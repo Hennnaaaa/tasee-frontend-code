@@ -1,8 +1,10 @@
+// src/components/layout/Navbar.jsx
 "use client"
 
 import React, { useState } from 'react';
 import { ShoppingCart, Search, Menu, X, User, Heart } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/authcontext';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
   const [cartItems, setCartItems] = useState(0);
 
   return (
@@ -67,6 +69,11 @@ const Navbar = () => {
               <DropdownMenuContent align="end" className="w-48">
                 {isAuthenticated ? (
                   <>
+                    <div className="px-2 py-1.5">
+                      <p className="text-sm font-medium">{user?.firstName} {user?.lastName}</p>
+                      <p className="text-xs text-gray-500">{user?.email}</p>
+                    </div>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
                       <Link href="/profile">My Profile</Link>
                     </DropdownMenuItem>
@@ -77,7 +84,7 @@ const Navbar = () => {
                       <Link href="/wishlist">My Wishlist</Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => setIsAuthenticated(false)}>
+                    <DropdownMenuItem onClick={logout}>
                       Sign Out
                     </DropdownMenuItem>
                   </>
@@ -162,6 +169,11 @@ const Navbar = () => {
                   <DropdownMenuContent align="center" className="w-48">
                     {isAuthenticated ? (
                       <>
+                        <div className="px-2 py-1.5">
+                          <p className="text-sm font-medium">{user?.firstName}</p>
+                          <p className="text-xs text-gray-500">{user?.email}</p>
+                        </div>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
                           <Link href="/profile">My Profile</Link>
                         </DropdownMenuItem>
@@ -169,7 +181,7 @@ const Navbar = () => {
                           <Link href="/orders">My Orders</Link>
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setIsAuthenticated(false)}>
+                        <DropdownMenuItem onClick={logout}>
                           Sign Out
                         </DropdownMenuItem>
                       </>
