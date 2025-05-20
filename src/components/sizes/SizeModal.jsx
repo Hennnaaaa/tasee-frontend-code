@@ -21,7 +21,7 @@ import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Import API routes
-import { CREATE_SIZE, UPDATE_SIZE } from '@/utils/routes/api';
+import { CREATE_SIZE, UPDATE_SIZE } from '@/utils/routes/productManagementRoutes';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';

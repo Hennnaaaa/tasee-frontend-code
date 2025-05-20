@@ -30,7 +30,7 @@ import {
   GET_ALL_SIZES, 
   DELETE_SIZE, 
   CREATE_STANDARD_SIZES 
-} from '@/utils/routes/api';
+} from '@/utils/routes/productManagementRoutes';
 
 // Import components
 import SizeModal from '@/components/sizes/SizeModal';

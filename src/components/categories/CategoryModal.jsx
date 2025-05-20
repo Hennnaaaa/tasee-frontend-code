@@ -46,7 +46,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 // Import API routes
-import { CREATE_CATEGORY, UPDATE_CATEGORY } from '@/utils/routes/api';
+import { CREATE_CATEGORY, UPDATE_CATEGORY } from '@/utils/routes/productManagementRoutes';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';

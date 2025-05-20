@@ -18,7 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Import API routes
-import { GET_INVENTORY_SUMMARY } from '@/utils/routes/api';
+import { GET_INVENTORY_SUMMARY } from '@/utils/routes/productManagementRoutes';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';

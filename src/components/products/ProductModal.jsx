@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   CREATE_PRODUCT, 
   UPDATE_PRODUCT 
-} from '@/utils/routes/api';
+} from '@/utils/routes/productManagementRoutes';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';

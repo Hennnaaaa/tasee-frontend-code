@@ -29,7 +29,7 @@ import {
   GET_INVENTORY_SUMMARY,
   GET_ALL_CATEGORIES,
   DELETE_PRODUCT
-} from '@/utils/routes/api';
+} from '@/utils/routes/productManagementRoutes';
 
 // Import components
 import ProductModal from '@/components/products/ProductModal';

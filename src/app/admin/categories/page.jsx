@@ -22,7 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Import API routes
-import { GET_ALL_CATEGORIES, DELETE_CATEGORY } from '@/utils/routes/api';
+import { GET_ALL_CATEGORIES, DELETE_CATEGORY } from '@/utils/routes/productManagementRoutes';
 
 // Import components
 import CategoryModal from '@/components/categories/CategoryModal';

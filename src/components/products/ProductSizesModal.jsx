@@ -53,7 +53,7 @@ import {
   ASSIGN_SIZES_TO_PRODUCT,
   UPDATE_PRODUCT_SIZE_INVENTORY,
   GET_ALL_SIZES,
-} from '@/utils/routes/api';
+} from '@/utils/routes/productManagementRoutes';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';
