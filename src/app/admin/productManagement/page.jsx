@@ -52,22 +52,22 @@ const ProductManagement = () => {
   }, []);
 //  Function to add category in the database
   const handleAddCategory = useCallback(async (category) => {
-    try {
-      const response = await axios.post(CREATE_CATEGORY, {
-        name : category.name,
-        isActive : true
-      }, {
-        headers : {
-          'Content-Type' : 'application/json',
-        }
-      })
+    // try {
+    //   const response = await axios.post(CREATE_CATEGORY, {
+    //     name : category.name,
+    //     isActive : true
+    //   }, {
+    //     headers : {
+    //       'Content-Type' : 'application/json',
+    //     }
+    //   })
 
-      console.log("Response of create Category : ", response.data);
+    //   console.log("Response of create Category : ", response.data);
       
-    } catch (error) {
-      console.log("Error in Adding Category : ", error);
+    // } catch (error) {
+    //   console.log("Error in Adding Category : ", error);
       
-    }
+    // }
     setCategories(prev => [...prev, category]);
   }, []);
 

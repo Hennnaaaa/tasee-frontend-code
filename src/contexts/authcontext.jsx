@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (userData) => {
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/customer/create`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/create`;
       console.log('Signup URL:', url);
       console.log('Signup data:', userData);
       
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
 
   const verifyOTP = async (email, otp) => {
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/customer/verify-OTP`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/verify-OTP`;
       console.log('Verify OTP URL:', url);
       console.log('OTP data:', { email, otp });
       
@@ -96,7 +96,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/customer/login`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
       console.log('Login URL:', url);
       
       const response = await fetch(url, {
