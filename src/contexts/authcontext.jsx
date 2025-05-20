@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.jsx
 "use client"
 
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext({});
@@ -11,7 +11,36 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [pendingEmail, setPendingEmail] = useState('');
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
+
+  // Check for existing token and user data on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          // Get user data from token or fetch from API
+          const userData = JSON.parse(localStorage.getItem('user') || 'null');
+          if (userData) {
+            setUser(userData);
+          } else {
+            // If we have token but no user data, clear invalid state
+            localStorage.removeItem('token');
+          }
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+        // Clear potentially corrupted data
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const signup = async (userData) => {
     try {
@@ -94,7 +123,8 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  // Updated login function that handles both customer and admin roles
+  const loginWithRole = async (email, password, expectedRole = null) => {
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/customer/login`;
       console.log('Login URL:', url);
@@ -117,9 +147,26 @@ export const AuthProvider = ({ children }) => {
       console.log('Login response:', data);
       
       if (data.success && data.data) {
+        // Check if the user has the expected role (if specified)
+        if (expectedRole && data.data.user.role !== expectedRole) {
+          return { 
+            success: false, 
+            error: `Access denied. You don't have ${expectedRole} privileges.` 
+          };
+        }
+        
+        // Save token and user data
         localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
         setUser(data.data.user);
-        router.push('/home');
+        
+        // Redirect based on role - always redirect admins to admin dashboard
+        if (data.data.user.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/home');
+        }
+        
         return { success: true };
       }
       return { success: false, error: data.message || 'Login failed' };
@@ -129,10 +176,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // The standard login function - will redirect based on role
+  // This means admins will always go to the admin dashboard regardless of which login page they use
+  const login = async (email, password) => {
+    return loginWithRole(email, password, null); // No role enforcement, will redirect based on actual role
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
     setUser(null);
     router.push('/home');
+  };
+
+  // New helper function to check if the user has a specific role
+  const hasRole = (role) => {
+    return user && user.role === role;
+  };
+
+  // New function to check if the current user is an admin
+  const isAdmin = () => {
+    return hasRole('admin');
   };
 
   return (
@@ -142,8 +206,12 @@ export const AuthProvider = ({ children }) => {
       signup,
       verifyOTP,
       login,
+      loginWithRole,
       logout,
-      isAuthenticated: !!user
+      isAuthenticated: !!user,
+      isAdmin,
+      hasRole,
+      loading
     }}>
       {children}
     </AuthContext.Provider>

@@ -24,13 +24,14 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
 
+    // Use login without enforcing a specific role
+    // This will automatically redirect based on the role
     const result = await login(email, password);
     
-    if (result.success) {
-      router.push('/home');
-    } else {
+    if (!result.success) {
       setError(result.error);
     }
+    // No redirect needed here as login function handles it based on role
     
     setLoading(false);
   };
