@@ -32,9 +32,10 @@ import {
 } from '@/utils/routes/productManagementRoutes';
 
 // Import components
-import ProductModal from '@/components/products/ProductModal';
-import ConfirmationDialog from '@/components/products/ConfirmationDialog';
-import ProductSizesModal from '@/components/products/ProductSizesModal';
+import ProductModal from '@/components/adminComponents/products/ProductModal';
+import ConfirmationDialog from '@/components/adminComponents/products/ConfirmationDialog';
+import ProductSizesModal from '@/components/adminComponents/products/ProductSizesModal';
+import AdminLayout from '@/components/adminComponents/layout/AdminLayout';
 
 // Import authentication utility
 import { getUserData } from '@/utils/auth';
@@ -294,7 +295,7 @@ export default function ProductsPage() {
     }
   };
   
-  return (
+  const productsContent = (
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex justify-between items-center">
@@ -594,4 +595,7 @@ export default function ProductsPage() {
       />
     </div>
   );
+  
+  // Wrap the content with AdminLayout
+  return <AdminLayout>{productsContent}</AdminLayout>;
 }
