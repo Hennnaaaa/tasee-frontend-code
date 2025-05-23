@@ -8,7 +8,7 @@ import Footer from '@/components/layout/Footer';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-
+import Support from '@/components/Support';
 export default function Home() {
   const categories = [
     { name: 'Dresses', description: 'Elegant & Casual', image: '/api/placeholder/300/400' },
@@ -16,7 +16,7 @@ export default function Home() {
     { name: 'Bottoms', description: 'Pants & Skirts', image: '/api/placeholder/300/400' },
     { name: 'Accessories', description: 'Bags & Jewelry', image: '/api/placeholder/300/400' }
   ];
-
+ 
   const products = [
     { id: 1, name: 'Floral Summer Dress', category: 'Dresses', price: 79, originalPrice: 99, sale: true },
     { id: 2, name: 'Silk Blouse', category: 'Tops', price: 59, isNew: true },
@@ -88,6 +88,8 @@ export default function Home() {
       </main>
       
       <Footer />
+            {/* Support Component */}
+      <Support />
     </div>
   );
 }
