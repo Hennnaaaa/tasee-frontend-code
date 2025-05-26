@@ -33,8 +33,9 @@ import {
 } from '@/utils/routes/productManagementRoutes';
 
 // Import components
-import SizeModal from '@/components/sizes/SizeModal';
-import ConfirmationDialog from '@/components/products/ConfirmationDialog';
+import SizeModal from '@/components/adminComponents/sizes/SizeModal';
+import ConfirmationDialog from '@/components/adminComponents/products/ConfirmationDialog';
+import AdminLayout from '@/components/adminComponents/layout/AdminLayout';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';
@@ -250,7 +251,7 @@ export default function SizesPage() {
   // Get unique categories for filter
   const uniqueCategories = [...new Set(sizes.map((size) => size.category))].sort();
   
-  return (
+  const sizesContent = (
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex justify-between items-center">
@@ -541,4 +542,7 @@ export default function SizesPage() {
       />
     </div>
   );
+  
+  // Wrap the content with AdminLayout
+  return <AdminLayout>{sizesContent}</AdminLayout>;
 }

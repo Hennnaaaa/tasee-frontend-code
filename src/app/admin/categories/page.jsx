@@ -25,8 +25,9 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { GET_ALL_CATEGORIES, DELETE_CATEGORY } from '@/utils/routes/productManagementRoutes';
 
 // Import components
-import CategoryModal from '@/components/categories/CategoryModal';
-import ConfirmationDialog from '@/components/products/ConfirmationDialog';
+import CategoryModal from '@/components/adminComponents/categories/CategoryModal';
+import ConfirmationDialog from '@/components/adminComponents/products/ConfirmationDialog';
+import AdminLayout from '@/components/adminComponents/layout/AdminLayout';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';
@@ -175,7 +176,7 @@ export default function CategoriesPage() {
     );
   });
   
-  return (
+  const categoriesContent = (
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex justify-between items-center">
@@ -345,4 +346,7 @@ export default function CategoriesPage() {
       />
     </div>
   );
+  
+  // Wrap the content with AdminLayout
+  return <AdminLayout>{categoriesContent}</AdminLayout>;
 }

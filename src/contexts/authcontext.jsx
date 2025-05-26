@@ -164,7 +164,7 @@ export const AuthProvider = ({ children }) => {
         if (data.data.user.role === 'admin') {
           router.push('/admin/dashboard');
         } else {
-          router.push('/home');
+          router.push('/customer/home');
         }
         
         return { success: true };
@@ -186,7 +186,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    router.push('/home');
+    router.push('/customer/home');
   };
 
   // New helper function to check if the user has a specific role

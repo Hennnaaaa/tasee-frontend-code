@@ -76,6 +76,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
   const [loading, setLoading] = useState(false);
   const [savingInventory, setSavingInventory] = useState(false);
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState(''); // Added success message state
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [totalInventory, setTotalInventory] = useState(0);
   const [productData, setProductData] = useState(null);
@@ -110,6 +111,16 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       setTotalInventory(0);
     }
   }, [productSizes]);
+
+  // Clear success message after 5 seconds
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
   
   // Fetch product sizes with authentication
   const fetchProductSizes = async () => {
@@ -279,6 +290,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
     
     setSavingInventory(true);
     setError('');
+    setSuccessMessage(''); // Clear previous success message
     
     try {
       // Get authentication data
@@ -320,6 +332,9 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         // Refetch product sizes
         await fetchProductSizes();
         setSelectedSizes([]);
+        
+        // Set success message
+        setSuccessMessage('Sizes and inventory updated successfully');
         
         // Call onSaved callback
         if (onSaved) {
@@ -376,6 +391,14 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
+
+        {/* Success Message Alert */}
+        {successMessage && (
+          <Alert variant="success" className="mb-4 mt-4 mx-6 bg-green-50 text-green-800 border-green-200">
+            <Check className="h-4 w-4" />
+            <AlertDescription>{successMessage}</AlertDescription>
+          </Alert>
+        )}
         
         <div className="px-6 py-4">
           {loading ? (
@@ -416,7 +439,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Total Inventory</p>
-                      <p className="font-semibold text-lg">
+                      <div className="font-semibold text-lg">
                         <Badge className={`
                           ${totalInventory <= 0 
                             ? 'bg-red-100 text-red-700 hover:bg-red-200' 
@@ -427,7 +450,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                         `}>
                           {totalInventory} units
                         </Badge>
-                      </p>
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -454,8 +477,8 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                 {productSizes.length === 0 ? (
                   <div className="bg-muted/30 border rounded-lg p-6 text-center">
                     <Boxes className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
-                    <p className="text-muted-foreground">No sizes assigned to this product yet.</p>
-                    <p className="text-muted-foreground text-sm mt-1">Add sizes below to get started.</p>
+                    <div className="text-muted-foreground">No sizes assigned to this product yet.</div>
+                    <div className="text-muted-foreground text-sm mt-1">Add sizes below to get started.</div>
                   </div>
                 ) : (
                   <div className="rounded-md border">
@@ -571,7 +594,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                 <h3 className="text-lg font-medium mb-3">Add New Sizes</h3>
                 {availableSizes.length === 0 ? (
                   <div className="bg-muted/30 border rounded-lg p-4 text-center">
-                    <p className="text-muted-foreground">All available sizes have been added to this product.</p>
+                    <div className="text-muted-foreground">All available sizes have been added to this product.</div>
                   </div>
                 ) : (
                   <div>
