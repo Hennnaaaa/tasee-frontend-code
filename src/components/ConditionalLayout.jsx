@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Navbar from "../app/customer/components/layout/Navbar";
 import Footer from "../app/customer/components/layout/Footer";
-
+import Support from "./Support";
 export default function ConditionalLayout({ children }) {
   const pathname = usePathname();
   
@@ -38,6 +38,7 @@ export default function ConditionalLayout({ children }) {
         {children}
       </main>
       <Footer />
+      <Support />
     </div>
   );
 }

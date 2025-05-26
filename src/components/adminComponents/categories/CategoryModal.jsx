@@ -306,9 +306,14 @@ export default function CategoryModal({
         {/* Fixed Header */}
         <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
           <DialogTitle className="text-lg sm:text-xl flex items-center">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[600px] max-h-[95vh] flex flex-col p-0">
+        {/* Fixed Header */}
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
+          <DialogTitle className="text-lg sm:text-xl flex items-center">
             <FolderTree className="mr-2 h-5 w-5 text-indigo-500" />
             {category ? 'Edit Category' : 'Add New Category'}
           </DialogTitle>
+          <DialogDescription className="text-sm">
           <DialogDescription className="text-sm">
             {category ? 'Update the category details below.' : 'Fill in the category details to add a new category.'}
           </DialogDescription>

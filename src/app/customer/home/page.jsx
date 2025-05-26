@@ -1,7 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import Newsletter from '@/components/Newsletter';
 import { getAllProducts, getAllCategories } from '@/utils/routes/customerRoutes';
 import ProductCard from '../components/products/ProductCard';
 import CategoryFilter from '../components/products/CategoryFilter';
@@ -163,6 +165,10 @@ export default function HomePage() {
               </div>
             </div>
           )}
+
+
+           {/* Newsletter */}
+          <Newsletter/>
         </>
       )}
     </div>

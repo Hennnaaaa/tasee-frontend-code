@@ -1,4 +1,5 @@
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+export const SUBSCRIBE_NEWSLETTER = `${BASE_URL}/api/customer/subscribeNewsletter`;
 export const GET_ALL_PRODUCTS = `${BASE_URL}/api/products`;
 export const GET_ALL_CATEGORIES = `${BASE_URL}/api/categories/getall`;
 export const GET_PRODUCT_BY_ID = (id) => `${BASE_URL}/api/products/${id}`;
