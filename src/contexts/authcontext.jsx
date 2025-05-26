@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.jsx
+// src/contexts/AuthContext.jsx - Updated to work with optimized cart
 "use client"
 
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -14,24 +14,28 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  // Helper function to trigger cart context update
+  const triggerCartUpdate = () => {
+    // Dispatch custom event that cart context listens for
+    window.dispatchEvent(new CustomEvent('authChange'));
+  };
+
   // Check for existing token and user data on mount
   useEffect(() => {
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          // Get user data from token or fetch from API
           const userData = JSON.parse(localStorage.getItem('user') || 'null');
           if (userData) {
             setUser(userData);
+            // Don't trigger cart merge on initial load
           } else {
-            // If we have token but no user data, clear invalid state
             localStorage.removeItem('token');
           }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        // Clear potentially corrupted data
         localStorage.removeItem('token');
         localStorage.removeItem('user');
       } finally {
@@ -65,7 +69,6 @@ export const AuthProvider = ({ children }) => {
 
       console.log('Signup response status:', response.status);
       
-      // First check if response is ok
       if (!response.ok) {
         const text = await response.text();
         console.error('Signup error response:', text);
@@ -101,7 +104,6 @@ export const AuthProvider = ({ children }) => {
 
       console.log('OTP response status:', response.status);
       
-      // Check content type
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text();
@@ -123,78 +125,115 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  // Updated login function that handles both customer and admin roles
-  const loginWithRole = async (email, password, expectedRole = null) => {
-    try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
-      console.log('Login URL:', url);
-      
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+ const loginWithRole = async (email, password, expectedRole = null) => {
+  try {
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
 
-      console.log('Login response status:', response.status);
+    if (!response.ok) {
+      const text = await response.text();
+      console.error('Login error response:', text);
+      return { success: false, error: `Server error: ${response.status}` };
+    }
 
-      if (!response.ok) {
-        const text = await response.text();
-        console.error('Login error response:', text);
-        return { success: false, error: `Server error: ${response.status}` };
+    const data = await response.json();
+    
+    if (data.success && data.data) {
+      if (expectedRole && data.data.user.role !== expectedRole) {
+        return { 
+          success: false, 
+          error: `Access denied. You don't have ${expectedRole} privileges.` 
+        };
       }
-
-      const data = await response.json();
-      console.log('Login response:', data);
       
-      if (data.success && data.data) {
-        // Check if the user has the expected role (if specified)
-        if (expectedRole && data.data.user.role !== expectedRole) {
-          return { 
-            success: false, 
-            error: `Access denied. You don't have ${expectedRole} privileges.` 
-          };
+      console.log('🔍 === AUTH LOGIN DEBUG ===');
+      console.log('🔍 Login successful, user:', data.data.user);
+      
+      // Check if guest cart exists before login
+      const guestCartBeforeLogin = localStorage.getItem('guestCart');
+      console.log('🔍 Guest cart before login:', guestCartBeforeLogin);
+      const hasGuestCart = guestCartBeforeLogin && JSON.parse(guestCartBeforeLogin).length > 0;
+      
+      // Save token and user data FIRST
+      localStorage.setItem('token', data.data.token);
+      localStorage.setItem('user', JSON.stringify(data.data.user));
+      setUser(data.data.user);
+      
+      console.log('🔍 User state updated, triggering cart operations...');
+      
+      // Trigger cart operations with proper sequencing
+      setTimeout(async () => {
+        console.log('🔍 Triggering cart update and merge...');
+        
+        // Trigger cart context to detect user change
+        triggerCartUpdate();
+        
+        // If there's a guest cart, trigger merge
+        if (hasGuestCart && window.cartInitCallback) {
+          console.log('🔍 Calling cartInitCallback with merge = true');
+          await window.cartInitCallback(data.data.user, true);
+        } else if (window.cartInitCallback) {
+          console.log('🔍 Calling cartInitCallback without merge');
+          await window.cartInitCallback(data.data.user, false);
         }
         
-        // Save token and user data
-        localStorage.setItem('token', data.data.token);
-        localStorage.setItem('user', JSON.stringify(data.data.user));
-        setUser(data.data.user);
+        // Force a cart refresh after a short delay to ensure everything is synced
+        setTimeout(() => {
+          if (window.forceCartRefresh) {
+            console.log('🔍 Force refreshing cart...');
+            window.forceCartRefresh();
+          }
+        }, 200);
         
-        // Redirect based on role - always redirect admins to admin dashboard
+      }, 300);
+      
+      // Redirect based on role (after cart operations)
+      setTimeout(() => {
         if (data.data.user.role === 'admin') {
           router.push('/admin/dashboard');
         } else {
           router.push('/customer/home');
         }
-        
-        return { success: true };
-      }
-      return { success: false, error: data.message || 'Login failed' };
-    } catch (error) {
-      console.error('Login error:', error);
-      return { success: false, error: error.message };
+      }, 500);
+      
+      return { success: true };
     }
-  };
+    return { success: false, error: data.message || 'Login failed' };
+  } catch (error) {
+    console.error('Login error:', error);
+    return { success: false, error: error.message };
+  }
+};
 
-  // The standard login function - will redirect based on role
-  // This means admins will always go to the admin dashboard regardless of which login page they use
   const login = async (email, password) => {
-    return loginWithRole(email, password, null); // No role enforcement, will redirect based on actual role
+    return loginWithRole(email, password, null);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
+    
+    // **IMPORTANT: Trigger cart logout**
+    if (window.cartLogoutCallback) {
+      window.cartLogoutCallback();
+    }
+    
+    // Trigger cart update
+    triggerCartUpdate();
+    
     router.push('/customer/home');
   };
 
-  // New helper function to check if the user has a specific role
   const hasRole = (role) => {
     return user && user.role === role;
   };
 
-  // New function to check if the current user is an admin
   const isAdmin = () => {
     return hasRole('admin');
   };

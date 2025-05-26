@@ -2,6 +2,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/authcontext";
 import { CartProvider } from "@/contexts/cartContext";
+import { AddressProvider } from "@/contexts/AddressContext"; // ADD THIS IMPORT
 import ConditionalLayout from "../components/ConditionalLayout";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -17,7 +18,12 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <AuthProvider>
           <CartProvider>
-            <ConditionalLayout>{children}</ConditionalLayout>
+            <AddressProvider>
+              {" "}
+              {/* ADD THIS WRAPPER */}
+              <ConditionalLayout>{children}</ConditionalLayout>
+            </AddressProvider>{" "}
+            {/* ADD THIS CLOSING TAG */}
           </CartProvider>
         </AuthProvider>
       </body>

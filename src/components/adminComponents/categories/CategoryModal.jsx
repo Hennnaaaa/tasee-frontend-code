@@ -302,215 +302,234 @@ export default function CategoryModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
-        <DialogHeader className="pb-4 border-b">
-          <DialogTitle className="text-xl flex items-center">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[600px] max-h-[95vh] flex flex-col p-0">
+        {/* Fixed Header */}
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
+          <DialogTitle className="text-lg sm:text-xl flex items-center">
             <FolderTree className="mr-2 h-5 w-5 text-indigo-500" />
             {category ? 'Edit Category' : 'Add New Category'}
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm">
             {category ? 'Update the category details below.' : 'Fill in the category details to add a new category.'}
           </DialogDescription>
         </DialogHeader>
         
-        {apiError && (
-          <Alert variant="destructive" className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>{apiError}</AlertDescription>
-          </Alert>
-        )}
-        
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" className="text-sm font-medium">
-                Category Name <span className="text-red-500">*</span>
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="Enter category name"
-                value={formData.name}
-                onChange={handleChange}
-                className={errors.name ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
-              />
-              {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="description" className="text-sm font-medium">Description</Label>
-              <Textarea
-                id="description"
-                name="description"
-                placeholder="Enter category description"
-                value={formData.description}
-                onChange={handleChange}
-                rows={3}
-                className="resize-none"
-              />
-              <p className="text-xs text-muted-foreground">
-                A brief description of this category for internal reference
-              </p>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="parentId" className="text-sm font-medium">Parent Category</Label>
-              <Select
-                name="parentId"
-                value={formData.parentId}
-                onValueChange={(value) => handleSelectChange('parentId', value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="None (Top-level category)" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none" className="flex items-center">
-                    <Box className="mr-2 h-4 w-4" />
-                    <span>None (Top-level category)</span>
-                  </SelectItem>
-                  {parentOptions.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id}>
-                      {cat.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Organize categories hierarchically by selecting a parent
-              </p>
-            </div>
-          </div>
-
-          <Card className="border-dashed">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center">
-                <Shirt className="mr-2 h-4 w-4 text-indigo-500" />
-                Size Settings
-              </CardTitle>
-              <CardDescription>
-                Configure how sizes work for this category
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Scrollable Content */}
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
+          {apiError && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>{apiError}</AlertDescription>
+            </Alert>
+          )}
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-4">
+              {/* Category Name */}
               <div className="space-y-2">
-                <Label htmlFor="clothingType" className="text-sm font-medium">Clothing Type</Label>
-                <Select
-                  name="clothingType"
-                  value={formData.clothingType}
-                  onValueChange={(value) => handleSelectChange('clothingType', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select clothing type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">
-                      <div className="flex items-center">
-                        <LayoutGrid className="mr-2 h-4 w-4" />
-                        <span>None</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="TOPS">
-                      <div className="flex items-center">
-                        <Shirt className="mr-2 h-4 w-4" />
-                        <span>Tops</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="DRESSES">Dresses</SelectItem>
-                    <SelectItem value="BOTTOMS">Bottoms</SelectItem>
-                    <SelectItem value="OUTERWEAR">Outerwear</SelectItem>
-                    <SelectItem value="INTIMATES">Intimates</SelectItem>
-                    <SelectItem value="SWIMWEAR">Swimwear</SelectItem>
-                    <SelectItem value="ACTIVEWEAR">Activewear</SelectItem>
-                    <SelectItem value="ACCESSORIES">Accessories</SelectItem>
-                    <SelectItem value="SHOES">Shoes</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {formData.clothingType !== 'none' && (
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {getClothingTypeDescription(formData.clothingType)}
-                  </p>
+                <Label htmlFor="name" className="text-sm font-medium">
+                  Category Name <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="Enter category name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={errors.name ? "border-red-300 focus:border-red-500 focus:ring-red-500" : ""}
+                />
+                {errors.name && (
+                  <p className="text-red-500 text-sm mt-1">{errors.name}</p>
                 )}
-                
-                <p className="text-xs text-muted-foreground mt-1">
-                  Determines which sizes will be available for products in this category
+              </div>
+              
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">Description</Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  placeholder="Enter category description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  rows={3}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">
+                  A brief description of this category for internal reference
                 </p>
               </div>
               
+              {/* Parent Category */}
               <div className="space-y-2">
-                <Label htmlFor="sizeChartType" className="text-sm font-medium">Size Chart Type</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {['STANDARD', 'NUMERIC', 'WAIST', 'FREE'].map((type) => {
-                    const info = getSizeChartTypeInfo(type);
-                    const isSelected = formData.sizeChartType === type;
-                    
-                    return (
-                      <div 
-                        key={type}
-                        className={`border rounded-md p-3 cursor-pointer transition-colors ${
-                          isSelected 
-                            ? 'border-indigo-500 bg-indigo-50' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => handleSelectChange('sizeChartType', type)}
-                      >
-                        <div className="flex items-center">
-                          {info.icon}
-                          <span className="font-medium">{type.charAt(0) + type.slice(1).toLowerCase()}</span>
-                          {isSelected && (
-                            <Check className="ml-auto h-4 w-4 text-indigo-500" />
-                          )}
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {info.description}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
+                <Label htmlFor="parentId" className="text-sm font-medium">Parent Category</Label>
+                <Select
+                  name="parentId"
+                  value={formData.parentId}
+                  onValueChange={(value) => handleSelectChange('parentId', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="None (Top-level category)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none" className="flex items-center">
+                      <Box className="mr-2 h-4 w-4" />
+                      <span>None (Top-level category)</span>
+                    </SelectItem>
+                    {parentOptions.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Organize categories hierarchically by selecting a parent
+                </p>
               </div>
-            </CardContent>
-          </Card>
-          
-          <div className="flex items-center space-x-2 pt-2">
-            <Switch
-              id="isActive"
-              checked={formData.isActive}
-              onCheckedChange={(checked) => handleSelectChange('isActive', checked)}
-            />
-            <div>
-              <Label htmlFor="isActive" className="text-sm font-medium">Active</Label>
-              <p className="text-xs text-muted-foreground">
-                Inactive categories won't be visible to customers
-              </p>
             </div>
-          </div>
-          
-          <DialogFooter className="pt-4 border-t">
-            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
-              Cancel
-            </Button>
-            <Button 
-              type="submit" 
-              disabled={loading}
-              className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  {category ? 'Update Category' : 'Create Category'}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </form>
+
+            {/* Size Settings Card */}
+            <Card className="border-dashed">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center">
+                  <Shirt className="mr-2 h-4 w-4 text-indigo-500" />
+                  Size Settings
+                </CardTitle>
+                <CardDescription>
+                  Configure how sizes work for this category
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* Clothing Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="clothingType" className="text-sm font-medium">Clothing Type</Label>
+                  <Select
+                    name="clothingType"
+                    value={formData.clothingType}
+                    onValueChange={(value) => handleSelectChange('clothingType', value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select clothing type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">
+                        <div className="flex items-center">
+                          <LayoutGrid className="mr-2 h-4 w-4" />
+                          <span>None</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="TOPS">
+                        <div className="flex items-center">
+                          <Shirt className="mr-2 h-4 w-4" />
+                          <span>Tops</span>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="DRESSES">Dresses</SelectItem>
+                      <SelectItem value="BOTTOMS">Bottoms</SelectItem>
+                      <SelectItem value="OUTERWEAR">Outerwear</SelectItem>
+                      <SelectItem value="INTIMATES">Intimates</SelectItem>
+                      <SelectItem value="SWIMWEAR">Swimwear</SelectItem>
+                      <SelectItem value="ACTIVEWEAR">Activewear</SelectItem>
+                      <SelectItem value="ACCESSORIES">Accessories</SelectItem>
+                      <SelectItem value="SHOES">Shoes</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {formData.clothingType !== 'none' && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {getClothingTypeDescription(formData.clothingType)}
+                    </p>
+                  )}
+                  
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Determines which sizes will be available for products in this category
+                  </p>
+                </div>
+                
+                {/* Size Chart Type */}
+                <div className="space-y-2">
+                  <Label htmlFor="sizeChartType" className="text-sm font-medium">Size Chart Type</Label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {['STANDARD', 'NUMERIC', 'WAIST', 'FREE'].map((type) => {
+                      const info = getSizeChartTypeInfo(type);
+                      const isSelected = formData.sizeChartType === type;
+                      
+                      return (
+                        <div 
+                          key={type}
+                          className={`border rounded-md p-3 cursor-pointer transition-colors ${
+                            isSelected 
+                              ? 'border-indigo-500 bg-indigo-50' 
+                              : 'border-gray-200 hover:border-gray-300'
+                          }`}
+                          onClick={() => handleSelectChange('sizeChartType', type)}
+                        >
+                          <div className="flex items-center">
+                            {info.icon}
+                            <span className="font-medium text-sm">{type.charAt(0) + type.slice(1).toLowerCase()}</span>
+                            {isSelected && (
+                              <Check className="ml-auto h-4 w-4 text-indigo-500" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {info.description}
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Active Toggle */}
+            <div className="flex items-center space-x-2 pt-2">
+              <Switch
+                id="isActive"
+                checked={formData.isActive}
+                onCheckedChange={(checked) => handleSelectChange('isActive', checked)}
+              />
+              <div>
+                <Label htmlFor="isActive" className="text-sm font-medium">Active</Label>
+                <p className="text-xs text-muted-foreground">
+                  Inactive categories won't be visible to customers
+                </p>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+        {/* Fixed Footer */}
+        <DialogFooter className="px-4 sm:px-6 py-4 border-t flex-shrink-0 gap-2">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose} 
+            disabled={loading}
+            className="w-full sm:w-auto"
+          >
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={loading}
+            onClick={handleSubmit}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 w-full sm:w-auto"
+          >
+            {loading ? (
+              <>
+                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="mr-2 h-4 w-4" />
+                {category ? 'Update Category' : 'Create Category'}
+              </>
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
