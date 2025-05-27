@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  PlusCircle, 
-  Trash2, 
-  X, 
-  Check, 
-  RefreshCw, 
-  PlusIcon, 
+import {
+  PlusCircle,
+  Trash2,
+  X,
+  Check,
+  RefreshCw,
+  PlusIcon,
   Tag,
   Boxes,
   PackageCheck,
@@ -81,7 +81,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
   const [totalInventory, setTotalInventory] = useState(0);
   const [productData, setProductData] = useState(null);
   const [showEmptySizes, setShowEmptySizes] = useState(false);
-  
+
   // Check authentication when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -93,7 +93,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       }
     }
   }, [isOpen, router, onClose]);
-  
+
   // Fetch product sizes and available sizes when product changes
   useEffect(() => {
     if (isOpen && product) {
@@ -101,7 +101,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       fetchAvailableSizes();
     }
   }, [isOpen, product]);
-  
+
   // Calculate total inventory when product sizes change
   useEffect(() => {
     if (productSizes.length > 0) {
@@ -121,14 +121,14 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       return () => clearTimeout(timer);
     }
   }, [successMessage]);
-  
+
   // Fetch product sizes with authentication
   const fetchProductSizes = async () => {
     if (!product) return;
-    
+
     setLoading(true);
     setError('');
-    
+
     try {
       // Get authentication data
       const auth = getUserData();
@@ -136,18 +136,24 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         router.push('/login');
         return;
       }
-      
+
       // Make authenticated request
       const response = await axios.get(GET_PRODUCT_SIZES(product.id), {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }
       });
-      
+
       if (response.data.success) {
-        setProductSizes(response.data.data.productSizes || []);
+        // Store original inventory values for comparison
+        const sizesWithOriginal = (response.data.data.productSizes || []).map(size => ({
+          ...size,
+          originalInventory: size.inventory, // Store original inventory
+          isEditedSize: false // Reset edit flag
+        }));
+
+        setProductSizes(sizesWithOriginal);
         setProductData(response.data.data.product);
-        
         // If there are recommended sizes, add them to available sizes
         if (response.data.data.recommendedSizes) {
           setAvailableSizes(response.data.data.recommendedSizes);
@@ -163,18 +169,18 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         router.push('/login');
         return;
       }
-      
+
       setError(err.response?.data?.message || 'Error fetching product sizes');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
-  
+
   // Fetch available sizes with authentication
   const fetchAvailableSizes = async () => {
     if (!product) return;
-    
+
     try {
       // Get authentication data
       const auth = getUserData();
@@ -182,7 +188,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         router.push('/login');
         return;
       }
-      
+
       // Make authenticated request
       const categoryResponse = await axios.get(GET_ALL_SIZES, {
         params: {
@@ -193,14 +199,14 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
           Authorization: `Bearer ${auth.token}`
         }
       });
-      
+
       if (categoryResponse.data.success) {
         // Filter out sizes that are already assigned to the product
         const currentSizeIds = new Set(productSizes.map((ps) => ps.sizeId));
         const filteredSizes = categoryResponse.data.data.filter(
           (size) => !currentSizeIds.has(size.id)
         );
-        
+
         setAvailableSizes(filteredSizes);
       }
     } catch (err) {
@@ -211,11 +217,11 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         router.push('/login');
         return;
       }
-      
+
       console.error('Error fetching available sizes:', err);
     }
   };
-  
+
   // Handle adding a size to selected sizes
   const handleAddSize = (size) => {
     if (!selectedSizes.some((s) => s.id === size.id)) {
@@ -229,35 +235,35 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
           isActive: true,
         },
       ]);
-      
+
       // Remove from available sizes
       setAvailableSizes(availableSizes.filter((s) => s.id !== size.id));
     }
   };
-  
+
   // Handle removing a size from selected sizes
   const handleRemoveSize = (sizeId) => {
     const removedSize = selectedSizes.find((s) => s.id === sizeId);
     if (removedSize) {
       setSelectedSizes(selectedSizes.filter((s) => s.id !== sizeId));
-      
+
       // Add back to available sizes
       setAvailableSizes([...availableSizes, removedSize]);
     }
   };
-  
+
   // Handle inventory change for a size
   const handleInventoryChange = (sizeId, inventory) => {
     setProductSizes(
       productSizes.map((size) => {
         if (size.sizeId === sizeId) {
-          return { ...size, inventory: parseInt(inventory) || 0 };
+          return { ...size, inventory: parseInt(inventory) || 0, isEditedSize: true };
         }
         return size;
       })
     );
   };
-  
+
   // Handle inventory increment/decrement
   const handleInventoryAdjust = (sizeId, amount) => {
     setProductSizes(
@@ -265,13 +271,13 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         if (size.sizeId === sizeId) {
           // Ensure inventory doesn't go below zero
           const newValue = Math.max(0, (size.inventory || 0) + amount);
-          return { ...size, inventory: newValue };
+          return { ...size, inventory: newValue, isEditedSize: true };
         }
         return size;
       })
     );
   };
-  
+
   // Handle inventory change for a selected size
   const handleSelectedInventoryChange = (sizeId, inventory) => {
     setSelectedSizes(
@@ -283,15 +289,15 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       })
     );
   };
-  
+
   // Save size changes with authentication
   const handleSaveSizes = async () => {
     if (!product) return;
-    
+
     setSavingInventory(true);
     setError('');
     setSuccessMessage(''); // Clear previous success message
-    
+
     try {
       // Get authentication data
       const auth = getUserData();
@@ -299,24 +305,29 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         router.push('/login');
         return;
       }
-      
-      // Prepare existing sizes data
+
+      // Prepare existing sizes data with ORIGINAL inventory for comparison
       const existingSizes = productSizes.map((ps) => ({
         sizeId: ps.sizeId,
         inventory: ps.inventory,
+        originalInventory: ps.originalInventory || ps.inventory, // Add original inventory
         isActive: ps.isActive,
+        isSizeNewlyAdded: false,
+        isEditedSize: ps.isEditedSize || false // Track if inventory was edited
       }));
-      
+
       // Prepare new sizes data
       const newSizes = selectedSizes.map((size) => ({
         sizeId: size.id,
         inventory: size.inventory,
+        originalInventory: 0, // New sizes start with 0 original inventory
         isActive: true,
+        isSizeNewlyAdded: true,
+        isEditedSize: false
       }));
-      
       // Combine existing and new sizes
       const sizesPayload = [...existingSizes, ...newSizes];
-      
+
       // Send API request with authentication
       const response = await axios.post(
         ASSIGN_SIZES_TO_PRODUCT(product.id),
@@ -327,15 +338,15 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
           }
         }
       );
-      
+
       if (response.data.success) {
         // Refetch product sizes
         await fetchProductSizes();
         setSelectedSizes([]);
-        
+
         // Set success message
         setSuccessMessage('Sizes and inventory updated successfully');
-        
+
         // Call onSaved callback
         if (onSaved) {
           onSaved();
@@ -351,14 +362,14 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         router.push('/login');
         return;
       }
-      
+
       setError(err.response?.data?.message || 'Error saving sizes');
       console.error(err);
     } finally {
       setSavingInventory(false);
     }
   };
-  
+
   // Toggle size active status
   const handleToggleActive = (sizeId, isActive) => {
     setProductSizes(
@@ -370,11 +381,11 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       })
     );
   };
-  
+
   if (!product) {
     return null;
   }
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
@@ -384,7 +395,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
             Manage sizes and inventory for <span className="font-medium text-foreground">{product.name}</span>
           </DialogDescription>
         </DialogHeader>
-        
+
         {error && (
           <Alert variant="destructive" className="mb-4 mt-4 mx-6">
             <AlertTriangle className="h-4 w-4" />
@@ -399,7 +410,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
             <AlertDescription>{successMessage}</AlertDescription>
           </Alert>
         )}
-        
+
         <div className="px-6 py-4">
           {loading ? (
             <div className="flex justify-center items-center h-32">
@@ -409,10 +420,10 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
               </div>
             </div>
           ) : (
-            <motion.div 
-              className="space-y-6" 
-              initial="hidden" 
-              animate="visible" 
+            <motion.div
+              className="space-y-6"
+              initial="hidden"
+              animate="visible"
               variants={fadeIn}
             >
               {/* Product info card */}
@@ -441,9 +452,9 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                       <p className="text-sm font-medium text-muted-foreground">Total Inventory</p>
                       <div className="font-semibold text-lg">
                         <Badge className={`
-                          ${totalInventory <= 0 
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200' 
-                            : totalInventory < 5 
+                          ${totalInventory <= 0
+                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                            : totalInventory < 5
                               ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
                               : 'bg-green-100 text-green-700 hover:bg-green-200'}
                             rounded-md px-3 py-0.5 text-sm
@@ -455,12 +466,12 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                   </div>
                 </CardContent>
               </Card>
-              
+
               {/* Current sizes */}
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-lg font-medium">Current Sizes</h3>
-                  
+
                   <div className="flex items-center space-x-2">
                     <div className="flex items-center text-sm text-muted-foreground">
                       <Switch
@@ -473,7 +484,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                     </div>
                   </div>
                 </div>
-                
+
                 {productSizes.length === 0 ? (
                   <div className="bg-muted/30 border rounded-lg p-6 text-center">
                     <Boxes className="h-12 w-12 mx-auto text-muted-foreground/50 mb-3" />
@@ -497,98 +508,98 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                           {productSizes
                             .filter(productSize => showEmptySizes || productSize.inventory > 0)
                             .map((productSize) => (
-                            <motion.tr
-                              key={productSize.id}
-                              className="group"
-                              variants={itemVariants}
-                              initial="hidden"
-                              animate="visible"
-                              exit={{ opacity: 0, height: 0 }}
-                            >
-                              <TableCell>
-                                <div className="font-medium">{productSize.size.name}</div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="font-mono">
-                                  {productSize.size.code}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="font-mono text-sm text-muted-foreground">
-                                {productSize.sku}
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <div className="flex items-center justify-center space-x-1">
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          size="icon"
-                                          className="h-8 w-8"
-                                          onClick={() => handleInventoryAdjust(productSize.sizeId, -1)}
-                                          disabled={productSize.inventory <= 0}
-                                        >
-                                          <Minus className="h-3 w-3" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Decrease</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                  
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    value={productSize.inventory || 0}
-                                    onChange={(e) =>
-                                      handleInventoryChange(productSize.sizeId, e.target.value)
+                              <motion.tr
+                                key={productSize.id}
+                                className="group"
+                                variants={itemVariants}
+                                initial="hidden"
+                                animate="visible"
+                                exit={{ opacity: 0, height: 0 }}
+                              >
+                                <TableCell>
+                                  <div className="font-medium">{productSize.size.name}</div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className="font-mono">
+                                    {productSize.size.code}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="font-mono text-sm text-muted-foreground">
+                                  {productSize.sku}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <div className="flex items-center justify-center space-x-1">
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() => handleInventoryAdjust(productSize.sizeId, -1)}
+                                            disabled={productSize.inventory <= 0}
+                                          >
+                                            <Minus className="h-3 w-3" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Decrease</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={productSize.inventory || 0}
+                                      onChange={(e) =>
+                                        handleInventoryChange(productSize.sizeId, e.target.value)
+                                      }
+                                      className="w-20 text-center"
+                                    />
+
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-8 w-8"
+                                            onClick={() => handleInventoryAdjust(productSize.sizeId, 1)}
+                                          >
+                                            <Plus className="h-3 w-3" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Increase</TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Switch
+                                    checked={productSize.isActive}
+                                    onCheckedChange={() =>
+                                      handleToggleActive(productSize.sizeId, productSize.isActive)
                                     }
-                                    className="w-20 text-center"
                                   />
-                                  
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          variant="outline"
-                                          size="icon"
-                                          className="h-8 w-8"
-                                          onClick={() => handleInventoryAdjust(productSize.sizeId, 1)}
-                                        >
-                                          <Plus className="h-3 w-3" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Increase</TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                </div>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Switch
-                                  checked={productSize.isActive}
-                                  onCheckedChange={() =>
-                                    handleToggleActive(productSize.sizeId, productSize.isActive)
-                                  }
-                                />
-                              </TableCell>
-                            </motion.tr>
-                          ))}
+                                </TableCell>
+                              </motion.tr>
+                            ))}
                         </AnimatePresence>
-                        
+
                         {/* Empty state for filtered sizes */}
-                        {productSizes.length > 0 && 
-                         productSizes.filter(productSize => showEmptySizes || productSize.inventory > 0).length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
-                              No sizes with inventory. Toggle "Show zero inventory sizes" to view all.
-                            </TableCell>
-                          </TableRow>
-                        )}
+                        {productSizes.length > 0 &&
+                          productSizes.filter(productSize => showEmptySizes || productSize.inventory > 0).length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                                No sizes with inventory. Toggle "Show zero inventory sizes" to view all.
+                              </TableCell>
+                            </TableRow>
+                          )}
                       </TableBody>
                     </Table>
                   </div>
                 )}
               </div>
-              
+
               {/* Add new sizes */}
               <div>
                 <h3 className="text-lg font-medium mb-3">Add New Sizes</h3>
@@ -618,10 +629,10 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                     </div>
                   </div>
                 )}
-                
+
                 {/* Selected sizes */}
                 {selectedSizes.length > 0 && (
-                  <motion.div 
+                  <motion.div
                     className="mt-6 border rounded-md bg-muted/30 p-4"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -641,7 +652,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                         <TableBody>
                           <AnimatePresence>
                             {selectedSizes.map((size) => (
-                              <motion.tr 
+                              <motion.tr
                                 key={size.id}
                                 variants={itemVariants}
                                 initial="hidden"
@@ -672,7 +683,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                                         <TooltipContent>Decrease</TooltipContent>
                                       </Tooltip>
                                     </TooltipProvider>
-                                    
+
                                     <Input
                                       type="number"
                                       min="0"
@@ -682,7 +693,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                                       }
                                       className="w-16 text-center"
                                     />
-                                    
+
                                     <TooltipProvider>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
@@ -722,14 +733,14 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
             </motion.div>
           )}
         </div>
-        
+
         <DialogFooter className="px-6 py-4 border-t">
           <Button variant="outline" onClick={onClose} disabled={savingInventory}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSaveSizes} 
-            disabled={savingInventory} 
+          <Button
+            onClick={handleSaveSizes}
+            disabled={savingInventory}
             className={savingInventory ? "opacity-80" : ""}
           >
             {savingInventory ? (

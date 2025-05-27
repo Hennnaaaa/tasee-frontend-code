@@ -196,7 +196,7 @@ export default function ProductModal({
     discountedPrice: '',
     categoryId: '',
     sku: '',
-    inventory: 0,
+    // inventory: 0,
     weight: '',
     isActive: true,
   };
@@ -229,7 +229,7 @@ export default function ProductModal({
         discountedPrice: product.discountedPrice ? parseFloat(product.discountedPrice).toString() : '',
         categoryId: product.categoryId || '',
         sku: product.sku || '',
-        inventory: product.inventory || 0,
+        // inventory: product.inventory || 0,
         weight: product.weight ? product.weight.toString() : '',
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
@@ -322,9 +322,9 @@ export default function ProductModal({
       newErrors.weight = 'Weight must be a valid positive number';
     }
     
-    if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
-      newErrors.inventory = 'Inventory must be a valid positive number';
-    }
+    // if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
+    //   newErrors.inventory = 'Inventory must be a valid positive number';
+    // }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -364,7 +364,7 @@ export default function ProductModal({
       if (formData.sku) {
         formDataToSend.append('sku', formData.sku);
       }
-      formDataToSend.append('inventory', parseInt(formData.inventory));
+      formDataToSend.append('// inventory', parseInt(formData.inventory));
       if (formData.weight) {
         formDataToSend.append('weight', parseFloat(formData.weight));
       }
@@ -399,6 +399,7 @@ export default function ProductModal({
           }
         });
       }
+      console.log("Response from API:", response.data);
       
       if (response.data.success) {
         onSaved();
@@ -567,7 +568,7 @@ export default function ProductModal({
                   {errors.discountedPrice && <p className="text-red-500 text-sm">{errors.discountedPrice}</p>}
                 </div>
                 
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <Label htmlFor="inventory">Base Inventory</Label>
                   <Input
                     id="inventory"
@@ -580,7 +581,7 @@ export default function ProductModal({
                   />
                   {errors.inventory && <p className="text-red-500 text-sm">{errors.inventory}</p>}
                   <p className="text-muted-foreground text-xs">Base inventory (for products without size variants)</p>
-                </div>
+                </div> */}
                 
                 <div className="space-y-2">
                   <Label htmlFor="weight">Weight (kg)</Label>
