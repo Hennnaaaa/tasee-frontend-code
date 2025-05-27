@@ -13,7 +13,8 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Menu
+  Menu,
+   Newspaper
 } from 'lucide-react';
 
 // Import UI components
@@ -75,7 +76,12 @@ const Sidebar = ({ onToggle }) => {
       href: '/admin/sizes',
       active: pathname === '/admin/sizes',
     },
-   
+    {
+      title: 'Newsletters',
+      icon: <Newspaper size={20} />,
+      href: '/admin/NewsletterSubscriber',
+      active: pathname === '/admin/NewsletterSubscriber',
+    },
   ];
 
   return (

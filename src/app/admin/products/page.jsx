@@ -478,7 +478,7 @@ export default function ProductsPage() {
                               (sum, size) => sum + (size.inventory || 0),
                               0
                             ) || 0;
-                            const totalInventory = baseInventory + sizeInventory;
+                            const totalInventory =  sizeInventory;
 
                             const textColor =
                               totalInventory <= 0
