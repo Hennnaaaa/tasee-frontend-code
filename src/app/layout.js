@@ -1,8 +1,10 @@
+// app/layout.js
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/authcontext";
 import { CartProvider } from "@/contexts/cartContext";
-import { AddressProvider } from "@/contexts/AddressContext"; // ADD THIS IMPORT
+import { AddressProvider } from "@/contexts/addressContext"; // Correct import
+import { Toaster } from "@/components/ui/toaster"; // Add this for shadcn toast
 import ConditionalLayout from "../components/ConditionalLayout";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,11 +21,9 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <CartProvider>
             <AddressProvider>
-              {" "}
-              {/* ADD THIS WRAPPER */}
               <ConditionalLayout>{children}</ConditionalLayout>
-            </AddressProvider>{" "}
-            {/* ADD THIS CLOSING TAG */}
+              <Toaster />
+            </AddressProvider>
           </CartProvider>
         </AuthProvider>
       </body>

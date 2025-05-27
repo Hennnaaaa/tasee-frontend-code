@@ -19,6 +19,10 @@ export default function ProductDetailsPage({ params }) {
   const [addingToCart, setAddingToCart] = useState(false);
   const [notification, setNotification] = useState(null);
   
+  // Image gallery state
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [imageError, setImageError] = useState(false);
+  
   // Handle params unwrapping for Next.js 15
   useEffect(() => {
     const unwrapParams = async () => {
@@ -139,6 +143,27 @@ export default function ProductDetailsPage({ params }) {
       setAddingToCart(false);
     }
   };
+
+  // Image gallery functions
+  const handleImageError = () => {
+    setImageError(true);
+  };
+
+  const nextImage = () => {
+    if (product.images && product.images.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
+    }
+  };
+
+  const prevImage = () => {
+    if (product.images && product.images.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+    }
+  };
+
+  const selectImage = (index) => {
+    setCurrentImageIndex(index);
+  };
   
   if (loading) {
     return (
@@ -165,6 +190,11 @@ export default function ProductDetailsPage({ params }) {
       </div>
     );
   }
+  
+  // Get product images
+  const productImages = product.images || [];
+  const primaryImage = productImages.find(img => img.isPrimary) || productImages[0];
+  const hasMultipleImages = productImages.length > 1;
   
   // Calculate if product is in stock
   const hasInventory = product.productSizes && product.productSizes.some(
@@ -216,29 +246,93 @@ export default function ProductDetailsPage({ params }) {
       </nav>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Product Image */}
-        <div className="bg-gray-100 aspect-square rounded-lg flex items-center justify-center">
-          {product.image ? (
-            <img 
-              src={product.image} 
-              alt={product.name}
-              className="w-full h-full object-cover rounded-lg"
-            />
-          ) : (
-            <svg 
-              className="w-32 h-32 text-gray-400" 
-              fill="none" 
-              stroke="currentColor" 
-              viewBox="0 0 24 24" 
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path 
-                strokeLinecap="round" 
-                strokeLinejoin="round" 
-                strokeWidth="1" 
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
+        {/* Product Image Gallery */}
+        <div className="space-y-4">
+          {/* Main Image */}
+          <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+            {productImages.length > 0 && !imageError ? (
+              <>
+                <img 
+                  src={productImages[currentImageIndex]?.url || primaryImage?.url}
+                  alt={productImages[currentImageIndex]?.alt || product.name}
+                  className="w-full h-full object-cover"
+                  onError={handleImageError}
+                />
+                
+                {/* Navigation arrows for multiple images */}
+                {hasMultipleImages && (
+                  <>
+                    <button
+                      onClick={prevImage}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <button
+                      onClick={nextImage}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-colors"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </>
+                )}
+
+                {/* Image counter */}
+                {hasMultipleImages && (
+                  <div className="absolute top-4 right-4 bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+                    {currentImageIndex + 1} / {productImages.length}
+                  </div>
+                )}
+              </>
+            ) : (
+              /* Placeholder for no image */
+              <div className="flex items-center justify-center h-full text-gray-400">
+                <svg 
+                  className="w-32 h-32" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    strokeWidth="1" 
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </div>
+            )}
+          </div>
+
+          {/* Thumbnail Images */}
+          {hasMultipleImages && (
+            <div className="grid grid-cols-4 gap-2">
+              {productImages.map((image, index) => (
+                <button
+                  key={image.id || index}
+                  onClick={() => selectImage(index)}
+                  className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${
+                    index === currentImageIndex ? 'border-blue-500' : 'border-transparent hover:border-gray-300'
+                  }`}
+                >
+                  <img
+                    src={image.url}
+                    alt={image.alt || `${product.name} - Image ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  {image.isPrimary && (
+                    <div className="absolute top-1 left-1 bg-blue-500 text-white text-xs px-1 rounded">
+                      Main
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
           )}
         </div>
         
@@ -428,9 +522,40 @@ export default function ProductDetailsPage({ params }) {
                     )}
                   </dd>
                 </div>
+                {productImages.length > 0 && (
+                  <div className="py-2 grid grid-cols-2">
+                    <dt className="text-sm text-gray-500">Images</dt>
+                    <dd className="text-sm text-gray-900">{productImages.length} photo{productImages.length !== 1 ? 's' : ''}</dd>
+                  </div>
+                )}
               </dl>
             </div>
           </div>
+        </div>
+      </div>
+      
+      {/* Image Gallery Modal for Mobile */}
+      <div className="md:hidden mt-8">
+        <h3 className="text-lg font-medium mb-4">Product Gallery</h3>
+        <div className="grid grid-cols-2 gap-2">
+          {productImages.map((image, index) => (
+            <button
+              key={image.id || index}
+              onClick={() => selectImage(index)}
+              className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden"
+            >
+              <img
+                src={image.url}
+                alt={image.alt || `${product.name} - Image ${index + 1}`}
+                className="w-full h-full object-cover"
+              />
+              {image.isPrimary && (
+                <div className="absolute top-2 left-2 bg-blue-500 text-white text-xs px-2 py-1 rounded">
+                  Main
+                </div>
+              )}
+            </button>
+          ))}
         </div>
       </div>
       

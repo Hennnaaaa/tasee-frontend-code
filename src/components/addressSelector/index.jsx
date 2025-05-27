@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAddress } from '@/contexts/AddressContext';
+import { useAddress } from '@/contexts/addressContext';
 
 const AddressSelector = ({ 
   type = 'shipping', // 'shipping' or 'billing' 

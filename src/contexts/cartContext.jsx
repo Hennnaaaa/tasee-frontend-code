@@ -302,6 +302,7 @@ export const CartProvider = ({ children }) => {
   const addToCartLocalStorage = (product, sizeVariant, quantity) => {
     try {
       console.log("🛒 Adding to localStorage cart");
+      console.log("🛒 Product data:", product); // Debug: Check what product data we have
       const newCartItems = [...cartItems];
 
       const existingItemIndex = newCartItems.findIndex(
@@ -333,10 +334,21 @@ export const CartProvider = ({ children }) => {
           product: {
             id: product.id,
             name: product.name,
-            image: product.image,
             price: product.price,
             discountedPrice: product.discountedPrice,
             sku: product.sku,
+            // ✅ FIXED: Include images array and category
+            images: product.images || [], // Include the images array
+            category: product.category || null, // Include category
+            // Keep old image field for backward compatibility
+            image:
+              product.image ||
+              (product.images && product.images.length > 0
+                ? (
+                    product.images.find((img) => img.isPrimary) ||
+                    product.images[0]
+                  ).url
+                : null),
           },
           sizeVariant: {
             sizeId: sizeVariant.sizeId,
@@ -348,7 +360,10 @@ export const CartProvider = ({ children }) => {
         };
 
         newCartItems.push(cartItem);
-        console.log("🛒 Added new item to guest cart");
+        console.log(
+          "🛒 Added new item to guest cart with images:",
+          cartItem.product.images?.length || 0
+        );
       }
 
       setCartItems(newCartItems);

@@ -31,6 +31,154 @@ import {
 import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
 
+// Image Upload Component with ProductImage model support
+const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage }) => {
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [previews, setPreviews] = useState([]);
+
+  // Initialize with existing images
+  useEffect(() => {
+    if (existingImages && existingImages.length > 0) {
+      const existingPreviews = existingImages.map(img => ({
+        url: img.url,
+        id: img.id,
+        isPrimary: img.isPrimary,
+        alt: img.alt,
+        isExisting: true
+      }));
+      setPreviews(existingPreviews);
+    } else {
+      setPreviews([]);
+    }
+  }, [existingImages]);
+
+  const handleImageSelect = (e) => {
+    const files = Array.from(e.target.files);
+    
+    const totalImages = selectedImages.length + existingImages.length;
+    if (files.length + totalImages > maxImages) {
+      alert(`Maximum ${maxImages} images allowed`);
+      return;
+    }
+
+    const newImages = [...selectedImages, ...files];
+    setSelectedImages(newImages);
+    
+    // Create previews for new files
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviews(prev => [...prev, {
+          url: e.target.result,
+          file: file,
+          isExisting: false
+        }]);
+      };
+      reader.readAsDataURL(file);
+    });
+
+    onImagesChange(newImages);
+  };
+
+  const removeImage = (index) => {
+    const imageToRemove = previews[index];
+    
+    if (imageToRemove.isExisting) {
+      // Handle removal of existing images
+      onRemoveExistingImage(imageToRemove.id);
+      const newPreviews = previews.filter((_, i) => i !== index);
+      setPreviews(newPreviews);
+    } else {
+      // Handle removal of newly selected images
+      const newImageIndex = previews.slice(0, index).filter(p => !p.isExisting).length;
+      const newImages = selectedImages.filter((_, i) => i !== newImageIndex);
+      const newPreviews = previews.filter((_, i) => i !== index);
+      
+      setSelectedImages(newImages);
+      setPreviews(newPreviews);
+      onImagesChange(newImages);
+    }
+  };
+
+  const setPrimaryImage = (index) => {
+    const newPreviews = previews.map((preview, i) => ({
+      ...preview,
+      isPrimary: i === index
+    }));
+    setPreviews(newPreviews);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <input
+          type="file"
+          multiple
+          accept="image/*"
+          onChange={handleImageSelect}
+          className="hidden"
+          id="image-upload"
+        />
+        
+        <label 
+          htmlFor="image-upload"
+          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+        >
+          Upload Images ({previews.length}/{maxImages})
+        </label>
+        
+        <span className="text-sm text-gray-500">
+          Click on an image to set it as primary
+        </span>
+      </div>
+
+      {previews.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {previews.map((preview, index) => (
+            <div key={index} className="relative group">
+              <div 
+                className={`relative cursor-pointer rounded-lg border-2 ${
+                  preview.isPrimary ? 'border-blue-500' : 'border-gray-200'
+                }`}
+                onClick={() => setPrimaryImage(index)}
+              >
+                <img 
+                  src={preview.url} 
+                  alt={preview.alt || `Preview ${index}`} 
+                  className="w-full h-32 object-cover rounded-lg"
+                />
+                
+                {preview.isPrimary && (
+                  <span className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 text-xs rounded">
+                    Primary
+                  </span>
+                )}
+                
+                {preview.isExisting && (
+                  <span className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
+                    Existing
+                  </span>
+                )}
+              </div>
+              
+              <button 
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeImage(index);
+                }}
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export default function ProductModal({
   isOpen,
   onClose,
@@ -57,6 +205,9 @@ export default function ProductModal({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [existingImages, setExistingImages] = useState([]);
+  const [removedImageIds, setRemovedImageIds] = useState([]);
   
   // Check authentication when modal opens
   useEffect(() => {
@@ -82,10 +233,23 @@ export default function ProductModal({
         weight: product.weight ? product.weight.toString() : '',
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
+      
+      // Set existing images from ProductImage model - FIXED to use 'images' alias
+      if (product.images && product.images.length > 0) {
+        setExistingImages(product.images);
+      } else {
+        setExistingImages([]);
+      }
+      
       setErrors({});
       setApiError('');
+      setSelectedImages([]);
+      setRemovedImageIds([]);
     } else {
       setFormData(initialState);
+      setExistingImages([]);
+      setSelectedImages([]);
+      setRemovedImageIds([]);
     }
   }, [product, isOpen]);
   
@@ -120,6 +284,16 @@ export default function ProductModal({
         [name]: '',
       });
     }
+  };
+
+  // Handle image selection
+  const handleImagesChange = (images) => {
+    setSelectedImages(images);
+  };
+
+  // Handle existing image removal
+  const handleRemoveExistingImage = (imageId) => {
+    setRemovedImageIds(prev => [...prev, imageId]);
   };
   
   // Validate form
@@ -176,28 +350,52 @@ export default function ProductModal({
     setApiError('');
     
     try {
-      const payload = {
-        ...formData,
-        price: parseFloat(formData.price),
-        discountedPrice: formData.discountedPrice ? parseFloat(formData.discountedPrice) : null,
-        inventory: parseInt(formData.inventory),
-        weight: formData.weight ? parseFloat(formData.weight) : null,
-      };
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      
+      // Append form fields
+      formDataToSend.append('name', formData.name);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('price', parseFloat(formData.price));
+      if (formData.discountedPrice) {
+        formDataToSend.append('discountedPrice', parseFloat(formData.discountedPrice));
+      }
+      formDataToSend.append('categoryId', formData.categoryId);
+      if (formData.sku) {
+        formDataToSend.append('sku', formData.sku);
+      }
+      formDataToSend.append('inventory', parseInt(formData.inventory));
+      if (formData.weight) {
+        formDataToSend.append('weight', parseFloat(formData.weight));
+      }
+      formDataToSend.append('isActive', formData.isActive);
+      
+      // Append removed image IDs for updates
+      if (product && removedImageIds.length > 0) {
+        formDataToSend.append('removeImageIds', JSON.stringify(removedImageIds));
+      }
+      
+      // Append new images
+      selectedImages.forEach((image) => {
+        formDataToSend.append('images', image);
+      });
       
       let response;
       
       if (product) {
-        // Update existing product with authentication
-        response = await axios.put(UPDATE_PRODUCT(product.id), payload, {
+        // Update existing product
+        response = await axios.put(UPDATE_PRODUCT(product.id), formDataToSend, {
           headers: {
-            Authorization: `Bearer ${auth.token}`
+            Authorization: `Bearer ${auth.token}`,
+            'Content-Type': 'multipart/form-data'
           }
         });
       } else {
-        // Create new product with authentication
-        response = await axios.post(CREATE_PRODUCT, payload, {
+        // Create new product
+        response = await axios.post(CREATE_PRODUCT, formDataToSend, {
           headers: {
-            Authorization: `Bearer ${auth.token}`
+            Authorization: `Bearer ${auth.token}`,
+            'Content-Type': 'multipart/form-data'
           }
         });
       }
@@ -226,7 +424,7 @@ export default function ProductModal({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           <DialogDescription>
@@ -242,9 +440,10 @@ export default function ProductModal({
         
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="inventory">Inventory & Pricing</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing & Inventory</TabsTrigger>
+              <TabsTrigger value="images">Images</TabsTrigger>
             </TabsList>
             
             <TabsContent value="basic" className="space-y-4 pt-4">
@@ -326,7 +525,7 @@ export default function ProductModal({
               </div>
             </TabsContent>
             
-            <TabsContent value="inventory" className="space-y-4 pt-4">
+            <TabsContent value="pricing" className="space-y-4 pt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">
@@ -403,6 +602,31 @@ export default function ProductModal({
                 <p className="text-sm text-muted-foreground mb-2">
                   Note: If you need to manage size-specific inventory, save the product first, then use the "Manage Sizes" option.
                 </p>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="images" className="space-y-4 pt-4">
+              <div className="space-y-4">
+                <div>
+                  <h3 className="text-lg font-medium">Product Images</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Upload up to 5 images for your product. Click on an image to set it as the primary image.
+                  </p>
+                </div>
+                
+                <ImageUpload 
+                  onImagesChange={handleImagesChange}
+                  existingImages={existingImages}
+                  onRemoveExistingImage={handleRemoveExistingImage}
+                  maxImages={5}
+                />
+                
+                {existingImages.length === 0 && selectedImages.length === 0 && (
+                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                    <p className="text-gray-500">No images uploaded yet</p>
+                    <p className="text-sm text-gray-400 mt-1">Upload some images to showcase your product</p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>

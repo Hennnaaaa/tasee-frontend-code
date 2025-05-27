@@ -4,9 +4,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/cartContext';
-import { useAddress } from '@/contexts/AddressContext';
-import { CheckoutAddresses } from '@/components/addressSelector/AddressSelector';
-import GuestCheckout from '@/components/guestCheckout/GuestCheckout';
+import { useAddress } from '@/contexts/addressContext';
+import { CheckoutAddresses } from '@/components/addressSelector';
+import GuestCheckout from '@/components/guestCheckout';
 import { CREATE_ORDER } from '@/utils/routes/orderRoutes';
 import Link from 'next/link';
 

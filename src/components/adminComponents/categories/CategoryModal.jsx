@@ -1,13 +1,13 @@
 'use client';
-
+ 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { motion } from 'framer-motion';
-import { 
-  FolderTree, 
-  Box, 
+import {
+  FolderTree,
+  Box,
   Save,
-  AlertTriangle, 
+  AlertTriangle,
   RefreshCw,
   Check,
   Info,
@@ -17,7 +17,7 @@ import {
   LayoutGrid
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
+ 
 // Import UI components
 import {
   Dialog,
@@ -35,22 +35,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { 
+import {
   Card,
   CardContent,
   CardDescription,
   CardFooter,
   CardHeader,
-  CardTitle 
+  CardTitle
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-
+ 
 // Import API routes
 import { CREATE_CATEGORY, UPDATE_CATEGORY } from '@/utils/routes/productManagementRoutes';
-
+ 
 // Import auth utility
 import { getUserData } from '@/utils/auth';
-
+ 
 export default function CategoryModal({
   isOpen,
   onClose,
@@ -59,7 +59,7 @@ export default function CategoryModal({
   onSaved,
 }) {
   const router = useRouter();
-  
+ 
   // Form state
   const initialState = {
     name: '',
@@ -69,12 +69,12 @@ export default function CategoryModal({
     sizeChartType: 'STANDARD',
     isActive: true,
   };
-  
+ 
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState('');
-  
+ 
   // Check authentication when modal opens
   useEffect(() => {
     if (isOpen) {
@@ -86,7 +86,7 @@ export default function CategoryModal({
       }
     }
   }, [isOpen, router, onClose]);
-  
+ 
   // Initialize form data when category changes
   useEffect(() => {
     if (category) {
@@ -104,7 +104,7 @@ export default function CategoryModal({
       setFormData(initialState);
     }
   }, [category, isOpen]);
-  
+ 
   // Handle input change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -112,7 +112,7 @@ export default function CategoryModal({
       ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
-    
+   
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -121,14 +121,14 @@ export default function CategoryModal({
       });
     }
   };
-  
+ 
   // Handle select change
   const handleSelectChange = (name, value) => {
     setFormData({
       ...formData,
       [name]: value,
     });
-    
+   
     // Clear error for this field
     if (errors[name]) {
       setErrors({
@@ -137,27 +137,27 @@ export default function CategoryModal({
       });
     }
   };
-  
+ 
   // Validate form
   const validateForm = () => {
     const newErrors = {};
-    
+   
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+   
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
-  
+ 
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+   
     if (!validateForm()) {
       return;
     }
-    
+   
     // Get authentication data
     const auth = getUserData();
     if (!auth || !auth.token) {
@@ -165,10 +165,10 @@ export default function CategoryModal({
       router.push('/login');
       return;
     }
-    
+   
     setLoading(true);
     setApiError('');
-    
+   
     try {
       const payload = {
         ...formData,
@@ -176,9 +176,9 @@ export default function CategoryModal({
         parentId: formData.parentId === 'none' ? null : formData.parentId,
         clothingType: formData.clothingType === 'none' ? '' : formData.clothingType,
       };
-      
+     
       let response;
-      
+     
       if (category) {
         // Update existing category with authentication
         response = await axios.put(UPDATE_CATEGORY(category.id), payload, {
@@ -194,7 +194,7 @@ export default function CategoryModal({
           }
         });
       }
-      
+     
       if (response.data.success) {
         onSaved();
         onClose();
@@ -209,20 +209,20 @@ export default function CategoryModal({
         router.push('/login');
         return;
       }
-      
+     
       setApiError(err.response?.data?.message || 'Error saving category');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
-  
+ 
   // Filter out current category and its subcategories from parent category options
   const filterParentOptions = (categoryList, currentId) => {
     if (!currentId) return categoryList;
-    
+   
     const childIds = new Set();
-    
+   
     // Function to find all descendants
     const findDescendants = (parentId) => {
       categoryList.forEach((cat) => {
@@ -232,17 +232,17 @@ export default function CategoryModal({
         }
       });
     };
-    
+   
     // Find all descendants of current category
     findDescendants(currentId);
-    
+   
     // Filter out current category and its descendants
     return categoryList.filter((cat) => cat.id !== currentId && !childIds.has(cat.id));
   };
-  
+ 
   // Available parent options
   const parentOptions = filterParentOptions(categories, category?.id);
-  
+ 
   // Helper to get description for clothing type
   const getClothingTypeDescription = (type) => {
     switch (type) {
@@ -268,7 +268,7 @@ export default function CategoryModal({
         return 'No specific clothing type';
     }
   };
-
+ 
   // Helper to get info for size chart types
   const getSizeChartTypeInfo = (type) => {
     switch (type) {
@@ -299,13 +299,9 @@ export default function CategoryModal({
         };
     }
   };
-
+ 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-[95vw] sm:max-w-[600px] max-h-[95vh] flex flex-col p-0">
-        {/* Fixed Header */}
-        <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
-          <DialogTitle className="text-lg sm:text-xl flex items-center">
       <DialogContent className="w-full max-w-[95vw] sm:max-w-[600px] max-h-[95vh] flex flex-col p-0">
         {/* Fixed Header */}
         <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
@@ -314,11 +310,10 @@ export default function CategoryModal({
             {category ? 'Edit Category' : 'Add New Category'}
           </DialogTitle>
           <DialogDescription className="text-sm">
-          <DialogDescription className="text-sm">
             {category ? 'Update the category details below.' : 'Fill in the category details to add a new category.'}
           </DialogDescription>
         </DialogHeader>
-        
+       
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           {apiError && (
@@ -327,7 +322,7 @@ export default function CategoryModal({
               <AlertDescription>{apiError}</AlertDescription>
             </Alert>
           )}
-          
+         
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               {/* Category Name */}
@@ -347,7 +342,7 @@ export default function CategoryModal({
                   <p className="text-red-500 text-sm mt-1">{errors.name}</p>
                 )}
               </div>
-              
+             
               {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm font-medium">Description</Label>
@@ -364,7 +359,7 @@ export default function CategoryModal({
                   A brief description of this category for internal reference
                 </p>
               </div>
-              
+             
               {/* Parent Category */}
               <div className="space-y-2">
                 <Label htmlFor="parentId" className="text-sm font-medium">Parent Category</Label>
@@ -393,7 +388,7 @@ export default function CategoryModal({
                 </p>
               </div>
             </div>
-
+ 
             {/* Size Settings Card */}
             <Card className="border-dashed">
               <CardHeader className="pb-3">
@@ -440,18 +435,18 @@ export default function CategoryModal({
                       <SelectItem value="SHOES">Shoes</SelectItem>
                     </SelectContent>
                   </Select>
-                  
+                 
                   {formData.clothingType !== 'none' && (
                     <p className="text-xs text-muted-foreground mt-1">
                       {getClothingTypeDescription(formData.clothingType)}
                     </p>
                   )}
-                  
+                 
                   <p className="text-xs text-muted-foreground mt-1">
                     Determines which sizes will be available for products in this category
                   </p>
                 </div>
-                
+               
                 {/* Size Chart Type */}
                 <div className="space-y-2">
                   <Label htmlFor="sizeChartType" className="text-sm font-medium">Size Chart Type</Label>
@@ -459,13 +454,13 @@ export default function CategoryModal({
                     {['STANDARD', 'NUMERIC', 'WAIST', 'FREE'].map((type) => {
                       const info = getSizeChartTypeInfo(type);
                       const isSelected = formData.sizeChartType === type;
-                      
+                     
                       return (
-                        <div 
+                        <div
                           key={type}
                           className={`border rounded-md p-3 cursor-pointer transition-colors ${
-                            isSelected 
-                              ? 'border-indigo-500 bg-indigo-50' 
+                            isSelected
+                              ? 'border-indigo-500 bg-indigo-50'
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                           onClick={() => handleSelectChange('sizeChartType', type)}
@@ -487,7 +482,7 @@ export default function CategoryModal({
                 </div>
               </CardContent>
             </Card>
-            
+           
             {/* Active Toggle */}
             <div className="flex items-center space-x-2 pt-2">
               <Switch
@@ -504,20 +499,20 @@ export default function CategoryModal({
             </div>
           </form>
         </div>
-        
+       
         {/* Fixed Footer */}
         <DialogFooter className="px-4 sm:px-6 py-4 border-t flex-shrink-0 gap-2">
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={onClose} 
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
             disabled={loading}
             className="w-full sm:w-auto"
           >
             Cancel
           </Button>
-          <Button 
-            type="submit" 
+          <Button
+            type="submit"
             disabled={loading}
             onClick={handleSubmit}
             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 w-full sm:w-auto"
@@ -539,3 +534,4 @@ export default function CategoryModal({
     </Dialog>
   );
 }
+ 

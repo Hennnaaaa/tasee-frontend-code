@@ -9,7 +9,8 @@ import {
   Trash2,
   Edit,
   Eye,
-  AlertTriangle
+  AlertTriangle,
+  ImageIcon
 } from 'lucide-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
@@ -294,6 +295,37 @@ export default function ProductsPage() {
       console.error('Error deleting product:', error);
     }
   };
+
+  // Component for rendering product image
+  const ProductImageCell = ({ product }) => {
+    const [imageError, setImageError] = useState(false);
+    
+    // Get product images
+    const productImages = product.images || [];
+    const primaryImage = productImages.find(img => img.isPrimary) || productImages[0];
+    
+    const handleImageError = () => {
+      setImageError(true);
+    };
+
+    return (
+      <div className="flex items-center justify-center">
+        {productImages.length > 0 && !imageError && primaryImage ? (
+          <img
+            src={primaryImage.url}
+            alt={primaryImage.alt || product.name}
+            className="w-12 h-12 object-cover rounded-md border border-gray-200 shadow-sm"
+            onError={handleImageError}
+          />
+        ) : (
+          /* Placeholder for no image */
+          <div className="w-12 h-12 bg-gray-100 rounded-md border border-gray-200 flex items-center justify-center">
+            <ImageIcon className="w-6 h-6 text-gray-400" />
+          </div>
+        )}
+      </div>
+    );
+  };
   
   const productsContent = (
     <div className="space-y-6">
@@ -448,28 +480,46 @@ export default function ProductsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-20">Image</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>SKU</TableHead>
                       <TableHead>Category</TableHead>
                       <TableHead className="text-right">Price</TableHead>
                       <TableHead className="text-right">Inventory</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {products.map((product) => (
                       <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>{product.sku}</TableCell>
-                        <TableCell>{product.category?.name || 'N/A'}</TableCell>
+                        <TableCell>
+                          <ProductImageCell product={product} />
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          <div className="max-w-[200px] truncate" title={product.name}>
+                            {product.name}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-sm">{product.sku}</span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-1 text-xs font-medium text-gray-800">
+                            {product.category?.name || 'N/A'}
+                          </span>
+                        </TableCell>
                         <TableCell className="text-right">
-                          ${parseFloat(product.price).toFixed(2)}
-                          {product.discountedPrice && (
-                            <div className="text-sm text-muted-foreground line-through">
-                              ${parseFloat(product.discountedPrice).toFixed(2)}
-                            </div>
-                          )}
+                          <div className="flex flex-col items-end">
+                            <span className="font-semibold">
+                              ${parseFloat(product.price).toFixed(2)}
+                            </span>
+                            {product.discountedPrice && (
+                              <span className="text-sm text-muted-foreground line-through">
+                                ${parseFloat(product.discountedPrice).toFixed(2)}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right">
                           {(() => {
@@ -488,26 +538,37 @@ export default function ProductsPage() {
                                 : 'text-green-500';
 
                             return (
-                              <span className={`font-medium ${textColor}`}>
-                                {totalInventory}
-                              </span>
+                              <div className="flex flex-col items-end">
+                                <span className={`font-semibold ${textColor}`}>
+                                  {totalInventory}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {totalInventory <= 0 ? 'Out of stock' : 
+                                   totalInventory < 5 ? 'Low stock' : 'In stock'}
+                                </span>
+                              </div>
                             );
                           })()}
                         </TableCell>
                         <TableCell>
                           {product.isActive ? (
-                            <Badge variant="success">Active</Badge>
+                            <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
+                              Active
+                            </Badge>
                           ) : (
-                            <Badge variant="destructive">Inactive</Badge>
+                            <Badge variant="destructive">
+                              Inactive
+                            </Badge>
                           )}
                         </TableCell>
                         <TableCell>
-                          <div className="flex space-x-2">
+                          <div className="flex justify-end space-x-1">
                             <Button 
                               variant="outline" 
                               size="sm" 
                               onClick={() => handleManageSizes(product)}
                               title="Manage Sizes"
+                              className="h-8 w-8 p-0"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -516,13 +577,14 @@ export default function ProductsPage() {
                               size="sm" 
                               onClick={() => handleEditProduct(product)}
                               title="Edit Product"
+                              className="h-8 w-8 p-0"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              className="text-red-500 hover:text-red-700"
+                              className="text-red-500 hover:text-red-700 h-8 w-8 p-0"
                               onClick={() => handleDeleteProduct(product)}
                               title="Delete Product"
                             >
