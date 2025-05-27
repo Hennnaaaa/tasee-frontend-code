@@ -306,14 +306,19 @@ export default function CategoryModal({
         {/* Fixed Header */}
         <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
           <DialogTitle className="text-lg sm:text-xl flex items-center">
+      <DialogContent className="w-full max-w-[95vw] sm:max-w-[600px] max-h-[95vh] flex flex-col p-0">
+        {/* Fixed Header */}
+        <DialogHeader className="px-4 sm:px-6 py-4 border-b flex-shrink-0">
+          <DialogTitle className="text-lg sm:text-xl flex items-center">
             <FolderTree className="mr-2 h-5 w-5 text-indigo-500" />
             {category ? 'Edit Category' : 'Add New Category'}
           </DialogTitle>
           <DialogDescription className="text-sm">
+          <DialogDescription className="text-sm">
             {category ? 'Update the category details below.' : 'Fill in the category details to add a new category.'}
           </DialogDescription>
         </DialogHeader>
-       
+        
         {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4">
           {apiError && (
@@ -322,7 +327,7 @@ export default function CategoryModal({
               <AlertDescription>{apiError}</AlertDescription>
             </Alert>
           )}
-         
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               {/* Category Name */}
@@ -342,7 +347,7 @@ export default function CategoryModal({
                   <p className="text-red-500 text-sm mt-1">{errors.name}</p>
                 )}
               </div>
-             
+              
               {/* Description */}
               <div className="space-y-2">
                 <Label htmlFor="description" className="text-sm font-medium">Description</Label>
@@ -359,7 +364,7 @@ export default function CategoryModal({
                   A brief description of this category for internal reference
                 </p>
               </div>
-             
+              
               {/* Parent Category */}
               <div className="space-y-2">
                 <Label htmlFor="parentId" className="text-sm font-medium">Parent Category</Label>
@@ -388,7 +393,7 @@ export default function CategoryModal({
                 </p>
               </div>
             </div>
- 
+
             {/* Size Settings Card */}
             <Card className="border-dashed">
               <CardHeader className="pb-3">
@@ -435,18 +440,18 @@ export default function CategoryModal({
                       <SelectItem value="SHOES">Shoes</SelectItem>
                     </SelectContent>
                   </Select>
-                 
+                  
                   {formData.clothingType !== 'none' && (
                     <p className="text-xs text-muted-foreground mt-1">
                       {getClothingTypeDescription(formData.clothingType)}
                     </p>
                   )}
-                 
+                  
                   <p className="text-xs text-muted-foreground mt-1">
                     Determines which sizes will be available for products in this category
                   </p>
                 </div>
-               
+                
                 {/* Size Chart Type */}
                 <div className="space-y-2">
                   <Label htmlFor="sizeChartType" className="text-sm font-medium">Size Chart Type</Label>
@@ -454,13 +459,13 @@ export default function CategoryModal({
                     {['STANDARD', 'NUMERIC', 'WAIST', 'FREE'].map((type) => {
                       const info = getSizeChartTypeInfo(type);
                       const isSelected = formData.sizeChartType === type;
-                     
+                      
                       return (
-                        <div
+                        <div 
                           key={type}
                           className={`border rounded-md p-3 cursor-pointer transition-colors ${
-                            isSelected
-                              ? 'border-indigo-500 bg-indigo-50'
+                            isSelected 
+                              ? 'border-indigo-500 bg-indigo-50' 
                               : 'border-gray-200 hover:border-gray-300'
                           }`}
                           onClick={() => handleSelectChange('sizeChartType', type)}
@@ -482,7 +487,7 @@ export default function CategoryModal({
                 </div>
               </CardContent>
             </Card>
-           
+            
             {/* Active Toggle */}
             <div className="flex items-center space-x-2 pt-2">
               <Switch
@@ -499,20 +504,20 @@ export default function CategoryModal({
             </div>
           </form>
         </div>
-       
+        
         {/* Fixed Footer */}
         <DialogFooter className="px-4 sm:px-6 py-4 border-t flex-shrink-0 gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose} 
             disabled={loading}
             className="w-full sm:w-auto"
           >
             Cancel
           </Button>
-          <Button
-            type="submit"
+          <Button 
+            type="submit" 
             disabled={loading}
             onClick={handleSubmit}
             className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 w-full sm:w-auto"

@@ -1,14 +1,15 @@
+// Update your existing ProductDetailsPage to use the cart context
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getProductById } from '@/utils/routes/customerRoutes';
-import { useCart } from '@/contexts/cartContext';
+import { useCart } from '@/contexts/cartContext'; // Updated import
 
 export default function ProductDetailsPage({ params }) {
   const router = useRouter();
-  const { addToCart: addItemToCart, cartCount } = useCart();
+  const { addToCart, cartCount } = useCart(); // Use cart context
   const [productId, setProductId] = useState(null);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,7 +23,6 @@ export default function ProductDetailsPage({ params }) {
   useEffect(() => {
     const unwrapParams = async () => {
       try {
-        // In Next.js 15, params might be a Promise
         const resolvedParams = await Promise.resolve(params);
         setProductId(resolvedParams.id);
       } catch (err) {
@@ -124,8 +124,8 @@ export default function ProductDetailsPage({ params }) {
         size: selectedSize.size
       };
       
-      // Add to cart using the cart context
-      await addItemToCart(product, sizeVariant, quantity);
+      // Add to cart using the cart context - this handles both guest and logged-in users
+      await addToCart(product, sizeVariant, quantity);
       
       showNotification('success', `Added ${quantity} item(s) to cart successfully!`);
       
@@ -134,19 +134,7 @@ export default function ProductDetailsPage({ params }) {
       
     } catch (err) {
       console.error('Error adding to cart:', err);
-      
-      // Handle specific error cases
-      if (err.message.includes('401') || err.message.includes('Unauthorized') || err.message.includes('Session expired')) {
-        showNotification('error', 'Session expired. Please refresh the page and try again.');
-      } else if (err.message.includes('403') || err.message.includes('Access denied')) {
-        showNotification('error', 'Access denied. Please refresh the page and try again.');
-      } else if (err.message.includes('Insufficient inventory')) {
-        showNotification('error', 'Sorry, there is not enough inventory for this item.');
-      } else if (err.message.includes('Cart cannot contain more than')) {
-        showNotification('error', 'Your cart is full. Please remove some items before adding more.');
-      } else {
-        showNotification('error', err.message || 'Failed to add to cart. Please try again.');
-      }
+      showNotification('error', err.message || 'Failed to add to cart. Please try again.');
     } finally {
       setAddingToCart(false);
     }
