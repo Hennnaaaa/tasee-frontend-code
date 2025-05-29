@@ -1,4 +1,4 @@
-// src/contexts/cartContext.js - Optimized version without infinite loop
+// src/contexts/cartContext.js - Updated with size support
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
@@ -28,15 +28,12 @@ export const CartProvider = ({ children }) => {
       const authData = getUserData();
       const userString = authData ? JSON.stringify(authData.userData) : null;
 
-      // Only update if user data actually changed
       if (userString !== lastUserCheck) {
         console.log("🛒 User data changed, updating...");
-        console.log("🛒 Auth data from getUserData:", authData);
-
+        
         if (authData && authData.userData) {
           setUser(authData.userData);
           console.log("🛒 User set from localStorage:", authData.userData);
-          console.log("🛒 User ID:", authData.userData.id);
         } else {
           setUser(null);
           console.log("🛒 No user found, switching to guest mode");
@@ -46,10 +43,8 @@ export const CartProvider = ({ children }) => {
       }
     };
 
-    // Initial check
     checkUserData();
 
-    // Listen for storage changes (login/logout in other tabs)
     const handleStorageChange = (e) => {
       if (e.key === "user" || e.key === "token") {
         console.log("🛒 Storage changed, rechecking user data");
@@ -59,7 +54,6 @@ export const CartProvider = ({ children }) => {
 
     window.addEventListener("storage", handleStorageChange);
 
-    // Set up custom event listener for same-tab login/logout
     const handleAuthChange = () => {
       console.log("🛒 Auth change event received");
       checkUserData();
@@ -87,7 +81,6 @@ export const CartProvider = ({ children }) => {
   // Initialize cart when user changes
   useEffect(() => {
     if (user !== null || lastUserCheck !== null) {
-      // Only run after initial user check
       initializeCart();
     }
   }, [user]);
@@ -116,7 +109,7 @@ export const CartProvider = ({ children }) => {
   const fetchCartFromDatabase = async () => {
     try {
       const authData = getUserData();
-      const currentUser = user || authData?.userData; // Use current user or get from auth data
+      const currentUser = user || authData?.userData;
 
       if (!authData || !authData.token || !currentUser?.id) {
         console.error("❌ No auth data available for cart fetch");
@@ -135,17 +128,10 @@ export const CartProvider = ({ children }) => {
         },
       });
 
-      console.log("🛒 Fetch response status:", response.status);
-
       if (response.ok) {
         const data = await response.json();
         console.log("🛒 Fetch response data:", data);
         if (data.success) {
-          console.log(
-            "🛒 ✅ Setting cart items:",
-            data.data.items?.length || 0,
-            "items"
-          );
           setCartItems(data.data.items || []);
         }
       } else {
@@ -160,14 +146,10 @@ export const CartProvider = ({ children }) => {
   const loadCartFromLocalStorage = () => {
     try {
       const savedCart = localStorage.getItem("guestCart");
-      console.log(
-        "🛒 Loading guest cart from localStorage:",
-        savedCart ? "found" : "empty"
-      );
+      console.log("🛒 Loading guest cart from localStorage:", savedCart ? "found" : "empty");
       if (savedCart) {
         const parsedCart = JSON.parse(savedCart);
         setCartItems(parsedCart || []);
-        console.log("🛒 Loaded guest cart items:", parsedCart.length);
       } else {
         setCartItems([]);
       }
@@ -180,11 +162,7 @@ export const CartProvider = ({ children }) => {
   const saveCartToLocalStorage = (items) => {
     try {
       localStorage.setItem("guestCart", JSON.stringify(items));
-      console.log(
-        "🛒 Saved guest cart to localStorage:",
-        items.length,
-        "items"
-      );
+      console.log("🛒 Saved guest cart to localStorage:", items.length, "items");
     } catch (error) {
       console.error("❌ Error saving cart to localStorage:", error);
     }
@@ -193,11 +171,7 @@ export const CartProvider = ({ children }) => {
   const calculateCartTotals = () => {
     const count = cartItems.reduce((sum, item) => sum + item.quantity, 0);
     const total = cartItems.reduce((sum, item) => {
-      const price =
-        item.sizeVariant?.price ||
-        item.product?.discountedPrice ||
-        item.product?.price ||
-        0;
+      const price = item.sizeVariant?.price || item.product?.discountedPrice || item.product?.price || 0;
       return sum + price * item.quantity;
     }, 0);
 
@@ -205,16 +179,23 @@ export const CartProvider = ({ children }) => {
     setCartTotal(total);
   };
 
-  const addToCart = async (product, sizeVariant, quantity = 1) => {
-    if (!product || !sizeVariant) {
-      throw new Error("Product and size variant are required");
+  // UPDATED: Enhanced addToCart to support both sized and regular products
+  const addToCart = async (product, sizeVariant = null, quantity = 1) => {
+    if (!product) {
+      throw new Error("Product is required");
+    }
+
+    // Check if product has sizes and require sizeVariant
+    const hasSizes = product.productSizes && product.productSizes.length > 0;
+    if (hasSizes && !sizeVariant) {
+      throw new Error("Size selection is required for this product");
     }
 
     console.log("🛒 === ADD TO CART DEBUG ===");
     console.log("🛒 Current user state:", user);
-    console.log("🛒 User ID:", user?.id);
     console.log("🛒 Product:", product.id, product.name);
-    console.log("🛒 Size variant sizeId:", sizeVariant.sizeId);
+    console.log("🛒 Has sizes:", hasSizes);
+    console.log("🛒 Size variant:", sizeVariant);
     console.log("🛒 Quantity:", quantity);
 
     if (user?.id) {
@@ -240,23 +221,20 @@ export const CartProvider = ({ children }) => {
 
       console.log("🛒 === DATABASE ADD DEBUG ===");
       console.log("🛒 User ID:", user.id);
-      console.log("🛒 Token exists:", !!authData.token);
       console.log("🛒 Product ID:", product.id);
-      console.log("🛒 Size ID:", sizeVariant.sizeId);
+      console.log("🛒 Size ID:", sizeVariant?.sizeId || null);
 
       const requestBody = {
         userId: user.id,
         productId: product.id,
-        sizeId: sizeVariant.sizeId,
+        sizeId: sizeVariant?.sizeId || null, // Can be null for regular products
         quantity: quantity,
-        price: sizeVariant.price,
+        price: sizeVariant?.price || product.discountedPrice || product.price,
       };
 
       console.log("🛒 Request body:", requestBody);
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/cart/add`;
-      console.log("🛒 Add to cart URL:", url);
-
       const response = await fetch(url, {
         method: "POST",
         headers: {
@@ -266,19 +244,8 @@ export const CartProvider = ({ children }) => {
         body: JSON.stringify(requestBody),
       });
 
-      console.log("🛒 Add to cart response status:", response.status);
-
-      const responseText = await response.text();
-      console.log("🛒 Add to cart response text:", responseText);
-
-      let data;
-      try {
-        data = JSON.parse(responseText);
-        console.log("🛒 Add to cart response data:", data);
-      } catch (parseError) {
-        console.error("❌ Failed to parse response as JSON:", parseError);
-        throw new Error("Invalid response from server");
-      }
+      const data = await response.json();
+      console.log("🛒 Add to cart response:", data);
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to add item to cart");
@@ -302,21 +269,32 @@ export const CartProvider = ({ children }) => {
   const addToCartLocalStorage = (product, sizeVariant, quantity) => {
     try {
       console.log("🛒 Adding to localStorage cart");
-      console.log("🛒 Product data:", product); // Debug: Check what product data we have
       const newCartItems = [...cartItems];
 
+      // Create unique identifier for cart item
+      const itemIdentifier = sizeVariant 
+        ? `${product.id}_${sizeVariant.sizeId}`
+        : `${product.id}_no_size`;
+
       const existingItemIndex = newCartItems.findIndex(
-        (item) =>
-          item.product.id === product.id &&
-          item.sizeVariant?.sizeId === sizeVariant.sizeId
+        (item) => {
+          if (sizeVariant) {
+            return item.product.id === product.id && item.sizeVariant?.sizeId === sizeVariant.sizeId;
+          } else {
+            return item.product.id === product.id && !item.sizeVariant;
+          }
+        }
       );
+
+      // Check inventory
+      const availableInventory = sizeVariant ? sizeVariant.inventory : product.inventory;
 
       if (existingItemIndex > -1) {
         const existingItem = newCartItems[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
 
-        if (newQuantity > sizeVariant.inventory) {
-          throw new Error(`Only ${sizeVariant.inventory} items available`);
+        if (newQuantity > availableInventory) {
+          throw new Error(`Only ${availableInventory} items available`);
         }
 
         newCartItems[existingItemIndex] = {
@@ -325,8 +303,8 @@ export const CartProvider = ({ children }) => {
         };
         console.log("🛒 Updated existing item, new quantity:", newQuantity);
       } else {
-        if (quantity > sizeVariant.inventory) {
-          throw new Error(`Only ${sizeVariant.inventory} items available`);
+        if (quantity > availableInventory) {
+          throw new Error(`Only ${availableInventory} items available`);
         }
 
         const cartItem = {
@@ -337,33 +315,25 @@ export const CartProvider = ({ children }) => {
             price: product.price,
             discountedPrice: product.discountedPrice,
             sku: product.sku,
-            // ✅ FIXED: Include images array and category
-            images: product.images || [], // Include the images array
-            category: product.category || null, // Include category
+            images: product.images || [],
+            category: product.category || null,
+            inventory: product.inventory, // Include base inventory
             // Keep old image field for backward compatibility
-            image:
-              product.image ||
-              (product.images && product.images.length > 0
-                ? (
-                    product.images.find((img) => img.isPrimary) ||
-                    product.images[0]
-                  ).url
+            image: product.image || (product.images && product.images.length > 0
+                ? (product.images.find((img) => img.isPrimary) || product.images[0]).url
                 : null),
           },
-          sizeVariant: {
+          sizeVariant: sizeVariant ? {
             sizeId: sizeVariant.sizeId,
             price: sizeVariant.price,
             inventory: sizeVariant.inventory,
             size: sizeVariant.size,
-          },
+          } : null,
           quantity: quantity,
         };
 
         newCartItems.push(cartItem);
-        console.log(
-          "🛒 Added new item to guest cart with images:",
-          cartItem.product.images?.length || 0
-        );
+        console.log("🛒 Added new item to guest cart:", cartItem);
       }
 
       setCartItems(newCartItems);
@@ -376,7 +346,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  // Rest of the methods remain the same...
+  // Updated other methods to handle both sized and regular products
   const updateCartItem = async (itemId, quantity) => {
     if (user?.id) {
       return await updateCartItemDatabase(itemId, quantity);
@@ -424,10 +394,12 @@ export const CartProvider = ({ children }) => {
     try {
       const newCartItems = cartItems.map((item) => {
         if (item.id === itemId) {
-          if (quantity > item.sizeVariant.inventory) {
-            throw new Error(
-              `Only ${item.sizeVariant.inventory} items available`
-            );
+          const availableInventory = item.sizeVariant 
+            ? item.sizeVariant.inventory 
+            : item.product.inventory;
+
+          if (quantity > availableInventory) {
+            throw new Error(`Only ${availableInventory} items available`);
           }
           return { ...item, quantity };
         }
@@ -550,21 +522,7 @@ export const CartProvider = ({ children }) => {
     }
   };
 
-  const debugGuestCart = () => {
-    const guestCart = localStorage.getItem("guestCart");
-    console.log("🔍 DEBUG: Guest cart in localStorage:", guestCart);
-    if (guestCart) {
-      try {
-        const parsed = JSON.parse(guestCart);
-        console.log("🔍 DEBUG: Parsed guest cart:", parsed);
-        console.log("🔍 DEBUG: Guest cart length:", parsed.length);
-      } catch (e) {
-        console.error("🔍 DEBUG: Error parsing guest cart:", e);
-      }
-    }
-  };
-
-  // Updated handleUserChange with extensive debugging
+  // Updated handleUserChange with better cart merging
   const handleUserChange = async (newUser, shouldMergeCart = false) => {
     console.log("🔍 === CART MERGE DEBUG START ===");
     console.log("🔍 New user:", newUser);
@@ -573,7 +531,6 @@ export const CartProvider = ({ children }) => {
     if (shouldMergeCart && newUser?.id) {
       console.log("🔍 Starting merge process...");
 
-      // Get guest cart directly from localStorage
       const guestCartFromStorage = localStorage.getItem("guestCart");
       let guestCartItems = [];
 
@@ -581,10 +538,6 @@ export const CartProvider = ({ children }) => {
         try {
           guestCartItems = JSON.parse(guestCartFromStorage);
           console.log("🔍 Guest cart items from localStorage:", guestCartItems);
-          console.log(
-            "🔍 Guest cart items length from localStorage:",
-            guestCartItems.length
-          );
         } catch (e) {
           console.error("🔍 Error parsing guest cart from localStorage:", e);
           return;
@@ -596,14 +549,14 @@ export const CartProvider = ({ children }) => {
         setIsLoading(true);
 
         try {
-          // Prepare items for batch add
+          // Prepare items for batch add - UPDATED to handle both sized and regular products
           const itemsToAdd = guestCartItems.map((item) => {
             console.log("🔍 Processing guest item:", item);
             return {
               productId: item.product.id,
-              sizeId: item.sizeVariant.sizeId,
+              sizeId: item.sizeVariant?.sizeId || null, // Can be null for regular products
               quantity: item.quantity,
-              price: item.sizeVariant.price,
+              price: item.sizeVariant?.price || item.product.discountedPrice || item.product.price,
             };
           });
 
@@ -616,7 +569,6 @@ export const CartProvider = ({ children }) => {
             userId: newUser.id,
             items: itemsToAdd,
           };
-          console.log("🔍 Request body:", requestBody);
 
           const response = await fetch(url, {
             method: "POST",
@@ -627,8 +579,6 @@ export const CartProvider = ({ children }) => {
             body: JSON.stringify(requestBody),
           });
 
-          console.log("🔍 Batch add response status:", response.status);
-
           if (response.ok) {
             const data = await response.json();
             console.log("🔍 Batch add response data:", data);
@@ -636,17 +586,9 @@ export const CartProvider = ({ children }) => {
             if (data.success) {
               console.log("🔍 ✅ Merge successful, clearing guest cart...");
               localStorage.removeItem("guestCart");
-              console.log("🔍 ✅ Guest cart cleared");
-
-              // 🚀 FIXED: Immediately update the cart state
-              // Set the user first to ensure fetchCartFromDatabase works
+              
               setUser(newUser);
-
-              // Clear the current cart items (guest items)
               setCartItems([]);
-
-              // Immediately fetch the updated cart with merged items
-              console.log("🔍 🚀 Fetching updated cart immediately...");
               await fetchCartFromDatabase();
 
               console.log("🔍 ✅ Cart updated in UI");
@@ -664,13 +606,11 @@ export const CartProvider = ({ children }) => {
         }
       } else {
         console.log("🔍 No guest items to merge");
-        // Still need to fetch user's existing cart
         setUser(newUser);
         await fetchCartFromDatabase();
       }
     } else {
       console.log("🔍 Merge not needed, just updating user and fetching cart");
-      // No merge needed, just update user and fetch their cart
       if (newUser?.id) {
         setUser(newUser);
         await fetchCartFromDatabase();
@@ -688,7 +628,6 @@ export const CartProvider = ({ children }) => {
     loadCartFromLocalStorage();
   };
 
-  // Trigger auth change event when needed (call this from your auth context)
   const triggerAuthChange = () => {
     window.dispatchEvent(new CustomEvent("authChange"));
   };
@@ -704,7 +643,7 @@ export const CartProvider = ({ children }) => {
     removeCartItem,
     clearCart,
     refreshCart: user?.id ? fetchCartFromDatabase : loadCartFromLocalStorage,
-    triggerAuthChange, // Export this for use in auth context
+    triggerAuthChange,
   };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
