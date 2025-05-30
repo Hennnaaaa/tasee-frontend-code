@@ -17,7 +17,6 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 
 // Import API routes
@@ -136,15 +135,9 @@ export default function DashboardPage() {
         </Alert>
       )}
 
-      {/* Tabs for different sections */}
-      <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-        </TabsList>
+     
         
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+       
           {/* Inventory Status Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -388,13 +381,10 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
         
-        {/* Users Tab */}
-        <TabsContent value="users">
-          <UserManagement />
-        </TabsContent>
-      </Tabs>
+        
+       
+      
     </div>
   );
   

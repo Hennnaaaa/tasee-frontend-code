@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.jsx - Updated to work with optimized cart
+// src/contexts/AuthContext.jsx - Enhanced with complete logout functionality
 "use client"
 
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -20,6 +20,46 @@ export const AuthProvider = ({ children }) => {
     window.dispatchEvent(new CustomEvent('authChange'));
   };
 
+  // Enhanced function to clear all user-related localStorage data
+  const clearAllUserData = () => {
+    console.log('🔍 Clearing all user data from localStorage...');
+    
+    // List of all possible keys that should be cleared on logout
+    const keysToRemove = [
+      'token',
+      'user',
+      'userCart',
+      'cartItems',
+      'userProfile',
+      'userAddresses',
+      'userOrders',
+      'lastActivity',
+      'authExpiry',
+      'refreshToken',
+      'userPreferences',
+      'recentlyViewed'
+    ];
+    
+    // Remove each key
+    keysToRemove.forEach(key => {
+      if (localStorage.getItem(key)) {
+        console.log(`🔍 Removing ${key} from localStorage`);
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Optional: Clear any keys that start with 'user_' or 'auth_'
+    const allKeys = Object.keys(localStorage);
+    allKeys.forEach(key => {
+      if (key.startsWith('user_') || key.startsWith('auth_')) {
+        console.log(`🔍 Removing prefixed key ${key} from localStorage`);
+        localStorage.removeItem(key);
+      }
+    });
+    
+    console.log('🔍 localStorage cleanup completed');
+  };
+
   // Check for existing token and user data on mount
   useEffect(() => {
     const checkAuth = async () => {
@@ -36,8 +76,7 @@ export const AuthProvider = ({ children }) => {
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        clearAllUserData(); // Use enhanced cleanup
       } finally {
         setLoading(false);
       }
@@ -214,20 +253,59 @@ export const AuthProvider = ({ children }) => {
     return loginWithRole(email, password, null);
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setUser(null);
-    
-    // **IMPORTANT: Trigger cart logout**
-    if (window.cartLogoutCallback) {
-      window.cartLogoutCallback();
+  // Enhanced logout function with complete cleanup
+  const logout = async () => {
+    try {
+      console.log('🔍 === LOGOUT PROCESS STARTING ===');
+      
+      // 1. Clear user state immediately
+      setUser(null);
+      console.log('🔍 User state cleared');
+      
+      // 2. Call cart logout callback if available
+      if (window.cartLogoutCallback) {
+        console.log('🔍 Calling cart logout callback...');
+        window.cartLogoutCallback();
+      }
+      
+      // 3. Clear all localStorage data
+      clearAllUserData();
+      
+      // 4. Trigger cart update to reflect logout
+      triggerCartUpdate();
+      
+      // 5. Optional: Call logout API endpoint to invalidate server-side token
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const logoutUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/logout`;
+          await fetch(logoutUrl, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+            },
+          });
+          console.log('🔍 Server-side logout completed');
+        }
+      } catch (apiError) {
+        console.warn('🔍 Server-side logout failed (non-critical):', apiError);
+        // Don't throw - this is not critical for client-side logout
+      }
+      
+      // 6. Navigate to home page
+      console.log('🔍 Redirecting to home page...');
+      router.push('/customer/home');
+      
+      console.log('🔍 === LOGOUT PROCESS COMPLETED ===');
+      
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Even if there's an error, ensure basic cleanup
+      setUser(null);
+      clearAllUserData();
+      router.push('/customer/home');
     }
-    
-    // Trigger cart update
-    triggerCartUpdate();
-    
-    router.push('/customer/home');
   };
 
   const hasRole = (role) => {
@@ -236,6 +314,25 @@ export const AuthProvider = ({ children }) => {
 
   const isAdmin = () => {
     return hasRole('admin');
+  };
+
+  // Helper function to check if user session is still valid
+  const checkTokenValidity = () => {
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    if (!token || !user) {
+      return false;
+    }
+    
+    try {
+      // Basic token validation (you might want to add expiry checking)
+      const userData = JSON.parse(user);
+      return !!userData.id;
+    } catch (error) {
+      console.error('Token validation error:', error);
+      return false;
+    }
   };
 
   return (
@@ -250,7 +347,9 @@ export const AuthProvider = ({ children }) => {
       isAuthenticated: !!user,
       isAdmin,
       hasRole,
-      loading
+      loading,
+      checkTokenValidity,
+      clearAllUserData // Expose for emergency cleanup
     }}>
       {children}
     </AuthContext.Provider>
