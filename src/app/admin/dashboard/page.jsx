@@ -1,5 +1,5 @@
 'use client';
-
+ 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
@@ -12,26 +12,25 @@ import {
   Users
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-
+ 
 // Import UI components
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-
+ 
 // Import API routes
 import { GET_INVENTORY_SUMMARY } from '@/utils/routes/productManagementRoutes';
-
+ 
 // Import auth utility
 import { getUserData } from '@/utils/auth';
-
+ 
 // Import AdminLayout
 import AdminLayout from '@/components/adminComponents/layout/AdminLayout';
-
+ 
 // Import UserManagement component
 import UserManagement from '@/components/adminComponents/users/userManagement';
-
+ 
 export default function DashboardPage() {
   const router = useRouter();
   const [inventorySummary, setInventorySummary] = useState({
@@ -44,10 +43,10 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+ 
   // State for active tab
   const [activeTab, setActiveTab] = useState('overview');
-
+ 
   // Check authentication on component mount
   useEffect(() => {
     const auth = getUserData();
@@ -55,30 +54,30 @@ export default function DashboardPage() {
       router.push('/login');
       return;
     }
-    
+   
     fetchInventorySummary();
   }, [router]);
-
+ 
   // Fetch inventory summary with authentication
   const fetchInventorySummary = async () => {
     try {
       setLoading(true);
       setError(null);
-
+ 
       // Get authentication data
       const auth = getUserData();
       if (!auth || !auth.token) {
         router.push('/login');
         return;
       }
-
+ 
       // Make authenticated request
       const response = await axios.get(GET_INVENTORY_SUMMARY, {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }
       });
-
+ 
       if (response.data.success) {
         setInventorySummary({
           ...response.data.data.summary,
@@ -96,20 +95,20 @@ export default function DashboardPage() {
         router.push('/login');
         return;
       }
-      
+     
       setError(err.response?.data?.message || 'Error fetching inventory summary');
       console.error(err);
     } finally {
       setLoading(false);
     }
   };
-
+ 
   // Navigate to pages
   const navigateToProducts = () => router.push('/admin/products');
   const navigateToCategories = () => router.push('/admin/categories');
   const navigateToSizes = () => router.push('/admin/sizes');
   const navigateToUsers = () => setActiveTab('users');
-
+ 
   const dashboardContent = (
     <div className="space-y-6">
       {/* Page header */}
@@ -127,7 +126,7 @@ export default function DashboardPage() {
           </Button>
         </div>
       </div>
-
+ 
       {/* Error message */}
       {error && (
         <Alert variant="destructive">
@@ -135,16 +134,10 @@ export default function DashboardPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-
-      {/* Tabs for different sections */}
-      <Tabs defaultValue="overview" className="w-full" onValueChange={setActiveTab} value={activeTab}>
-        <TabsList className="grid w-full grid-cols-2 mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">User Management</TabsTrigger>
-        </TabsList>
-        
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6">
+ 
+     
+       
+       
           {/* Inventory Status Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card>
@@ -168,7 +161,7 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
             </Card>
-
+ 
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Inventory</CardTitle>
@@ -190,7 +183,7 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
             </Card>
-
+ 
             <Card className="bg-yellow-50 border-yellow-100">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Low Stock Products</CardTitle>
@@ -210,13 +203,13 @@ export default function DashboardPage() {
                 <p className="text-xs text-yellow-800 mt-1">
                   Products with less than 5 units in stock
                 </p>
-                <Progress 
-                  value={loading ? 0 : (inventorySummary.lowStockProducts / inventorySummary.totalProducts) * 100} 
-                  className="h-2 mt-3 bg-yellow-200" 
+                <Progress
+                  value={loading ? 0 : (inventorySummary.lowStockProducts / inventorySummary.totalProducts) * 100}
+                  className="h-2 mt-3 bg-yellow-200"
                 />
               </CardContent>
             </Card>
-
+ 
             <Card className="bg-red-50 border-red-100">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Out of Stock Products</CardTitle>
@@ -236,14 +229,14 @@ export default function DashboardPage() {
                 <p className="text-xs text-red-800 mt-1">
                   Products with zero inventory
                 </p>
-                <Progress 
-                  value={loading ? 0 : (inventorySummary.outOfStockProducts / inventorySummary.totalProducts) * 100} 
-                  className="h-2 mt-3 bg-red-200" 
+                <Progress
+                  value={loading ? 0 : (inventorySummary.outOfStockProducts / inventorySummary.totalProducts) * 100}
+                  className="h-2 mt-3 bg-red-200"
                 />
               </CardContent>
             </Card>
           </div>
-
+ 
           {/* Quick action cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={navigateToProducts}>
@@ -259,7 +252,7 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
             </Card>
-
+ 
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={navigateToCategories}>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -273,7 +266,7 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
             </Card>
-
+ 
             <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={navigateToSizes}>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -287,7 +280,7 @@ export default function DashboardPage() {
                 </p>
               </CardContent>
             </Card>
-            
+           
             <Card className="hover:shadow-md transition-shadow cursor-pointer bg-blue-50 border-blue-100" onClick={navigateToUsers}>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -302,7 +295,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-
+ 
           {/* Inventory breakdown */}
           {loading ? (
             <Card>
@@ -352,7 +345,7 @@ export default function DashboardPage() {
                       <p className="text-muted-foreground">No category data available</p>
                     )}
                   </div>
-
+ 
                   {/* Inventory by Size */}
                   <div>
                     <h3 className="text-md font-medium mb-4">Inventory by Size</h3>
@@ -388,16 +381,13 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           )}
-        </TabsContent>
-        
-        {/* Users Tab */}
-        <TabsContent value="users">
-          <UserManagement />
-        </TabsContent>
-      </Tabs>
+       
+       
+       
+     
     </div>
   );
-  
+ 
   // Wrap in AdminLayout for final render
   return <AdminLayout>{dashboardContent}</AdminLayout>;
 }

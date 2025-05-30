@@ -739,7 +739,7 @@ export default function ProductDetailsPage({ params }) {
       {/* Back to Products Button */}
       <div className="mt-8 text-center">
         <Link 
-          href="/"
+          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home` || '/customer/home'}
           className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
         >
           <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
