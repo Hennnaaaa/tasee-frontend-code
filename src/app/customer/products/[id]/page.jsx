@@ -220,7 +220,7 @@ export default function ProductDetailsPage({ params }) {
   const { hasStock, isLowStock, totalAvailable } = product.inventoryStatus || {};
   
   // Check if it's low stock (less than 10 items) - Updated threshold
-  const isLowStockDisplay = hasStock && totalAvailable < 10;
+  const isLowStockDisplay = hasStock && totalAvailable <= 5;
   
   return (
     <div className="container mx-auto px-4 py-8">
@@ -239,27 +239,6 @@ export default function ProductDetailsPage({ params }) {
         </div>
       )}
 
-      {/* Breadcrumb */}
-      <nav className="mb-8">
-        <ol className="flex text-sm text-gray-600">
-          <li>
-            <Link href="/" className="hover:text-blue-500">
-              Home
-            </Link>
-          </li>
-          <li className="mx-2">/</li>
-          <li>
-            <Link 
-              href={product.category ? `/categories/${product.category.id}` : "/"}
-              className="hover:text-blue-500"
-            >
-              {product.category ? product.category.name : "All Products"}
-            </Link>
-          </li>
-          <li className="mx-2">/</li>
-          <li className="font-medium text-gray-900">{String(product.name || '')}</li>
-        </ol>
-      </nav>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Image Gallery */}
@@ -304,7 +283,7 @@ export default function ProductDetailsPage({ params }) {
                   </div>
                 )}
 
-                {/* Stock status badge - Updated to show only for low stock (< 10) */}
+                {/* Stock status badge - Updated to show only for low stock (< 5) */}
                 {isLowStockDisplay && (
                   <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                     Only {totalAvailable} left!
@@ -428,7 +407,7 @@ export default function ProductDetailsPage({ params }) {
                         <div>{String(sizeVariant.sizeName || sizeVariant.size?.name || 'Unknown')}</div>
                         {sizeVariant.inventory <= 0 ? (
                           <div className="text-xs text-red-500">Sold Out</div>
-                        ) : sizeVariant.inventory < 10 ? (
+                        ) : sizeVariant.inventory <=5  ? (
                           <div className="text-xs text-orange-500">{sizeVariant.inventory} left</div>
                         ) : null}
                       </div>
@@ -441,7 +420,7 @@ export default function ProductDetailsPage({ params }) {
                   <div className="text-sm text-gray-600">
                     <strong>{selectedSize.sizeName}</strong> - 
                     Price: ${Number(selectedSize.price).toLocaleString()} | 
-                    Stock: {selectedSize.inventory < 10 ? `${Number(selectedSize.inventory)} available` : 'Available'}
+                    Stock: {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
                   </div>
                 </div>
               )}
@@ -450,7 +429,7 @@ export default function ProductDetailsPage({ params }) {
             // For regular products, show inventory info only if low stock
             <div className="mb-6 p-3 bg-gray-50 rounded-md">
               <div className="text-sm text-gray-600">
-                {product.inventory < 10 ? (
+                {product.inventory <=5 ? (
                   <span className="text-orange-600">
                     Low Stock: {Number(product.inventory)} available
                   </span>
@@ -493,13 +472,13 @@ export default function ProductDetailsPage({ params }) {
               {/* Show available quantity info - Only show count for low stock */}
               <div className="ml-4 text-sm text-gray-500">
                 {selectedSize ? (
-                  selectedSize.inventory < 10 ? (
+                  selectedSize.inventory < 5 ? (
                     <span className="text-orange-600">{Number(selectedSize.inventory)} available</span>
                   ) : (
                     <span>Available</span>
                   )
                 ) : product.inventory !== undefined ? (
-                  product.inventory < 10 ? (
+                  product.inventory < 5 ? (
                     <span className="text-orange-600">{Number(product.inventory)} available</span>
                   ) : (
                     <span>Available</span>
@@ -570,7 +549,7 @@ export default function ProductDetailsPage({ params }) {
                   <dt className="text-sm text-gray-500">Availability</dt>
                   <dd className="text-sm text-gray-900">
                     {hasStock ? (
-                      totalAvailable < 10 ? (
+                      totalAvailable < 5 ? (
                         <span className="text-yellow-600">
                           Low Stock ({totalAvailable} available)
                         </span>
@@ -669,7 +648,7 @@ export default function ProductDetailsPage({ params }) {
                         ${Number(size.price).toLocaleString()}
                       </td>
                       <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                        {size.inventory < 10 && size.inventory > 0 ? (
+                        {size.inventory <= 5 && size.inventory > 0 ? (
                           <span className="text-orange-600">{size.inventory}</span>
                         ) : size.inventory > 0 ? (
                           <span className="text-green-600">Available</span>

@@ -6,6 +6,7 @@ import { Menu, Bell } from 'lucide-react';
 
 // Import components
 import Sidebar from '@/components/adminComponents/layout/Sidebar';
+import UserManagement from '@/components/adminComponents/users/userManagement';
 
 // Import UI components
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,8 @@ const AdminLayout = ({ children }) => {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentComponent, setCurrentComponent] = useState(null);
+  const [pageTitle, setPageTitle] = useState('Admin Dashboard');
 
   // Check authentication on component mount
   useEffect(() => {
@@ -44,11 +47,48 @@ const AdminLayout = ({ children }) => {
     setMobileMenuOpen(!mobileMenuOpen);
   };
 
+  // Handle component navigation from sidebar
+  const handleNavigateToComponent = (componentName) => {
+    setCurrentComponent(componentName);
+    
+    // Update page title based on component
+    switch (componentName) {
+      case 'UserManagement':
+        setPageTitle('Customer Management');
+        break;
+      default:
+        setPageTitle('Admin Dashboard');
+    }
+    
+    // Close mobile menu if open
+    setMobileMenuOpen(false);
+  };
+
+  // Clear component when navigating to regular pages
+  useEffect(() => {
+    // Clear component state when route changes (for regular pages)
+    setCurrentComponent(null);
+    setPageTitle('Admin Dashboard');
+  }, [children]);
+
+  // Render the appropriate component or children
+  const renderMainContent = () => {
+    switch (currentComponent) {
+      case 'UserManagement':
+        return <UserManagement />;
+      default:
+        return children;
+    }
+  };
+
   return (
     <div className="flex h-screen bg-white">
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <Sidebar onToggle={handleSidebarToggle} />
+        <Sidebar 
+          onToggle={handleSidebarToggle}
+          onNavigateToComponent={handleNavigateToComponent}
+        />
       </div>
 
       {/* Mobile Sidebar (Overlay) */}
@@ -56,7 +96,10 @@ const AdminLayout = ({ children }) => {
         <div className="md:hidden fixed inset-0 z-40 flex">
           <div className="fixed inset-0 bg-black/50" onClick={toggleMobileMenu}></div>
           <div className="relative flex-1 flex flex-col max-w-xs w-full bg-white">
-            <Sidebar onToggle={handleSidebarToggle} />
+            <Sidebar 
+              onToggle={handleSidebarToggle}
+              onNavigateToComponent={handleNavigateToComponent}
+            />
           </div>
         </div>
       )}
@@ -77,7 +120,7 @@ const AdminLayout = ({ children }) => {
                 <Menu className="h-6 w-6" />
               </Button>
               <h1 className="text-xl font-semibold text-gray-800">
-                Admin Dashboard
+                {pageTitle}
               </h1>
             </div>
             
@@ -113,7 +156,7 @@ const AdminLayout = ({ children }) => {
 
         {/* Main Content Area */}
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-white">
-          {children}
+          {renderMainContent()}
         </main>
       </div>
     </div>

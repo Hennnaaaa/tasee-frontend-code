@@ -212,15 +212,15 @@ const ProductCard = ({ product }) => {
           {product.discountedPrice ? (
             <>
               <span className="text-lg font-normal text-stone-800 tracking-wide">
-                RS. {parseFloat(product.discountedPrice).toLocaleString()}
+                $ {parseFloat(product.discountedPrice).toLocaleString()}
               </span>
               <span className="text-sm text-stone-500 line-through font-light">
-                RS. {parseFloat(product.price).toLocaleString()}
+                $ {parseFloat(product.price).toLocaleString()}
               </span>
             </>
           ) : (
             <span className="text-lg font-normal text-stone-800 tracking-wide">
-              RS. {parseFloat(product.price).toLocaleString()}
+              $ {parseFloat(product.price).toLocaleString()}
             </span>
           )}
         </div>

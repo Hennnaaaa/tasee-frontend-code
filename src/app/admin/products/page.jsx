@@ -8,7 +8,7 @@ import {
   Search,
   Trash2,
   Edit,
-  Eye,
+  Plus, // Changed from Eye to Plus for Add Sizes
   AlertTriangle,
   ImageIcon
 } from 'lucide-react';
@@ -487,6 +487,7 @@ export default function ProductsPage() {
                       <TableHead className="text-right">Price</TableHead>
                       <TableHead className="text-right">Inventory</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Sizes</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -528,7 +529,7 @@ export default function ProductsPage() {
                               (sum, size) => sum + (size.inventory || 0),
                               0
                             ) || 0;
-                            const totalInventory =  sizeInventory;
+                            const totalInventory = sizeInventory;
 
                             const textColor =
                               totalInventory <= 0
@@ -561,17 +562,19 @@ export default function ProductsPage() {
                             </Badge>
                           )}
                         </TableCell>
+                        <TableCell className="text-center">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleManageSizes(product)}
+                            title="Add Sizes to Product"
+                            className="h-8 w-8 p-0"
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
                         <TableCell>
                           <div className="flex justify-end space-x-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleManageSizes(product)}
-                              title="Manage Sizes"
-                              className="h-8 w-8 p-0"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
                             <Button 
                               variant="outline" 
                               size="sm" 

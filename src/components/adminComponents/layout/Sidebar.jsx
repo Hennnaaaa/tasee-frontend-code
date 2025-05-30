@@ -14,7 +14,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-   Newspaper
+  Newspaper,
+  User2Icon
 } from 'lucide-react';
 
 // Import UI components
@@ -29,7 +30,7 @@ import {
 // Import auth utility
 import { getUserData } from '@/utils/auth';
 
-const Sidebar = ({ onToggle }) => {
+const Sidebar = ({ onToggle, onNavigateToComponent }) => {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -47,6 +48,13 @@ const Sidebar = ({ onToggle }) => {
     setCollapsed(!collapsed);
     if (onToggle) {
       onToggle(!collapsed);
+    }
+  };
+
+  // Handle component navigation
+  const handleComponentNavigation = (componentName) => {
+    if (onNavigateToComponent) {
+      onNavigateToComponent(componentName);
     }
   };
 
@@ -82,7 +90,102 @@ const Sidebar = ({ onToggle }) => {
       href: '/admin/NewsletterSubscriber',
       active: pathname === '/admin/NewsletterSubscriber',
     },
+    {
+      title: 'Customers',
+      icon: <User2Icon size={20} />,
+      isComponent: true,
+      componentName: 'UserManagement',
+      active: pathname === '/admin/customers', // This will be managed by parent
+    },
   ];
+
+  // Render navigation item
+  const renderNavItem = (item, index) => {
+    // Handle component-based navigation items
+    if (item.isComponent) {
+      if (collapsed) {
+        return (
+          <TooltipProvider key={index}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant={item.active ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-full ${
+                    item.active ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : ''
+                  }`}
+                  onClick={() => handleComponentNavigation(item.componentName)}
+                >
+                  {item.icon}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {item.title}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        );
+      } else {
+        return (
+          <Button
+            key={index}
+            variant={item.active ? 'default' : 'ghost'}
+            className={`w-full justify-start ${
+              item.active ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : ''
+            }`}
+            onClick={() => handleComponentNavigation(item.componentName)}
+          >
+            <div className="flex items-center">
+              {item.icon}
+              <span className="ml-3">{item.title}</span>
+            </div>
+          </Button>
+        );
+      }
+    }
+
+    // Handle regular link items
+    if (collapsed) {
+      return (
+        <TooltipProvider key={index}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link href={item.href}>
+                <Button
+                  variant={item.active ? 'default' : 'ghost'}
+                  size="icon"
+                  className={`w-full ${
+                    item.active ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : ''
+                  }`}
+                >
+                  {item.icon}
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent side="right">
+              {item.title}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      );
+    } else {
+      return (
+        <Link key={index} href={item.href}>
+          <Button
+            variant={item.active ? 'default' : 'ghost'}
+            className={`w-full justify-start ${
+              item.active ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : ''
+            }`}
+          >
+            <div className="flex items-center">
+              {item.icon}
+              <span className="ml-3">{item.title}</span>
+            </div>
+          </Button>
+        </Link>
+      );
+    }
+  };
 
   return (
     <div
@@ -142,42 +245,7 @@ const Sidebar = ({ onToggle }) => {
         <ul className="space-y-2 px-2">
           {navItems.map((item, index) => (
             <li key={index}>
-              {collapsed ? (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link href={item.href}>
-                        <Button
-                          variant={item.active ? 'default' : 'ghost'}
-                          size="icon"
-                          className={`w-full ${
-                            item.active ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : ''
-                          }`}
-                        >
-                          {item.icon}
-                        </Button>
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      {item.title}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              ) : (
-                <Link href={item.href}>
-                  <Button
-                    variant={item.active ? 'default' : 'ghost'}
-                    className={`w-full justify-start ${
-                      item.active ? 'bg-indigo-100 text-indigo-600 hover:bg-indigo-200' : ''
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      {item.icon}
-                      <span className="ml-3">{item.title}</span>
-                    </div>
-                  </Button>
-                </Link>
-              )}
+              {renderNavItem(item, index)}
             </li>
           ))}
         </ul>
