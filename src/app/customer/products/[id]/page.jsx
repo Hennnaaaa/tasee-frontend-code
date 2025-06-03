@@ -1,4 +1,4 @@
-// Final ProductDetailsPage - Complete code with $ currency and no SKU
+// Simplified ProductDetailsPage with Reviews Integration
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getProductById } from '@/utils/routes/customerRoutes';
 import { useCart } from '@/contexts/cartContext';
+
+// Import the ProductReviews component
+import ProductReviews from '@/components/customerComponents/reviews/ProductReview';
 
 export default function ProductDetailsPage({ params }) {
   const router = useRouter();
@@ -219,7 +222,7 @@ export default function ProductDetailsPage({ params }) {
   // Use enhanced inventory status
   const { hasStock, isLowStock, totalAvailable } = product.inventoryStatus || {};
   
-  // Check if it's low stock (less than 10 items) - Updated threshold
+  // Check if it's low stock (less than 5 items)
   const isLowStockDisplay = hasStock && totalAvailable <= 5;
   
   return (
@@ -283,7 +286,7 @@ export default function ProductDetailsPage({ params }) {
                   </div>
                 )}
 
-                {/* Stock status badge - Updated to show only for low stock (< 5) */}
+                {/* Stock status badge */}
                 {isLowStockDisplay && (
                   <div className="absolute top-4 left-4 bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                     Only {totalAvailable} left!
@@ -348,7 +351,7 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
           
-          {/* Price - Using $ currency everywhere */}
+          {/* Price */}
           <div className="flex items-center mb-6">
             {product.discountInfo?.hasDiscount ? (
               <>
@@ -381,7 +384,7 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
           
-          {/* Size Selection - Enhanced with updated low stock threshold */}
+          {/* Size Selection */}
           {product.productType === 'sized' && product.availableSizes?.length > 0 ? (
             <div className="mb-6">
               <h2 className="text-lg font-medium mb-2">Select Size</h2>
@@ -407,7 +410,7 @@ export default function ProductDetailsPage({ params }) {
                         <div>{String(sizeVariant.sizeName || sizeVariant.size?.name || 'Unknown')}</div>
                         {sizeVariant.inventory <= 0 ? (
                           <div className="text-xs text-red-500">Sold Out</div>
-                        ) : sizeVariant.inventory <=5  ? (
+                        ) : sizeVariant.inventory <= 5 ? (
                           <div className="text-xs text-orange-500">{sizeVariant.inventory} left</div>
                         ) : null}
                       </div>
@@ -419,8 +422,7 @@ export default function ProductDetailsPage({ params }) {
                 <div className="mt-3 p-3 bg-gray-50 rounded-md">
                   <div className="text-sm text-gray-600">
                     <strong>{selectedSize.sizeName}</strong> - 
-                    Price: ${Number(selectedSize.price).toLocaleString()} | 
-                    Stock: {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
+                    Price: ${Number(selectedSize.price).toLocaleString()}
                   </div>
                 </div>
               )}
@@ -429,7 +431,7 @@ export default function ProductDetailsPage({ params }) {
             // For regular products, show inventory info only if low stock
             <div className="mb-6 p-3 bg-gray-50 rounded-md">
               <div className="text-sm text-gray-600">
-                {product.inventory <=5 ? (
+                {product.inventory <= 5 ? (
                   <span className="text-orange-600">
                     Low Stock: {Number(product.inventory)} available
                   </span>
@@ -468,24 +470,6 @@ export default function ProductDetailsPage({ params }) {
               >
                 +
               </button>
-              
-              {/* Show available quantity info - Only show count for low stock */}
-              <div className="ml-4 text-sm text-gray-500">
-                {selectedSize ? (
-                  selectedSize.inventory < 5 ? (
-                    <span className="text-orange-600">{Number(selectedSize.inventory)} available</span>
-                  ) : (
-                    <span>Available</span>
-                  )
-                ) : product.inventory !== undefined ? (
-                  product.inventory < 5 ? (
-                    <span className="text-orange-600">{Number(product.inventory)} available</span>
-                  ) : (
-                    <span>Available</span>
-                  )
-                ) : null}
-                <span className="text-gray-400"> (max 99 per order)</span>
-              </div>
             </div>
           </div>
           
@@ -514,7 +498,7 @@ export default function ProductDetailsPage({ params }) {
             </button>
           </div>
           
-          {/* Stock Warning - Updated to show for items < 10 */}
+          {/* Stock Warning */}
           {isLowStockDisplay && (
             <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
               <div className="flex items-center">
@@ -528,7 +512,7 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
           
-          {/* Product Info - REMOVED SKU display */}
+          {/* Basic Product Info */}
           <div>
             <h2 className="text-lg font-medium mb-2">Product Information</h2>
             <div className="border-t border-gray-200 pt-4">
@@ -537,12 +521,6 @@ export default function ProductDetailsPage({ params }) {
                   <div className="py-2 grid grid-cols-2">
                     <dt className="text-sm text-gray-500">Category</dt>
                     <dd className="text-sm text-gray-900">{String(product.category.name || '')}</dd>
-                  </div>
-                )}
-                {product.weight && (
-                  <div className="py-2 grid grid-cols-2">
-                    <dt className="text-sm text-gray-500">Weight</dt>
-                    <dd className="text-sm text-gray-900">{String(product.weight || '')} kg</dd>
                   </div>
                 )}
                 <div className="py-2 grid grid-cols-2">
@@ -563,26 +541,6 @@ export default function ProductDetailsPage({ params }) {
                     )}
                   </dd>
                 </div>
-                <div className="py-2 grid grid-cols-2">
-                  <dt className="text-sm text-gray-500">Product Type</dt>
-                  <dd className="text-sm text-gray-900">
-                    {product.productType === 'sized' ? 'Sized Product' : 'Regular Product'}
-                  </dd>
-                </div>
-                {product.productType === 'sized' && (
-                  <div className="py-2 grid grid-cols-2">
-                    <dt className="text-sm text-gray-500">Available Sizes</dt>
-                    <dd className="text-sm text-gray-900">
-                      {product.inventoryStatus.sizesInStock} of {product.inventoryStatus.totalSizes} sizes in stock
-                    </dd>
-                  </div>
-                )}
-                {productImages.length > 0 && (
-                  <div className="py-2 grid grid-cols-2">
-                    <dt className="text-sm text-gray-500">Images</dt>
-                    <dd className="text-sm text-gray-900">{productImages.length} photo{productImages.length !== 1 ? 's' : ''}</dd>
-                  </div>
-                )}
                 {product.discountInfo?.hasDiscount && (
                   <div className="py-2 grid grid-cols-2">
                     <dt className="text-sm text-gray-500">You Save</dt>
@@ -597,7 +555,7 @@ export default function ProductDetailsPage({ params }) {
         </div>
       </div>
       
-      {/* Image Gallery Modal for Mobile */}
+      {/* Mobile Image Gallery */}
       <div className="md:hidden mt-8">
         <h3 className="text-lg font-medium mb-4">Product Gallery</h3>
         <div className="grid grid-cols-2 gap-2">
@@ -622,58 +580,41 @@ export default function ProductDetailsPage({ params }) {
         </div>
       </div>
 
-      {/* Additional Product Information Section - Using $ currency */}
-      {product.productType === 'sized' && product.availableSizes?.length > 0 && (
-        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-medium mb-4">Size & Pricing Information</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {[...product.availableSizes, ...product.outOfStockSizes]
-                  .sort((a, b) => a.sortOrder - b.sortOrder)
-                  .map((size) => (
-                    <tr key={size.id} className={size.inventory <= 0 ? 'opacity-50' : ''}>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {size.sizeName}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                        ${Number(size.price).toLocaleString()}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                        {size.inventory <= 5 && size.inventory > 0 ? (
-                          <span className="text-orange-600">{size.inventory}</span>
-                        ) : size.inventory > 0 ? (
-                          <span className="text-green-600">Available</span>
-                        ) : (
-                          <span className="text-red-600">0</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {size.inventory > 0 ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            In Stock
-                          </span>
-                        ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            Out of Stock
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+      {/* Product Reviews Section - NEW ADDITION */}
+      <div className="mt-12">
+        <ProductReviews productId={product.id} />
+      </div>
+
+      {/* Related Products Section */}
+      {product.category && (
+        <div className="mt-12">
+          <h3 className="text-2xl font-semibold text-gray-900 mb-6">Related Products</h3>
+          <div className="text-gray-600">
+            <Link 
+              href={`/categories/${product.category.id}`}
+              className="inline-flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
+            >
+              View More in {product.category.name}
+              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
         </div>
       )}
+
+      {/* Back to Products Button */}
+      <div className="mt-8 text-center">
+        <Link 
+          href="/"
+          className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+        >
+          <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to All Products
+        </Link>
+      </div>
       
       {/* Notification */}
       {notification && (
@@ -708,46 +649,6 @@ export default function ProductDetailsPage({ params }) {
           </div>
         </div>
       )}
-
-      {/* Related Products Section (Optional) */}
-      {product.category && (
-        <div className="mt-12">
-          <h3 className="text-2xl font-semibold text-gray-900 mb-6">Related Products</h3>
-          <div className="text-gray-600">
-            <Link 
-              href={`/categories/${product.category.id}`}
-              className="inline-flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
-            >
-              View More in {product.category.name}
-              <svg className="ml-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Product Reviews Section (Placeholder for future implementation) */}
-      <div className="mt-12">
-        <h3 className="text-2xl font-semibold text-gray-900 mb-6">Customer Reviews</h3>
-        <div className="bg-gray-50 p-6 rounded-lg text-center">
-          <p className="text-gray-600">Customer reviews coming soon!</p>
-          <p className="text-sm text-gray-500 mt-2">Be the first to review this product.</p>
-        </div>
-      </div>
-
-      {/* Back to Products Button */}
-      <div className="mt-8 text-center">
-        <Link 
-          href="/"
-          className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-        >
-          <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
-          </svg>
-          Back to All Products
-        </Link>
-      </div>
     </div>
   );
 }
