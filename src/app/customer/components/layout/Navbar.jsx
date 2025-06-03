@@ -1,17 +1,19 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useCart } from '@/contexts/cartContext';
 import { useAuth } from '@/contexts/authcontext';
+import { useCurrency, CURRENCIES } from '@/contexts/currencyContext';
 import { GET_NAVIGATION_CATEGORIES } from '@/utils/routes/productManagementRoutes';
-
+ 
 const Navbar = () => {
   const { cartCount } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
+  const { selectedCurrency, setSelectedCurrency, currentCurrency } = useCurrency();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -25,7 +27,7 @@ const Navbar = () => {
     try {
       // Using the imported route constant
       const response = await axios.get(GET_NAVIGATION_CATEGORIES);
-      
+     
       if (response.data.success) {
         setCategories(response.data.data);
       } else {
@@ -49,11 +51,16 @@ const Navbar = () => {
   const handleMouseLeave = () => {
     setActiveDropdown(null);
   };
-
+ 
   const handleMobileCategoryClick = (categoryId) => {
     setActiveDropdown(activeDropdown === categoryId ? null : categoryId);
   };
 
+  const handleCurrencyChange = (currencyCode) => {
+    setSelectedCurrency(currencyCode);
+    setShowCurrencyMenu(false);
+  };
+ 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -64,13 +71,13 @@ const Navbar = () => {
               Tasee
             </Link>
           </div>
-          
+         
           {/* Desktop Nav Links */}
           <div className="hidden md:flex space-x-8">
             <Link href="/customer/home" className="text-gray-700 hover:text-blue-500">
               Home
             </Link>
-            
+           
             {/* Dynamic Categories with Dropdowns */}
             {!loading && categories.map((category) => (
               <div
@@ -120,9 +127,59 @@ const Navbar = () => {
               </div>
             ))}
           </div>
-          
+         
           {/* Cart & User Actions */}
           <div className="flex items-center space-x-4">
+            {/* Currency Selector */}
+            <div className="relative">
+              <button
+                className="flex items-center space-x-1 text-gray-600 hover:text-blue-500 focus:outline-none"
+                onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
+                aria-label="Currency Selector"
+              >
+                <span className="text-sm">{currentCurrency.flag}</span>
+                <span className="text-sm font-medium">{currentCurrency.code}</span>
+                <svg
+                  className={`w-3 h-3 transform transition-transform ${
+                    showCurrencyMenu ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              
+              {/* Currency Dropdown Menu */}
+              {showCurrencyMenu && (
+                <div className="absolute right-0 mt-2 w-40 py-2 bg-white rounded-md shadow-xl border border-gray-200 z-20">
+                  {Object.values(CURRENCIES).map((currency) => (
+                    <button
+                      key={currency.code}
+                      onClick={() => handleCurrencyChange(currency.code)}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2 ${
+                        selectedCurrency === currency.code 
+                          ? 'bg-blue-50 text-blue-600' 
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      <span>{currency.flag}</span>
+                      <div>
+                        <div className="font-medium">{currency.code}</div>
+                        <div className="text-xs text-gray-500">{currency.name}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Search Button */}
             <button 
               className="text-gray-600 hover:text-blue-500"
@@ -135,10 +192,10 @@ const Navbar = () => {
                 viewBox="0 0 24 24" 
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 ></path>
               </svg>
@@ -158,10 +215,10 @@ const Navbar = () => {
                   viewBox="0 0 24 24" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth="2" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                   ></path>
                 </svg>
@@ -234,10 +291,10 @@ const Navbar = () => {
                 viewBox="0 0 24 24" 
                 xmlns="http://www.w3.org/2000/svg"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="2" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
                   d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                 ></path>
               </svg>
@@ -249,7 +306,7 @@ const Navbar = () => {
                 </span>
               )}
             </Link>
-            
+           
             {/* Mobile Menu Button */}
             <button 
               className="md:hidden text-gray-600 hover:text-blue-500"
@@ -264,10 +321,10 @@ const Navbar = () => {
                   viewBox="0 0 24 24" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth="2" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
                     d="M6 18L18 6M6 6l12 12"
                   ></path>
                 </svg>
@@ -279,10 +336,10 @@ const Navbar = () => {
                   viewBox="0 0 24 24" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth="2" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
                     d="M4 6h16M4 12h16M4 18h16"
                   ></path>
                 </svg>
@@ -302,7 +359,40 @@ const Navbar = () => {
               >
                 Home
               </Link>
-              
+
+              {/* Mobile Currency Selector */}
+              <div className="px-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700 py-1">Currency</span>
+                  <button
+                    onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
+                    className="flex items-center space-x-1 text-blue-500 py-1"
+                  >
+                    <span>{currentCurrency.flag}</span>
+                    <span className="font-medium">{currentCurrency.code}</span>
+                  </button>
+                </div>
+                
+                {showCurrencyMenu && (
+                  <div className="ml-4 mt-2 space-y-2">
+                    {Object.values(CURRENCIES).map((currency) => (
+                      <button
+                        key={currency.code}
+                        onClick={() => handleCurrencyChange(currency.code)}
+                        className={`w-full text-left py-1 flex items-center space-x-2 ${
+                          selectedCurrency === currency.code 
+                            ? 'text-blue-600 font-medium' 
+                            : 'text-gray-600'
+                        }`}
+                      >
+                        <span>{currency.flag}</span>
+                        <span>{currency.code} - {currency.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+             
               {/* Mobile Categories */}
               {!loading && categories.map((category) => (
                 <div key={category.id} className="px-2">
@@ -314,7 +404,7 @@ const Navbar = () => {
                     >
                       {category.name}
                     </Link>
-                    
+                   
                     {/* Expand/Collapse Button for Subcategories */}
                     {category.subcategories && category.subcategories.length > 0 && (
                       <button
@@ -339,10 +429,10 @@ const Navbar = () => {
                       </button>
                     )}
                   </div>
-                  
+                 
                   {/* Mobile Subcategories */}
-                  {category.subcategories && 
-                   category.subcategories.length > 0 && 
+                  {category.subcategories &&
+                   category.subcategories.length > 0 &&
                    activeDropdown === category.id && (
                     <div className="ml-4 mt-2 space-y-2">
                       {category.subcategories.map((subcategory) => (
@@ -366,5 +456,5 @@ const Navbar = () => {
     </nav>
   );
 };
-
+ 
 export default Navbar;

@@ -1,19 +1,19 @@
 // src/contexts/AuthContext.jsx - Enhanced with complete logout functionality
 "use client"
-
+ 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-
+ 
 const AuthContext = createContext({});
-
+ 
 export const useAuth = () => useContext(AuthContext);
-
+ 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [pendingEmail, setPendingEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-
+ 
   // Helper function to trigger cart context update
   const triggerCartUpdate = () => {
     // Dispatch custom event that cart context listens for
@@ -81,16 +81,16 @@ export const AuthProvider = ({ children }) => {
         setLoading(false);
       }
     };
-
+ 
     checkAuth();
   }, []);
-
+ 
   const signup = async (userData) => {
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/create`;
       console.log('Signup URL:', url);
       console.log('Signup data:', userData);
-      
+     
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -105,18 +105,18 @@ export const AuthProvider = ({ children }) => {
           role: 'customer'
         }),
       });
-
+ 
       console.log('Signup response status:', response.status);
-      
+     
       if (!response.ok) {
         const text = await response.text();
         console.error('Signup error response:', text);
         return { success: false, error: `Server error: ${response.status}` };
       }
-
+ 
       const data = await response.json();
       console.log('Signup response data:', data);
-      
+     
       if (data.success) {
         setPendingEmail(userData.email);
         router.push('/verify-otp');
@@ -128,31 +128,31 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
-
+ 
   const verifyOTP = async (email, otp) => {
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/verify-OTP`;
       console.log('Verify OTP URL:', url);
       console.log('OTP data:', { email, otp });
-      
+     
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, otp }),
       });
-
+ 
       console.log('OTP response status:', response.status);
-      
+     
       const contentType = response.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         const text = await response.text();
         console.error('Non-JSON response:', text);
         return { success: false, error: 'Server returned invalid response' };
       }
-
+ 
       const data = await response.json();
       console.log('Verify OTP response:', data);
-      
+     
       if (data.success) {
         router.push('/login');
         return { success: true, message: data.message };
@@ -163,55 +163,55 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
-
+ 
  const loginWithRole = async (email, password, expectedRole = null) => {
   try {
     const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
-    
+   
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-
+ 
     if (!response.ok) {
       const text = await response.text();
       console.error('Login error response:', text);
       return { success: false, error: `Server error: ${response.status}` };
     }
-
+ 
     const data = await response.json();
-    
+   
     if (data.success && data.data) {
       if (expectedRole && data.data.user.role !== expectedRole) {
-        return { 
-          success: false, 
-          error: `Access denied. You don't have ${expectedRole} privileges.` 
+        return {
+          success: false,
+          error: `Access denied. You don't have ${expectedRole} privileges.`
         };
       }
-      
+     
       console.log('🔍 === AUTH LOGIN DEBUG ===');
       console.log('🔍 Login successful, user:', data.data.user);
-      
+     
       // Check if guest cart exists before login
       const guestCartBeforeLogin = localStorage.getItem('guestCart');
       console.log('🔍 Guest cart before login:', guestCartBeforeLogin);
       const hasGuestCart = guestCartBeforeLogin && JSON.parse(guestCartBeforeLogin).length > 0;
-      
+     
       // Save token and user data FIRST
       localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
       setUser(data.data.user);
-      
+     
       console.log('🔍 User state updated, triggering cart operations...');
-      
+     
       // Trigger cart operations with proper sequencing
       setTimeout(async () => {
         console.log('🔍 Triggering cart update and merge...');
-        
+       
         // Trigger cart context to detect user change
         triggerCartUpdate();
-        
+       
         // If there's a guest cart, trigger merge
         if (hasGuestCart && window.cartInitCallback) {
           console.log('🔍 Calling cartInitCallback with merge = true');
@@ -220,7 +220,7 @@ export const AuthProvider = ({ children }) => {
           console.log('🔍 Calling cartInitCallback without merge');
           await window.cartInitCallback(data.data.user, false);
         }
-        
+       
         // Force a cart refresh after a short delay to ensure everything is synced
         setTimeout(() => {
           if (window.forceCartRefresh) {
@@ -228,9 +228,9 @@ export const AuthProvider = ({ children }) => {
             window.forceCartRefresh();
           }
         }, 200);
-        
+       
       }, 300);
-      
+     
       // Redirect based on role (after cart operations)
       setTimeout(() => {
         if (data.data.user.role === 'admin') {
@@ -239,7 +239,7 @@ export const AuthProvider = ({ children }) => {
           router.push('/customer/home');
         }
       }, 500);
-      
+     
       return { success: true };
     }
     return { success: false, error: data.message || 'Login failed' };
@@ -248,7 +248,7 @@ export const AuthProvider = ({ children }) => {
     return { success: false, error: error.message };
   }
 };
-
+ 
   const login = async (email, password) => {
     return loginWithRole(email, password, null);
   };
@@ -307,11 +307,11 @@ export const AuthProvider = ({ children }) => {
       router.push('/customer/home');
     }
   };
-
+ 
   const hasRole = (role) => {
     return user && user.role === role;
   };
-
+ 
   const isAdmin = () => {
     return hasRole('admin');
   };

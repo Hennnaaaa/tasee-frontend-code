@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getProductById } from '@/utils/routes/customerRoutes';
 import { useCart } from '@/contexts/cartContext';
+import { useCurrency } from '@/contexts/currencyContext';
 
 // Import the ProductReviews component
 import ProductReviews from '@/components/customerComponents/reviews/ProductReview';
@@ -13,6 +14,7 @@ import ProductReviews from '@/components/customerComponents/reviews/ProductRevie
 export default function ProductDetailsPage({ params }) {
   const router = useRouter();
   const { addToCart, cartCount } = useCart();
+  const { formatPrice, currentCurrency } = useCurrency();
   const [productId, setProductId] = useState(null);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -241,7 +243,6 @@ export default function ProductDetailsPage({ params }) {
           </Link>
         </div>
       )}
-
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Image Gallery */}
@@ -351,15 +352,16 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
           
+          {/* Price - Updated to use currency context */}
           {/* Price */}
           <div className="flex items-center mb-6">
             {product.discountInfo?.hasDiscount ? (
               <>
                 <span className="text-2xl font-bold text-gray-900">
-                  ${Number(product.discountInfo.discountedPrice).toLocaleString()}
+                  {formatPrice(product.discountInfo.discountedPrice)}
                 </span>
                 <span className="ml-3 text-lg text-gray-500 line-through">
-                  ${Number(product.discountInfo.originalPrice).toLocaleString()}
+                  {formatPrice(product.discountInfo.originalPrice)}
                 </span>
                 <span className="ml-3 bg-red-500 text-white text-sm font-bold px-2 py-1 rounded">
                   {product.discountInfo.discountPercentage}% OFF
@@ -367,11 +369,11 @@ export default function ProductDetailsPage({ params }) {
               </>
             ) : product.priceRange?.hasPriceVariation ? (
               <span className="text-2xl font-bold text-gray-900">
-                ${Number(product.priceRange.min).toLocaleString()} - ${Number(product.priceRange.max).toLocaleString()}
+                {formatPrice(product.priceRange.min)} - {formatPrice(product.priceRange.max)}
               </span>
             ) : (
               <span className="text-2xl font-bold text-gray-900">
-                ${Number(product.price).toLocaleString()}
+                {formatPrice(product.price)}
               </span>
             )}
           </div>
@@ -422,6 +424,8 @@ export default function ProductDetailsPage({ params }) {
                 <div className="mt-3 p-3 bg-gray-50 rounded-md">
                   <div className="text-sm text-gray-600">
                     <strong>{selectedSize.sizeName}</strong> - 
+                    Price: {formatPrice(selectedSize.price)} | 
+                    Stock: {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
                     Price: ${Number(selectedSize.price).toLocaleString()}
                   </div>
                 </div>
@@ -545,10 +549,18 @@ export default function ProductDetailsPage({ params }) {
                   <div className="py-2 grid grid-cols-2">
                     <dt className="text-sm text-gray-500">You Save</dt>
                     <dd className="text-sm text-green-600 font-medium">
-                      ${Number(product.discountInfo.savings).toLocaleString()} ({product.discountInfo.discountPercentage}% off)
+                      {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
                     </dd>
                   </div>
                 )}
+                <div className="py-2 grid grid-cols-2">
+                  <dt className="text-sm text-gray-500">Currency</dt>
+                  <dd className="text-sm text-gray-900">
+                    <span className="flex items-center">
+                      {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
+                    </span>
+                  </dd>
+                </div>
               </dl>
             </div>
           </div>
@@ -580,6 +592,51 @@ export default function ProductDetailsPage({ params }) {
         </div>
       </div>
 
+      {/* Additional Product Information Section - Updated to use currency context */}
+      {product.productType === 'sized' && product.availableSizes?.length > 0 && (
+        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-medium mb-4">Size & Pricing Information</h3>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-100">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Price ({currentCurrency.code})
+                  </th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {[...product.availableSizes, ...product.outOfStockSizes]
+                  .sort((a, b) => a.sortOrder - b.sortOrder)
+                  .map((size) => (
+                    <tr key={size.id} className={size.inventory <= 0 ? 'opacity-50' : ''}>
+                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
+                        {size.inventory <= 5 && size.inventory > 0 ? (
+                          <span className="text-orange-600">{size.inventory}</span>
+                        ) : size.inventory > 0 ? (
+                          <span className="text-green-600">Available</span>
+                        ) : (
+                          <span className="text-red-600">0</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 whitespace-nowrap">
+                        {size.inventory > 0 ? (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            In Stock
+                          </span>
+                        ) : (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            Out of Stock
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
       {/* Product Reviews Section - NEW ADDITION */}
       <div className="mt-12">
         <ProductReviews productId={product.id} />

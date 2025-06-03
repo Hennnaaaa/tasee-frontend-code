@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/authcontext";
 import { CartProvider } from "@/contexts/cartContext";
 import { AddressProvider } from "@/contexts/addressContext"; // Correct import
+import { CurrencyProvider } from "@/contexts/currencyContext";
 import { Toaster } from "@/components/ui/toaster"; // Add this for shadcn toast
 import ConditionalLayout from "../components/ConditionalLayout";
 
@@ -20,10 +21,12 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <AuthProvider>
           <CartProvider>
-            <AddressProvider>
-              <ConditionalLayout>{children}</ConditionalLayout>
-              <Toaster />
-            </AddressProvider>
+            <CurrencyProvider>
+              <AddressProvider>
+                <ConditionalLayout>{children}</ConditionalLayout>
+                <Toaster />
+              </AddressProvider>
+            </CurrencyProvider>
           </CartProvider>
         </AuthProvider>
       </body>

@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/authcontext';
+import { useCurrency } from '@/contexts/currencyContext';
 import { GET_USER_ORDERS } from '@/utils/routes/orderRoutes';
 import OrderCard from '@/components/orderComponents/OrderCard';
 import OrderFilters from '@/components/orderComponents/orderFilters';
@@ -11,6 +12,7 @@ import Link from 'next/link';
 
 export default function OrdersPage() {
   const { user, isAuthenticated } = useAuth();
+  const { formatPrice, currentCurrency, convertPrice } = useCurrency();
   const router = useRouter();
   
   const [orders, setOrders] = useState([]);
@@ -26,6 +28,15 @@ export default function OrdersPage() {
   // Filter states
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+
+  // Currency display preference
+  const [showInCurrentCurrency, setShowInCurrentCurrency] = useState(false);
+
+  // Get unique currencies from orders
+  const getOrderCurrencies = () => {
+    const currencies = [...new Set(orders.map(order => order.currency).filter(Boolean))];
+    return currencies;
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -110,6 +121,26 @@ export default function OrdersPage() {
     fetchOrders(page, statusFilter);
   };
 
+  // Helper function to format order prices
+  const formatOrderPrice = (amount, orderCurrency) => {
+    if (!amount) return formatPrice(0);
+    
+    // If showing in current currency and order currency differs
+    if (showInCurrentCurrency && orderCurrency && orderCurrency !== currentCurrency.code) {
+      // Convert and show in current currency with note
+      const convertedAmount = convertPrice(amount, orderCurrency);
+      return `${formatPrice(convertedAmount)} (converted from ${orderCurrency})`;
+    }
+    
+    // If order has a different currency, show in original currency
+    if (orderCurrency && orderCurrency !== currentCurrency.code) {
+      return `${orderCurrency} ${Number(amount).toFixed(2)}`;
+    }
+    
+    // Use current currency formatting
+    return formatPrice(amount);
+  };
+
   if (!isAuthenticated || !user) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -134,6 +165,43 @@ export default function OrdersPage() {
         <h1 className="text-3xl font-semibold text-gray-900">My Orders</h1>
         <p className="text-gray-600 mt-2">Track and manage your orders</p>
       </div>
+
+      {/* Currency Controls */}
+      {!isLoading && orders.length > 0 && getOrderCurrencies().length > 0 && (
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-3 sm:mb-0">
+              <h3 className="text-sm font-medium text-blue-900">Currency Display</h3>
+              <p className="text-xs text-blue-700">
+                Your orders contain multiple currencies: {getOrderCurrencies().join(', ')}
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center text-sm text-blue-800">
+                <span className="mr-2">{currentCurrency.flag}</span>
+                <span>Currently viewing in {currentCurrency.name}</span>
+              </div>
+              
+              <label className="flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={showInCurrentCurrency}
+                  onChange={(e) => setShowInCurrentCurrency(e.target.checked)}
+                  className="mr-2 rounded border-blue-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-sm text-blue-800">Convert to {currentCurrency.code}</span>
+              </label>
+            </div>
+          </div>
+          
+          {showInCurrentCurrency && (
+            <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+              <span className="font-medium">Note:</span> Converted amounts are estimates based on current exchange rates and may differ from original charges.
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <OrderFilters 
@@ -200,7 +268,116 @@ export default function OrdersPage() {
               {/* Orders Grid */}
               <div className="space-y-6 mb-8">
                 {orders.map((order) => (
-                  <OrderCard key={order.id} order={order} />
+                  <div key={order.id} className="bg-white border border-gray-200 rounded-lg p-6">
+                    {/* Order Header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Order #{order.orderNumber || order.id}
+                        </h3>
+                        <p className="text-sm text-gray-600">
+                          Placed on {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : new Date().toLocaleDateString()}
+                        </p>
+                      </div>
+                      
+                      <div className="mt-2 sm:mt-0 flex items-center space-x-3">
+                        {/* Currency Badge */}
+                        {order.currency && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {order.currency}
+                          </span>
+                        )}
+                        
+                        {/* Status Badge */}
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                          order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
+                          order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}>
+                          {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Order Items Preview */}
+                    {order.items && order.items.length > 0 && (
+                      <div className="mb-4">
+                        <div className="flex items-center space-x-3">
+                          {/* Show first few items */}
+                          {order.items.slice(0, 3).map((item, index) => (
+                            <div key={index} className="flex items-center space-x-2">
+                              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                {item.productImage ? (
+                                  <img
+                                    src={item.productImage}
+                                    alt={item.productName}
+                                    className="w-full h-full object-cover rounded-lg"
+                                  />
+                                ) : (
+                                  <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                                )}
+                              </div>
+                              <span className="text-sm text-gray-600 truncate max-w-24">
+                                {item.productName}
+                              </span>
+                            </div>
+                          ))}
+                          
+                          {order.items.length > 3 && (
+                            <span className="text-sm text-gray-500">
+                              +{order.items.length - 3} more items
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Order Summary */}
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-gray-200">
+                      <div className="mb-3 sm:mb-0">
+                        <p className="text-sm text-gray-600">
+                          Total: <span className="font-semibold text-gray-900">
+                            {formatOrderPrice(order.total, order.currency)}
+                          </span>
+                        </p>
+                        {order.items && (
+                          <p className="text-xs text-gray-500">
+                            {order.items.length} item{order.items.length !== 1 ? 's' : ''}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex space-x-3">
+                        <Link
+                          href={`/orders/${order.id}`}
+                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                        >
+                          View Details
+                        </Link>
+                        
+                        {order.status === 'delivered' && (
+                          <button className="text-gray-600 hover:text-gray-800 text-sm font-medium">
+                            Reorder
+                          </button>
+                        )}
+                        
+                        {(order.status === 'pending' || order.status === 'processing') && (
+                          <button className="text-red-600 hover:text-red-800 text-sm font-medium">
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Currency Conversion Note */}
+                    {showInCurrentCurrency && order.currency && order.currency !== currentCurrency.code && (
+                      <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                        Original amount: {order.currency} {Number(order.total).toFixed(2)}
+                      </div>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -242,10 +419,18 @@ export default function OrdersPage() {
 
               {/* Order Summary */}
               <div className="mt-8 bg-gray-50 rounded-lg p-4">
-                <p className="text-sm text-gray-600">
-                  Showing {orders.length} of {pagination.total} orders
-                  {statusFilter && ` with status: ${statusFilter}`}
-                </p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                  <p className="text-sm text-gray-600 mb-2 sm:mb-0">
+                    Showing {orders.length} of {pagination.total} orders
+                    {statusFilter && ` with status: ${statusFilter}`}
+                  </p>
+                  
+                  {getOrderCurrencies().length > 1 && (
+                    <div className="text-xs text-gray-500">
+                      Orders in: {getOrderCurrencies().join(', ')}
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}

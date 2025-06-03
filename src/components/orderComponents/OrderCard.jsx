@@ -207,16 +207,7 @@ const OrderCard = ({ order, onOrderUpdate }) => {
             <p className="text-sm text-gray-600">
               Placed on {formatDate(order.orderDate || order.createdAt)}
             </p>
-            
-            {/* Show cancellation time remaining for pending orders */}
-            {order.status === 'pending' && canCancelOrder(order.orderDate || order.createdAt) && (
-              <p className="text-xs text-orange-600 mt-1">
-                {(() => {
-                  const timeRemaining = getCancellationTimeRemaining(order.orderDate || order.createdAt);
-                  return timeRemaining ? `Cancel within: ${timeRemaining.hours}h ${timeRemaining.minutes}m` : '';
-                })()}
-              </p>
-            )}
+          
           </div>
           
           <div className="flex flex-col sm:flex-row gap-2 mt-2 sm:mt-0">
@@ -289,7 +280,7 @@ const OrderCard = ({ order, onOrderUpdate }) => {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-3 mt-6">
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-3 mt-6">
           <Link
             href={`/orders/${order.id}`}
             className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 text-center font-medium transition-colors"
@@ -302,26 +293,6 @@ const OrderCard = ({ order, onOrderUpdate }) => {
               Track Order
             </button>
           )}
-          
-          {/* Smart Cancel Button with 24-hour check */}
-          {order.status === 'pending' && canCancelOrder(order.orderDate || order.createdAt) && (
-            <button 
-              onClick={() => setShowCancelConfirm(true)}
-              className="flex-1 bg-red-100 text-red-700 py-2 px-4 rounded-md hover:bg-red-200 font-medium transition-colors"
-            >
-              Cancel Order
-            </button>
-          )}
-          
-          {order.status === 'pending' && !canCancelOrder(order.orderDate || order.createdAt) && (
-            <button 
-              disabled
-              className="flex-1 bg-gray-300 text-gray-500 py-2 px-4 rounded-md cursor-not-allowed font-medium"
-              title="Cancellation period expired (24 hours)"
-            >
-              Cannot Cancel
-            </button>
-          )}
         </div>
 
         {/* Order Notes */}
@@ -329,15 +300,6 @@ const OrderCard = ({ order, onOrderUpdate }) => {
           <div className="mt-4 p-3 bg-gray-50 rounded-md">
             <p className="text-sm text-gray-700">
               <span className="font-medium">Notes:</span> {order.notes}
-            </p>
-          </div>
-        )}
-
-        {/* Cancellation expired notice */}
-        {order.status === 'pending' && !canCancelOrder(order.orderDate || order.createdAt) && (
-          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-700">
-              <span className="font-medium">Note:</span> The 24-hour cancellation period for this order has expired.
             </p>
           </div>
         )}
