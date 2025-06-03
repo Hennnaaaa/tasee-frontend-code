@@ -1,4 +1,3 @@
-// Final ProductDetailsPage - Complete code with $ currency and no SKU
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getProductById } from '@/utils/routes/customerRoutes';
 import { useCart } from '@/contexts/cartContext';
+import { useCurrency } from '@/contexts/currencyContext';
 
 export default function ProductDetailsPage({ params }) {
   const router = useRouter();
   const { addToCart, cartCount } = useCart();
+  const { formatPrice, currentCurrency } = useCurrency();
   const [productId, setProductId] = useState(null);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -238,7 +239,6 @@ export default function ProductDetailsPage({ params }) {
           </Link>
         </div>
       )}
-
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Image Gallery */}
@@ -348,15 +348,15 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
           
-          {/* Price - Using $ currency everywhere */}
+          {/* Price - Updated to use currency context */}
           <div className="flex items-center mb-6">
             {product.discountInfo?.hasDiscount ? (
               <>
                 <span className="text-2xl font-bold text-gray-900">
-                  ${Number(product.discountInfo.discountedPrice).toLocaleString()}
+                  {formatPrice(product.discountInfo.discountedPrice)}
                 </span>
                 <span className="ml-3 text-lg text-gray-500 line-through">
-                  ${Number(product.discountInfo.originalPrice).toLocaleString()}
+                  {formatPrice(product.discountInfo.originalPrice)}
                 </span>
                 <span className="ml-3 bg-red-500 text-white text-sm font-bold px-2 py-1 rounded">
                   {product.discountInfo.discountPercentage}% OFF
@@ -364,11 +364,11 @@ export default function ProductDetailsPage({ params }) {
               </>
             ) : product.priceRange?.hasPriceVariation ? (
               <span className="text-2xl font-bold text-gray-900">
-                ${Number(product.priceRange.min).toLocaleString()} - ${Number(product.priceRange.max).toLocaleString()}
+                {formatPrice(product.priceRange.min)} - {formatPrice(product.priceRange.max)}
               </span>
             ) : (
               <span className="text-2xl font-bold text-gray-900">
-                ${Number(product.price).toLocaleString()}
+                {formatPrice(product.price)}
               </span>
             )}
           </div>
@@ -419,7 +419,7 @@ export default function ProductDetailsPage({ params }) {
                 <div className="mt-3 p-3 bg-gray-50 rounded-md">
                   <div className="text-sm text-gray-600">
                     <strong>{selectedSize.sizeName}</strong> - 
-                    Price: ${Number(selectedSize.price).toLocaleString()} | 
+                    Price: {formatPrice(selectedSize.price)} | 
                     Stock: {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
                   </div>
                 </div>
@@ -587,10 +587,18 @@ export default function ProductDetailsPage({ params }) {
                   <div className="py-2 grid grid-cols-2">
                     <dt className="text-sm text-gray-500">You Save</dt>
                     <dd className="text-sm text-green-600 font-medium">
-                      ${Number(product.discountInfo.savings).toLocaleString()} ({product.discountInfo.discountPercentage}% off)
+                      {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
                     </dd>
                   </div>
                 )}
+                <div className="py-2 grid grid-cols-2">
+                  <dt className="text-sm text-gray-500">Currency</dt>
+                  <dd className="text-sm text-gray-900">
+                    <span className="flex items-center">
+                      {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
+                    </span>
+                  </dd>
+                </div>
               </dl>
             </div>
           </div>
@@ -622,7 +630,7 @@ export default function ProductDetailsPage({ params }) {
         </div>
       </div>
 
-      {/* Additional Product Information Section - Using $ currency */}
+      {/* Additional Product Information Section - Updated to use currency context */}
       {product.productType === 'sized' && product.availableSizes?.length > 0 && (
         <div className="mt-8 p-6 bg-gray-50 rounded-lg">
           <h3 className="text-lg font-medium mb-4">Size & Pricing Information</h3>
@@ -631,7 +639,9 @@ export default function ProductDetailsPage({ params }) {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Price</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Price ({currentCurrency.code})
+                  </th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
                   <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                 </tr>
@@ -641,12 +651,6 @@ export default function ProductDetailsPage({ params }) {
                   .sort((a, b) => a.sortOrder - b.sortOrder)
                   .map((size) => (
                     <tr key={size.id} className={size.inventory <= 0 ? 'opacity-50' : ''}>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {size.sizeName}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                        ${Number(size.price).toLocaleString()}
-                      </td>
                       <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
                         {size.inventory <= 5 && size.inventory > 0 ? (
                           <span className="text-orange-600">{size.inventory}</span>

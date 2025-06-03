@@ -113,6 +113,7 @@ function ResetPasswordForm() {
         },
         body: JSON.stringify({
           token,
+          userId : adminInfo.userId,
           newPassword: formData.newPassword,
           confirmPassword: formData.confirmPassword
         }),
@@ -133,7 +134,7 @@ function ResetPasswordForm() {
   };
 
   const handleBackToLogin = () => {
-    router.push('/admin/login');
+    router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login` || '/login');
   };
 
   // Loading state

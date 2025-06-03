@@ -2,12 +2,13 @@
 import { useState } from 'react';
 import { Mail, ArrowLeft, Shield, AlertCircle, CheckCircle } from 'lucide-react';
 import { REQUEST_RESET_PASSWORD } from '@/utils/routes/adminRoutes';
+import { useRouter } from 'next/navigation';
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState('');
-
+    const router = useRouter();
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -52,7 +53,7 @@ export default function ForgotPasswordPage() {
 
   const handleBackToLogin = () => {
     // In a real app, this would navigate to the login page
-    console.log('Navigate to login page');
+    router.push(`${process.env.NEXT_PUBLIC_ADMIN_URL}/login` || '/login');
   };
 
   if (isSubmitted) {

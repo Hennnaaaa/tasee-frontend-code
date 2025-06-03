@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/cartContext';
 import { useAddress } from '@/contexts/addressContext';
+import { useCurrency } from '@/contexts/currencyContext';
 import { CheckoutAddresses } from '@/components/addressSelector';
 import GuestCheckout from '@/components/guestCheckout';
 import { CREATE_ORDER } from '@/utils/routes/orderRoutes';
@@ -14,10 +15,11 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { cartItems, cartCount, cartTotal, isLoading: cartLoading, user } = useCart();
   const { defaultAddress, isLoading: addressLoading } = useAddress();
+  const { formatPrice, currentCurrency } = useCurrency();
 
   // Checkout type state
   const [checkoutType, setCheckoutType] = useState(null); // null, 'user', 'guest'
-  
+
   // User checkout states
   const [shippingAddressId, setShippingAddressId] = useState('');
   const [billingAddressId, setBillingAddressId] = useState('');
@@ -31,6 +33,10 @@ export default function CheckoutPage() {
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
   const [orderError, setOrderError] = useState('');
 
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  // Clear cart function from cart context
+  const { clearCart } = useCart();
+  
   // Set default addresses when available (for user checkout)
   useEffect(() => {
     if (defaultAddress && checkoutType === 'user') {
@@ -50,12 +56,12 @@ export default function CheckoutPage() {
     }
   }, [sameAsShipping, shippingAddressId, checkoutType]);
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty and user is not placing an order
   useEffect(() => {
-    if (!cartLoading && cartItems.length === 0) {
+    if (!cartLoading && cartItems.length === 0 && !isPlacingOrder) {
       router.push('/cart');
     }
-  }, [cartItems.length, cartLoading, router]);
+  }, [cartItems.length, cartLoading, router, isPlacingOrder]);
 
   // Set checkout type based on user status
   useEffect(() => {
@@ -100,7 +106,7 @@ export default function CheckoutPage() {
         setOrderError('Please select a shipping address');
         return false;
       }
-      
+
       if (!sameAsShipping && !billingAddressId) {
         setOrderError('Please select a billing address');
         return false;
@@ -121,12 +127,16 @@ export default function CheckoutPage() {
   };
 
   const handlePlaceOrder = async () => {
+    setIsPlacingOrder(true);
     setOrderError('');
-    
-    if (!validateCheckout()) return;
+
+    if (!validateCheckout()) {
+      setIsPlacingOrder(false);
+      return;
+    }
 
     setIsProcessingOrder(true);
-    
+
     try {
       let orderData;
 
@@ -143,7 +153,8 @@ export default function CheckoutPage() {
           shippingAddressId: shippingAddressId,
           billingAddressId: sameAsShipping ? shippingAddressId : billingAddressId,
           paymentMethod: 'credit_card', // You can make this dynamic
-          notes: '' // You can add a notes field to your form if needed
+          notes: '', // You can add a notes field to your form if needed
+          currency: currentCurrency.code // Include currency in order
         };
       } else {
         // Guest checkout - format according to your controller  
@@ -162,7 +173,8 @@ export default function CheckoutPage() {
           shippingAddressId: guestAddress.id,
           billingAddressId: guestAddress.id, // Use same address for billing
           paymentMethod: 'credit_card',
-          notes: ''
+          notes: '',
+          currency: currentCurrency.code // Include currency in order
         };
       }
 
@@ -184,10 +196,10 @@ export default function CheckoutPage() {
 
       if (response.ok && data.success) {
         console.log('✅ Order placed successfully:', data.data);
-        
+
         // Clear cart after successful order (optional)
-        // await clearCart();
-        
+        await clearCart();
+
         // Redirect to order confirmation
         router.push(`/orders/${data.data.id}/confirmation`);
       } else {
@@ -196,6 +208,7 @@ export default function CheckoutPage() {
     } catch (error) {
       console.error('❌ Error placing order:', error);
       setOrderError(error.message || 'Failed to place order. Please try again.');
+      setIsPlacingOrder(false);
     } finally {
       setIsProcessingOrder(false);
     }
@@ -211,34 +224,25 @@ export default function CheckoutPage() {
     );
   }
 
-  if (cartItems.length === 0) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-4">Your Cart is Empty</h2>
-          <p className="text-gray-600 mb-6">Add some items to your cart before checking out.</p>
-          <Link
-            href="/customer/home"
-            className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600"
-          >
-            Continue Shopping
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   // Show checkout type selection if not determined yet
   if (!checkoutType) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-md mx-auto">
           <h1 className="text-3xl font-semibold text-gray-900 mb-8 text-center">Checkout</h1>
-          
+
+          {/* Currency Indicator */}
+          <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <div className="flex items-center justify-center text-sm text-blue-800">
+              <span className="mr-2">{currentCurrency.flag}</span>
+              <span>Checkout in {currentCurrency.name} ({currentCurrency.code})</span>
+            </div>
+          </div>
+
           <div className="space-y-4">
             <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
               <h2 className="text-xl font-semibold mb-4">How would you like to checkout?</h2>
-              
+
               {user && (
                 <button
                   onClick={() => setCheckoutType('user')}
@@ -247,14 +251,14 @@ export default function CheckoutPage() {
                   Continue as {user.firstName} {user.lastName}
                 </button>
               )}
-              
+
               <button
                 onClick={() => setCheckoutType('guest')}
                 className="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-md font-medium hover:bg-gray-200 transition-colors"
               >
                 Checkout as Guest
               </button>
-              
+
               {!user && (
                 <div className="mt-6 text-center">
                   <p className="text-gray-600 mb-4">Already have an account?</p>
@@ -328,7 +332,7 @@ export default function CheckoutPage() {
               {/* Addresses Section */}
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-6">Delivery Information</h2>
-                
+
                 <CheckoutAddresses
                   shippingAddressId={shippingAddressId}
                   billingAddressId={billingAddressId}
@@ -346,11 +350,20 @@ export default function CheckoutPage() {
             <div className="bg-white border border-gray-200 rounded-lg p-6">
               <h2 className="text-xl font-semibold mb-6">Payment Method</h2>
               <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <p className="text-gray-600 text-center">
-                  Payment integration will be implemented here
-                  <br />
-                  (Stripe, PayPal, etc.)
-                </p>
+                <div className="text-center">
+                  <p className="text-gray-600 mb-2">
+                    Payment integration will be implemented here
+                  </p>
+                  <p className="text-gray-600 mb-3">
+                    (Stripe, PayPal, etc.)
+                  </p>
+                  <div className="text-sm text-gray-500">
+                    <span className="flex items-center justify-center">
+                      <span className="mr-2">{currentCurrency.flag}</span>
+                      Payment will be processed in {currentCurrency.name}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           ) : null}
@@ -363,11 +376,19 @@ export default function CheckoutPage() {
               Order Summary
             </h2>
 
+            {/* Currency Information */}
+            <div className="mb-4 p-3 bg-white border border-gray-200 rounded-md">
+              <div className="flex items-center text-sm text-gray-700">
+                <span className="mr-2">{currentCurrency.flag}</span>
+                <span>Pricing in {currentCurrency.name}</span>
+              </div>
+            </div>
+
             {/* Cart Items */}
             <div className="space-y-3 mb-6">
               {cartItems.map((item) => {
                 const price = item.sizeVariant?.price || item.product?.discountedPrice || item.product?.price || 0;
-                
+
                 return (
                   <div key={item.id} className="flex items-center space-x-3">
                     <div className="flex-shrink-0 w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
@@ -381,7 +402,7 @@ export default function CheckoutPage() {
                         <div className="w-6 h-6 bg-gray-300 rounded"></div>
                       )}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-gray-900 truncate">
                         {item.product.name}
@@ -395,39 +416,48 @@ export default function CheckoutPage() {
                         Qty: {item.quantity}
                       </p>
                     </div>
-                    
+
                     <div className="text-sm font-medium text-gray-900">
-                      ${(price * item.quantity).toFixed(2)}
+                      {formatPrice(price * item.quantity)}
                     </div>
                   </div>
                 );
               })}
             </div>
 
-            {/* Totals */}
+            {/* Totals - Updated to use currency context */}
             <div className="space-y-3 border-t border-gray-200 pt-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal ({cartCount} items):</span>
-                <span className="text-gray-900">${cartTotal.toFixed(2)}</span>
+                <span className="text-gray-900">{formatPrice(cartTotal)}</span>
               </div>
-              
+
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Shipping:</span>
                 <span className="text-gray-900">Calculated at next step</span>
               </div>
-              
+
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Tax:</span>
                 <span className="text-gray-900">Calculated at next step</span>
               </div>
-              
+
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between text-lg font-semibold">
                   <span className="text-gray-900">Total:</span>
-                  <span className="text-gray-900">${cartTotal.toFixed(2)}</span>
+                  <span className="text-gray-900">{formatPrice(cartTotal)}</span>
                 </div>
               </div>
             </div>
+
+            {/* Exchange Rate Notice */}
+            {currentCurrency.code !== 'USD' && (
+              <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="text-xs text-yellow-800">
+                  <span className="font-medium">Note:</span> Final charges may vary slightly due to exchange rate fluctuations at payment processing.
+                </div>
+              </div>
+            )}
 
             {/* Checkout Info */}
             {checkoutType === 'guest' && guestInfo && (
@@ -449,7 +479,7 @@ export default function CheckoutPage() {
             <button
               onClick={handlePlaceOrder}
               disabled={
-                isProcessingOrder || 
+                isProcessingOrder ||
                 (checkoutType === 'user' && (!shippingAddressId || (!sameAsShipping && !billingAddressId))) ||
                 (checkoutType === 'guest' && (!guestInfo || !guestAddress))
               }
@@ -461,7 +491,7 @@ export default function CheckoutPage() {
                   Processing Order...
                 </div>
               ) : (
-                'Place Order'
+                `Place Order - ${formatPrice(cartTotal)}`
               )}
             </button>
 

@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/contexts/cartContext';
+import { useCurrency } from '@/contexts/currencyContext';
 
 export default function CartPage() {
   const {
@@ -16,6 +17,8 @@ export default function CartPage() {
     clearCart,
     user,
   } = useCart();
+
+  const { formatPrice, currentCurrency } = useCurrency();
 
   const [notification, setNotification] = useState(null);
   const [updatingItems, setUpdatingItems] = useState(new Set());
@@ -232,15 +235,15 @@ export default function CartPage() {
                             </p>
                           )}
 
-                          {/* Price */}
+                          {/* Price - Updated to use currency context */}
                           <div className="flex items-center mt-3">
                             <span className="text-xl font-semibold text-gray-900">
-                              ${Number(price).toFixed(2)}
+                              {formatPrice(price)}
                             </span>
                             {hasDiscount && (
                               <>
                                 <span className="ml-2 text-sm text-gray-500 line-through">
-                                  ${Number(originalPrice).toFixed(2)}
+                                  {formatPrice(originalPrice)}
                                 </span>
                                 <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
                                   {Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF
@@ -300,13 +303,13 @@ export default function CartPage() {
                           )}
                         </div>
 
-                        {/* Item Total */}
+                        {/* Item Total - Updated to use currency context */}
                         <div className="text-right">
                           <span className="text-lg font-semibold text-gray-900">
-                            ${(Number(price) * item.quantity).toFixed(2)}
+                            {formatPrice(price * item.quantity)}
                           </span>
                           <div className="text-sm text-gray-500">
-                            {item.quantity} × ${Number(price).toFixed(2)}
+                            {item.quantity} × {formatPrice(price)}
                           </div>
                         </div>
                       </div>
@@ -348,10 +351,18 @@ export default function CartPage() {
               Order Summary
             </h2>
 
+            {/* Currency Information */}
+            <div className="mb-4 p-3 bg-white border border-gray-200 rounded-md">
+              <div className="flex items-center text-sm text-gray-700">
+                <span className="mr-2">{currentCurrency.flag}</span>
+                <span>Pricing in {currentCurrency.name}</span>
+              </div>
+            </div>
+
             <div className="space-y-3">
               <div className="flex justify-between">
                 <span className="text-gray-600">Items ({cartCount}):</span>
-                <span className="text-gray-900">${Number(cartTotal).toFixed(2)}</span>
+                <span className="text-gray-900">{formatPrice(cartTotal)}</span>
               </div>
               
               <div className="flex justify-between">
@@ -368,11 +379,20 @@ export default function CartPage() {
                 <div className="flex justify-between">
                   <span className="text-lg font-semibold text-gray-900">Total:</span>
                   <span className="text-lg font-semibold text-gray-900">
-                    ${Number(cartTotal).toFixed(2)}
+                    {formatPrice(cartTotal)}
                   </span>
                 </div>
               </div>
             </div>
+
+            {/* Exchange Rate Notice */}
+            {currentCurrency.code !== 'USD' && (
+              <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="text-xs text-yellow-800">
+                  <span className="font-medium">Note:</span> Final charges may vary slightly due to exchange rate fluctuations at checkout.
+                </div>
+              </div>
+            )}
 
             <div className="mt-6 space-y-3">
               <Link

@@ -1,26 +1,28 @@
 'use client';
- 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import axios from 'axios';
 import { useCart } from '@/contexts/cartContext';
 import { useAuth } from '@/contexts/authcontext';
+import { useCurrency, CURRENCIES } from '@/contexts/currencyContext';
 import { GET_NAVIGATION_CATEGORIES } from '@/utils/routes/productManagementRoutes';
  
 const Navbar = () => {
   const { cartCount } = useCart();
   const { user, logout, isAuthenticated } = useAuth();
+  const { selectedCurrency, setSelectedCurrency, currentCurrency } = useCurrency();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
- 
+
   // Fetch categories on component mount
   useEffect(() => {
     fetchCategories();
   }, []);
- 
+
   const fetchCategories = async () => {
     try {
       // Using the imported route constant
@@ -41,17 +43,22 @@ const Navbar = () => {
       setLoading(false);
     }
   };
- 
+
   const handleMouseEnter = (categoryId) => {
     setActiveDropdown(categoryId);
   };
- 
+
   const handleMouseLeave = () => {
     setActiveDropdown(null);
   };
  
   const handleMobileCategoryClick = (categoryId) => {
     setActiveDropdown(activeDropdown === categoryId ? null : categoryId);
+  };
+
+  const handleCurrencyChange = (currencyCode) => {
+    setSelectedCurrency(currencyCode);
+    setShowCurrencyMenu(false);
   };
  
   return (
@@ -100,10 +107,10 @@ const Navbar = () => {
                     </svg>
                   )}
                 </Link>
-               
+                
                 {/* Dropdown Menu */}
-                {category.subcategories &&
-                 category.subcategories.length > 0 &&
+                {category.subcategories && 
+                 category.subcategories.length > 0 && 
                  activeDropdown === category.id && (
                   <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-2 z-50">
                     {category.subcategories.map((subcategory) => (
@@ -123,16 +130,66 @@ const Navbar = () => {
          
           {/* Cart & User Actions */}
           <div className="flex items-center space-x-4">
+            {/* Currency Selector */}
+            <div className="relative">
+              <button
+                className="flex items-center space-x-1 text-gray-600 hover:text-blue-500 focus:outline-none"
+                onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
+                aria-label="Currency Selector"
+              >
+                <span className="text-sm">{currentCurrency.flag}</span>
+                <span className="text-sm font-medium">{currentCurrency.code}</span>
+                <svg
+                  className={`w-3 h-3 transform transition-transform ${
+                    showCurrencyMenu ? 'rotate-180' : ''
+                  }`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              
+              {/* Currency Dropdown Menu */}
+              {showCurrencyMenu && (
+                <div className="absolute right-0 mt-2 w-40 py-2 bg-white rounded-md shadow-xl border border-gray-200 z-20">
+                  {Object.values(CURRENCIES).map((currency) => (
+                    <button
+                      key={currency.code}
+                      onClick={() => handleCurrencyChange(currency.code)}
+                      className={`w-full text-left px-4 py-2 text-sm hover:bg-gray-100 flex items-center space-x-2 ${
+                        selectedCurrency === currency.code 
+                          ? 'bg-blue-50 text-blue-600' 
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      <span>{currency.flag}</span>
+                      <div>
+                        <div className="font-medium">{currency.code}</div>
+                        <div className="text-xs text-gray-500">{currency.name}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {/* Search Button */}
-            <button
+            <button 
               className="text-gray-600 hover:text-blue-500"
               aria-label="Search"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <svg 
+                className="w-6 h-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
@@ -143,7 +200,7 @@ const Navbar = () => {
                 ></path>
               </svg>
             </button>
-           
+            
             {/* User Account with Dropdown */}
             <div className="relative">
               <button
@@ -151,11 +208,11 @@ const Navbar = () => {
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
                 aria-label="Account"
               >
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <svg 
+                  className="w-6 h-6" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -166,7 +223,7 @@ const Navbar = () => {
                   ></path>
                 </svg>
               </button>
-             
+              
               {/* Profile Dropdown Menu */}
               {showProfileMenu && (
                 <div className="absolute right-0 mt-2 w-48 py-2 bg-white rounded-md shadow-xl border border-gray-200 z-20">
@@ -175,21 +232,21 @@ const Navbar = () => {
                       <div className="px-4 py-2 text-sm font-medium text-gray-700 border-b border-gray-100">
                         {user?.firstName} {user?.lastName}
                       </div>
-                      <Link
-                        href="/customer/profile"
+                      <Link 
+                        href="/customer/profile" 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
                         My Account
                       </Link>
-                      <Link
-                        href="/orders"
+                      <Link 
+                        href="/orders" 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
                         My Orders
                       </Link>
-                      <button
+                      <button 
                         onClick={() => {
                           logout();
                           setShowProfileMenu(false);
@@ -201,15 +258,15 @@ const Navbar = () => {
                     </>
                   ) : (
                     <>
-                      <Link
-                        href="/login"
+                      <Link 
+                        href="/login" 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
                         Sign In
                       </Link>
-                      <Link
-                        href="/signup"
+                      <Link 
+                        href="/signup" 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
@@ -220,18 +277,18 @@ const Navbar = () => {
                 </div>
               )}
             </div>
-           
+            
             {/* Cart */}
-            <Link
-              href="/cart"
+            <Link 
+              href="/cart" 
               className="text-gray-600 hover:text-blue-500 relative"
               aria-label="Shopping Cart"
             >
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <svg 
+                className="w-6 h-6" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24" 
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
@@ -241,7 +298,7 @@ const Navbar = () => {
                   d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
                 ></path>
               </svg>
-             
+              
               {/* Cart Item Count Badge */}
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
@@ -251,17 +308,17 @@ const Navbar = () => {
             </Link>
            
             {/* Mobile Menu Button */}
-            <button
+            <button 
               className="md:hidden text-gray-600 hover:text-blue-500"
               onClick={() => setShowMobileMenu(!showMobileMenu)}
               aria-label={showMobileMenu ? 'Close Menu' : 'Open Menu'}
             >
               {showMobileMenu ? (
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <svg 
+                  className="w-6 h-6" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -272,11 +329,11 @@ const Navbar = () => {
                   ></path>
                 </svg>
               ) : (
-                <svg
-                  className="w-6 h-6"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <svg 
+                  className="w-6 h-6" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
@@ -290,18 +347,51 @@ const Navbar = () => {
             </button>
           </div>
         </div>
-       
+        
         {/* Mobile Menu */}
         {showMobileMenu && (
           <div className="md:hidden py-4 border-t border-gray-200">
             <div className="flex flex-col space-y-3">
-              <Link
-                href="/customer/home"
+              <Link 
+                href="/customer/home" 
                 className="text-gray-700 hover:text-blue-500 px-2 py-1"
                 onClick={() => setShowMobileMenu(false)}
               >
                 Home
               </Link>
+
+              {/* Mobile Currency Selector */}
+              <div className="px-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-700 py-1">Currency</span>
+                  <button
+                    onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
+                    className="flex items-center space-x-1 text-blue-500 py-1"
+                  >
+                    <span>{currentCurrency.flag}</span>
+                    <span className="font-medium">{currentCurrency.code}</span>
+                  </button>
+                </div>
+                
+                {showCurrencyMenu && (
+                  <div className="ml-4 mt-2 space-y-2">
+                    {Object.values(CURRENCIES).map((currency) => (
+                      <button
+                        key={currency.code}
+                        onClick={() => handleCurrencyChange(currency.code)}
+                        className={`w-full text-left py-1 flex items-center space-x-2 ${
+                          selectedCurrency === currency.code 
+                            ? 'text-blue-600 font-medium' 
+                            : 'text-gray-600'
+                        }`}
+                      >
+                        <span>{currency.flag}</span>
+                        <span>{currency.code} - {currency.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
              
               {/* Mobile Categories */}
               {!loading && categories.map((category) => (

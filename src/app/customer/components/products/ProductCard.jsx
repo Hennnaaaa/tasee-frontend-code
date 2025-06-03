@@ -2,11 +2,15 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useCurrency } from '@/contexts/currencyContext';
 
 const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  // Currency context
+  const { formatPrice, currentCurrency } = useCurrency();
   
   // Get product images
   const productImages = product.images || [];
@@ -207,22 +211,27 @@ const ProductCard = ({ product }) => {
           </div>
         )}
         
-        {/* Price */}
+        {/* Price - Updated to use currency context */}
         <div className="flex items-center justify-center space-x-3 mb-4">
           {product.discountedPrice ? (
             <>
               <span className="text-lg font-normal text-stone-800 tracking-wide">
-                $ {parseFloat(product.discountedPrice).toLocaleString()}
+                {formatPrice(product.discountedPrice)}
               </span>
               <span className="text-sm text-stone-500 line-through font-light">
-                $ {parseFloat(product.price).toLocaleString()}
+                {formatPrice(product.price)}
               </span>
             </>
           ) : (
             <span className="text-lg font-normal text-stone-800 tracking-wide">
-              $ {parseFloat(product.price).toLocaleString()}
+              {formatPrice(product.price)}
             </span>
           )}
+        </div>
+
+        {/* Currency indicator - Shows current currency for clarity */}
+        <div className="text-xs text-stone-400 mb-2 font-light tracking-wider">
+          PRICE IN {currentCurrency.name.toUpperCase()}
         </div>
 
         {/* Stock Status - UPDATED: Only show count for low stock items */}

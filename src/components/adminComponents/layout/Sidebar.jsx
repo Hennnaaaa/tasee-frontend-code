@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Package,
   Boxes,
@@ -15,7 +15,9 @@ import {
   ChevronRight,
   Menu,
   Newspaper,
-  User2Icon
+  User2Icon,
+  LucideListOrdered,
+  ListOrderedIcon
 } from 'lucide-react';
 
 // Import UI components
@@ -26,14 +28,18 @@ import {
   TooltipProvider, 
   TooltipTrigger 
 } from '@/components/ui/tooltip';
+import { useAuth } from '@/contexts/authcontext';
 
 // Import auth utility
 import { getUserData } from '@/utils/auth';
 
 const Sidebar = ({ onToggle, onNavigateToComponent }) => {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { user, logout, isAuthenticated } = useAuth();
 
   // Get user data on component mount
   useEffect(() => {
@@ -55,6 +61,29 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
   const handleComponentNavigation = (componentName) => {
     if (onNavigateToComponent) {
       onNavigateToComponent(componentName);
+    }
+  };
+
+  // Handle logout functionality
+  const handleLogout = async () => {
+    try {
+      setIsLoggingOut(true);
+      
+      // Call logout from auth context
+      await logout();
+      
+      // Redirect to login page
+      router.push('/login');
+      
+      // Optional: Show success message
+      console.log('✅ Logout successful');
+      
+    } catch (error) {
+      console.error('❌ Logout error:', error);
+      // Even if there's an error, still redirect to login for security
+      router.push('/login');
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -96,6 +125,12 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
       isComponent: true,
       componentName: 'UserManagement',
       active: pathname === '/admin/customers', // This will be managed by parent
+    },
+    {
+      title: 'Orders',
+      icon: <ListOrderedIcon size={20} />,
+      href: '/admin/OrderManagement',
+      active: pathname === '/admin/OrderManagement',
     },
   ];
 
@@ -218,23 +253,23 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
-                  {userData?.name?.charAt(0) || 'A'}
+                  {userData?.name?.charAt(0) || user?.firstName?.charAt(0) || 'A'}
                 </div>
               </TooltipTrigger>
               <TooltipContent side="right">
-                <p>{userData?.name || 'Admin User'}</p>
-                <p className="text-xs text-gray-500">{userData?.email || 'admin@example.com'}</p>
+                <p>{userData?.name || user?.firstName || 'Admin User'}</p>
+                <p className="text-xs text-gray-500">{userData?.email || user?.email || 'admin@example.com'}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         ) : (
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-semibold">
-              {userData?.name?.charAt(0) || 'A'}
+              {userData?.name?.charAt(0) || user?.firstName?.charAt(0) || 'A'}
             </div>
             <div className="flex flex-col">
-              <span className="font-medium">{userData?.name || 'Admin User'}</span>
-              <span className="text-xs text-gray-500">{userData?.email || 'admin@example.com'}</span>
+              <span className="font-medium">{userData?.name || user?.firstName || 'Admin User'}</span>
+              <span className="text-xs text-gray-500">{userData?.email || user?.email || 'admin@example.com'}</span>
             </div>
           </div>
         )}
@@ -257,19 +292,32 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="w-full text-red-500 hover:text-red-600 hover:bg-red-50">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="w-full text-red-500 hover:text-red-600 hover:bg-red-50"
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
+                >
                   <LogOut size={20} />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">
-                Logout
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
         ) : (
-          <Button variant="ghost" className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50">
+          <Button 
+            variant="ghost" 
+            className="w-full justify-start text-red-500 hover:text-red-600 hover:bg-red-50"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+          >
             <LogOut size={20} />
-            <span className="ml-3">Logout</span>
+            <span className="ml-3">
+              {isLoggingOut ? 'Logging out...' : 'Logout'}
+            </span>
           </Button>
         )}
       </div>

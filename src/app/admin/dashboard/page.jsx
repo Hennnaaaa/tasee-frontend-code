@@ -134,9 +134,9 @@ export default function DashboardPage() {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
- 
+
      
-       
+        
        
           {/* Inventory Status Cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -381,10 +381,10 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           )}
+        
+        
        
-       
-       
-     
+      
     </div>
   );
  

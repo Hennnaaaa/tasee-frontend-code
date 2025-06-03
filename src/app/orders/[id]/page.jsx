@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/authcontext';
+import { useCurrency } from '@/contexts/currencyContext';
 import Link from 'next/link';
 import { GET_ORDER_BY_ID, CANCEL_ORDER } from '@/utils/routes/orderRoutes';
 
@@ -11,6 +12,7 @@ export default function OrderDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const { user, isAuthenticated } = useAuth();
+  const { formatPrice, currentCurrency } = useCurrency();
   const orderId = params.id;
   
   const [order, setOrder] = useState(null);
@@ -18,6 +20,20 @@ export default function OrderDetailsPage() {
   const [error, setError] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  // Helper function to format order prices based on stored currency
+  const formatOrderPrice = (amount) => {
+    if (!amount) return formatPrice(0);
+    
+    // If order has a stored currency that differs from current selection
+    if (order?.currency && order.currency !== currentCurrency.code) {
+      // Show original currency with note about conversion
+      return `${order.currency} ${Number(amount).toFixed(2)}`;
+    }
+    
+    // Use current currency formatting
+    return formatPrice(amount);
+  };
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -351,6 +367,12 @@ export default function OrderDetailsPage() {
           </div>
           
           <div className="flex gap-2 mt-4 sm:mt-0">
+            {/* Currency Badge */}
+            {order.currency && (
+              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                {order.currency}
+              </span>
+            )}
             <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)}`}>
               {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Unknown'}
             </span>
@@ -360,6 +382,23 @@ export default function OrderDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Currency Information */}
+      {order.currency && (
+        <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center text-sm text-blue-800">
+              <span className="mr-2">💰</span>
+              <span>Order placed in {order.currency}</span>
+            </div>
+            {order.currency !== currentCurrency.code && (
+              <div className="text-xs text-blue-600">
+                Prices shown in original currency
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
@@ -388,8 +427,8 @@ export default function OrderDetailsPage() {
                     </div>
                     
                     <div className="text-right">
-                      <p className="text-lg font-semibold text-gray-900">${item.total || 0}</p>
-                      <p className="text-sm text-gray-600">${item.price || 0} each</p>
+                      <p className="text-lg font-semibold text-gray-900">{formatOrderPrice(item.total || 0)}</p>
+                      <p className="text-sm text-gray-600">{formatOrderPrice(item.price || 0)} each</p>
                     </div>
                   </div>
                 ))}
@@ -436,36 +475,55 @@ export default function OrderDetailsPage() {
           <div className="bg-white border border-gray-200 rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
             
+            {/* Currency Information */}
+            {order.currency && (
+              <div className="mb-4 p-3 bg-white border border-gray-200 rounded-md">
+                <div className="flex items-center text-sm text-gray-700">
+                  <span className="mr-2">{currentCurrency.flag}</span>
+                  <span>Pricing in {order.currency}</span>
+                </div>
+              </div>
+            )}
+            
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Subtotal:</span>
-                <span className="text-gray-900">${order.subtotal || 0}</span>
+                <span className="text-gray-900">{formatOrderPrice(order.subtotal || 0)}</span>
               </div>
               
               {order.discount > 0 && (
                 <div className="flex justify-between text-sm">
                   <span className="text-gray-600">Discount:</span>
-                  <span className="text-green-600">-${order.discount}</span>
+                  <span className="text-green-600">-{formatOrderPrice(order.discount)}</span>
                 </div>
               )}
               
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Shipping:</span>
-                <span className="text-gray-900">${order.shipping || 0}</span>
+                <span className="text-gray-900">{formatOrderPrice(order.shipping || 0)}</span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Tax:</span>
-                <span className="text-gray-900">${order.tax || 0}</span>
+                <span className="text-gray-900">{formatOrderPrice(order.tax || 0)}</span>
               </div>
               
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between text-lg font-semibold">
                   <span className="text-gray-900">Total:</span>
-                  <span className="text-gray-900">${order.total || 0}</span>
+                  <span className="text-gray-900">{formatOrderPrice(order.total || 0)}</span>
                 </div>
               </div>
             </div>
+
+            {/* Currency Conversion Notice */}
+            {order.currency && order.currency !== currentCurrency.code && (
+              <div className="mt-4 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                <div className="text-xs text-yellow-800">
+                  <span className="font-medium">Note:</span> This order was placed in {order.currency}. Prices are shown in the original currency. Current display currency is {currentCurrency.code}.
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Payment Information */}
@@ -484,6 +542,13 @@ export default function OrderDetailsPage() {
                   {order.paymentStatus ? order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1) : 'Unknown'}
                 </span>
               </div>
+              
+              {order.currency && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-600">Payment Currency:</span>
+                  <span className="text-gray-900">{order.currency}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -510,34 +575,6 @@ export default function OrderDetailsPage() {
                 <button className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 font-medium transition-colors">
                   Leave Review
                 </button>
-              )}
-              
-              {/* Cancel Order Button with 24-hour check */}
-              {order.status === 'pending' && canCancelOrder(order.orderDate || order.createdAt) && (
-                <>
-                  <button 
-                    onClick={() => setShowCancelConfirm(true)}
-                    className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 font-medium transition-colors"
-                  >
-                    Cancel Order
-                  </button>
-                  
-                  {/* Show time remaining */}
-                  {(() => {
-                    const timeRemaining = getCancellationTimeRemaining(order.orderDate || order.createdAt);
-                    return timeRemaining && (
-                      <div className="text-xs text-gray-600 text-center">
-                        Cancel within: {timeRemaining.hours}h {timeRemaining.minutes}m
-                      </div>
-                    );
-                  })()}
-                </>
-              )}
-
-              {order.status === 'pending' && !canCancelOrder(order.orderDate || order.createdAt) && (
-                <div className="w-full bg-gray-300 text-gray-500 py-2 px-4 rounded-md text-center font-medium">
-                  Cancellation Period Expired
-                </div>
               )}
               
               <button 
