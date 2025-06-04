@@ -281,11 +281,10 @@ export default function ProductDetailsPage({ params }) {
                 <button
                   key={image.id || index}
                   onClick={() => selectImage(index)}
-                  className={`relative bg-gray-100 rounded-lg overflow-hidden border-2 transition-all duration-300 hover:shadow-lg group ${
-                    index === currentImageIndex 
-                      ? 'border-black shadow-lg ring-2 ring-gray-200' 
-                      : 'border-transparent hover:border-gray-300'
-                  }`}
+                  className={`relative bg-gray-100 rounded-lg overflow-hidden border-2 transition-all duration-300 hover:shadow-lg group ${index === currentImageIndex
+                    ? 'border-black shadow-lg ring-2 ring-gray-200'
+                    : 'border-transparent hover:border-gray-300'
+                    }`}
                   style={{ height: '200px', width: '120px' }}
                 >
                   <img
@@ -296,17 +295,17 @@ export default function ProductDetailsPage({ params }) {
                       imageRendering: 'high-quality'
                     }}
                   />
-                  
+
                   {/* Hover overlay */}
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                  
+
                   {/* Primary badge */}
                   {image.isPrimary && (
                     <div className="absolute top-1 left-1 bg-black text-white text-xs px-1 py-0.5 rounded font-medium">
                       Main
                     </div>
                   )}
-                  
+
                   {/* Active indicator */}
                   {index === currentImageIndex && (
                     <div className="absolute inset-0 border-2 border-black rounded-lg bg-black/5"></div>
@@ -318,9 +317,9 @@ export default function ProductDetailsPage({ params }) {
 
           {/* Main Image - Much Larger */}
           <div className="flex-1 ml-8">
-            <div 
+            <div
               className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 cursor-zoom-in"
-              style={{ 
+              style={{
                 height: '1000px',
                 width: '70%'
               }}
@@ -343,7 +342,7 @@ export default function ProductDetailsPage({ params }) {
                         ...zoomStyle
                       }}
                     />
-                    
+
                     {/* Zoom Overlay Effect */}
                     {isZooming && (
                       <div className="absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-black/5 transition-opacity duration-300"></div>
@@ -485,12 +484,10 @@ export default function ProductDetailsPage({ params }) {
                     <button
                       key={String(sizeVariant.id)}
                       onClick={() => sizeVariant.inventory > 0 ? handleSizeSelect(sizeVariant) : null}
-                      className={`h-14 min-w-[60px] px-5 border transition-all duration-200 hover:shadow-md ${
-                        selectedSize?.id === sizeVariant.id
-                          ? 'border-black bg-black text-white'
-                          : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                      } ${
-                        sizeVariant.inventory <= 0
+                      className={`h-14 min-w-[60px] px-5 border transition-all duration-200 hover:shadow-md ${selectedSize?.id === sizeVariant.id
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                        } ${sizeVariant.inventory <= 0
                           ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
                           : ''
                         }`}
@@ -511,8 +508,8 @@ export default function ProductDetailsPage({ params }) {
               {selectedSize && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl border">
                   <div className="text-sm text-gray-700">
-                    <strong className="text-black">{selectedSize.sizeName}</strong> - 
-                    Price: <span className="font-semibold">{formatPrice(selectedSize.price)}</span> | 
+                    <strong className="text-black">{selectedSize.sizeName}</strong> -
+                    Price: <span className="font-semibold">{formatPrice(selectedSize.price)}</span> |
                     Stock: <span className="font-semibold">
                       {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
                     </span>
@@ -580,15 +577,14 @@ export default function ProductDetailsPage({ params }) {
             <button
               onClick={handleAddToCart}
               disabled={!hasStock || addingToCart || (product.requiresSizeSelection && !selectedSize)}
-              className={`w-full py-4 px-6 font-medium text-white transition-all duration-300 text-lg uppercase tracking-wide ${
-                !hasStock
+              className={`w-full py-4 px-6 font-medium text-white transition-all duration-300 text-lg uppercase tracking-wide ${!hasStock
+                ? 'bg-gray-400 cursor-not-allowed'
+                : (product.requiresSizeSelection && !selectedSize)
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : (product.requiresSizeSelection && !selectedSize)
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : addingToCart
-                      ? 'bg-gray-500 cursor-wait'
-                      : 'bg-black hover:bg-gray-800 active:bg-gray-900'
-              }`}
+                  : addingToCart
+                    ? 'bg-gray-500 cursor-wait'
+                    : 'bg-black hover:bg-gray-800 active:bg-gray-900'
+                }`}
             >
               {addingToCart
                 ? (
@@ -675,9 +671,9 @@ export default function ProductDetailsPage({ params }) {
       <div className="lg:hidden">
         {/* Mobile Main Image */}
         <div className="mb-6">
-          <div 
+          <div
             className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl overflow-hidden shadow-lg"
-            style={{ 
+            style={{
               height: '600px',
               width: '100%'
             }}
@@ -769,11 +765,10 @@ export default function ProductDetailsPage({ params }) {
                 <button
                   key={image.id || index}
                   onClick={() => selectImage(index)}
-                  className={`relative bg-gray-100 rounded-lg overflow-hidden border-2 transition-all duration-300 flex-shrink-0 ${
-                    index === currentImageIndex 
-                      ? 'border-black shadow-md' 
-                      : 'border-transparent'
-                  }`}
+                  className={`relative bg-gray-100 rounded-lg overflow-hidden border-2 transition-all duration-300 flex-shrink-0 ${index === currentImageIndex
+                    ? 'border-black shadow-md'
+                    : 'border-transparent'
+                    }`}
                   style={{ height: '80px', width: '80px' }}
                 >
                   <img
@@ -784,13 +779,13 @@ export default function ProductDetailsPage({ params }) {
                       imageRendering: 'high-quality'
                     }}
                   />
-                  
+
                   {image.isPrimary && (
                     <div className="absolute top-1 left-1 bg-black text-white text-xs px-1 py-0.5 rounded font-medium">
                       Main
                     </div>
                   )}
-                  
+
                   {index === currentImageIndex && (
                     <div className="absolute inset-0 border-2 border-black rounded-lg bg-black/5"></div>
                   )}
@@ -857,15 +852,13 @@ export default function ProductDetailsPage({ params }) {
                     <button
                       key={String(sizeVariant.id)}
                       onClick={() => sizeVariant.inventory > 0 ? handleSizeSelect(sizeVariant) : null}
-                      className={`h-12 px-3 border transition-all duration-200 text-sm ${
-                        selectedSize?.id === sizeVariant.id
-                          ? 'border-black bg-black text-white'
-                          : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
-                      } ${
-                        sizeVariant.inventory <= 0
+                      className={`h-12 px-3 border transition-all duration-200 text-sm ${selectedSize?.id === sizeVariant.id
+                        ? 'border-black bg-black text-white'
+                        : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
+                        } ${sizeVariant.inventory <= 0
                           ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
                           : ''
-                      }`}
+                        }`}
                       disabled={sizeVariant.inventory <= 0}
                     >
                       <div className="text-center">
@@ -883,8 +876,8 @@ export default function ProductDetailsPage({ params }) {
               {selectedSize && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
                   <div className="text-sm text-gray-700">
-                    <strong className="text-black">{selectedSize.sizeName}</strong> - 
-                    Price: <span className="font-semibold">{formatPrice(selectedSize.price)}</span> | 
+                    <strong className="text-black">{selectedSize.sizeName}</strong> -
+                    Price: <span className="font-semibold">{formatPrice(selectedSize.price)}</span> |
                     Stock: <span className="font-semibold">
                       {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
                     </span>
@@ -952,15 +945,14 @@ export default function ProductDetailsPage({ params }) {
             <button
               onClick={handleAddToCart}
               disabled={!hasStock || addingToCart || (product.requiresSizeSelection && !selectedSize)}
-              className={`w-full py-4 px-6 font-semibold text-white transition-all duration-300 text-lg uppercase tracking-wide rounded-xl ${
-                !hasStock
+              className={`w-full py-4 px-6 font-semibold text-white transition-all duration-300 text-lg uppercase tracking-wide rounded-xl ${!hasStock
+                ? 'bg-gray-400 cursor-not-allowed'
+                : (product.requiresSizeSelection && !selectedSize)
                   ? 'bg-gray-400 cursor-not-allowed'
-                  : (product.requiresSizeSelection && !selectedSize)
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : addingToCart
-                      ? 'bg-gray-500 cursor-wait'
-                      : 'bg-black hover:bg-gray-800 active:bg-gray-900 shadow-lg hover:shadow-xl'
-              }`}
+                  : addingToCart
+                    ? 'bg-gray-500 cursor-wait'
+                    : 'bg-black hover:bg-gray-800 active:bg-gray-900 shadow-lg hover:shadow-xl'
+                }`}
             >
               {addingToCart
                 ? (
@@ -1081,9 +1073,8 @@ export default function ProductDetailsPage({ params }) {
 
       {/* Notification */}
       {notification && (
-        <div className={`fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-md p-4 rounded-md shadow-lg z-50 ${
-          notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div className={`fixed bottom-4 right-4 left-4 sm:left-auto sm:max-w-md p-4 rounded-md shadow-lg z-50 ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
               {notification.type === 'success' ? (
@@ -1125,4 +1116,5 @@ export default function ProductDetailsPage({ params }) {
       `}</style>
     </div>
   );
+
 }
