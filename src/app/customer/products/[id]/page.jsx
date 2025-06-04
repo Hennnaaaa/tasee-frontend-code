@@ -23,11 +23,11 @@ export default function ProductDetailsPage({ params }) {
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
   const [notification, setNotification] = useState(null);
-  
+
   // Image gallery state
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
-  
+
   // Handle params unwrapping for Next.js 15
   useEffect(() => {
     const unwrapParams = async () => {
@@ -40,29 +40,29 @@ export default function ProductDetailsPage({ params }) {
         setLoading(false);
       }
     };
-    
+
     unwrapParams();
   }, [params]);
-  
+
   useEffect(() => {
     const fetchProductDetails = async () => {
       if (!productId) return;
-      
+
       try {
         setLoading(true);
         const response = await getProductById(productId, true);
-        
+
         if (response.success) {
           const productData = response.data;
           setProduct(productData);
-          
+
           console.log("📦 Product data loaded:", {
             productType: productData.productType,
             hasAvailableSizes: productData.hasAvailableSizes,
             totalInventory: productData.totalInventory,
             availableSizesCount: productData.availableSizes?.length || 0
           });
-          
+
           // Auto-select the first available size if any
           if (productData.availableSizes && productData.availableSizes.length > 0) {
             setSelectedSize(productData.availableSizes[0]);
@@ -78,27 +78,27 @@ export default function ProductDetailsPage({ params }) {
         setLoading(false);
       }
     };
-    
+
     fetchProductDetails();
   }, [productId]);
-  
+
   const handleSizeSelect = (size) => {
     console.log("📦 Size selected:", size);
     setSelectedSize(size);
-    
+
     // Reset quantity to 1 or max available if less than current quantity
     if (size.inventory < quantity) {
       setQuantity(Math.min(size.inventory, 1));
     }
   };
-  
+
   const increaseQuantity = () => {
     const maxQuantity = selectedSize ? selectedSize.inventory : (product?.inventory || 0);
     if (quantity < maxQuantity && quantity < 99) {
       setQuantity(prev => prev + 1);
     }
   };
-  
+
   const decreaseQuantity = () => {
     if (quantity > 1) {
       setQuantity(prev => prev - 1);
@@ -109,11 +109,11 @@ export default function ProductDetailsPage({ params }) {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
   };
-  
+
   const handleAddToCart = async () => {
     // Check if product requires size selection
     const requiresSize = product.productType === 'sized' && product.availableSizes?.length > 0;
-    
+
     if (requiresSize && !selectedSize) {
       showNotification('error', 'Please select a size');
       return;
@@ -131,17 +131,17 @@ export default function ProductDetailsPage({ params }) {
       showNotification('error', `Only ${availableInventory} items available`);
       return;
     }
-    
+
     try {
       setAddingToCart(true);
-      
+
       console.log("🛒 Adding to cart:", {
         productId: product.id,
         productType: product.productType,
         selectedSize: selectedSize,
         quantity: quantity
       });
-      
+
       if (requiresSize && selectedSize) {
         // Product with sizes - create sizeVariant object
         const sizeVariant = {
@@ -150,18 +150,18 @@ export default function ProductDetailsPage({ params }) {
           inventory: selectedSize.inventory,
           size: selectedSize.size
         };
-        
+
         await addToCart(product, sizeVariant, quantity);
       } else {
         // Regular product without sizes
         await addToCart(product, null, quantity);
       }
-      
+
       showNotification('success', `Added ${quantity} item(s) to cart successfully!`);
-      
+
       // Reset quantity to 1 after successful add
       setQuantity(1);
-      
+
     } catch (err) {
       console.error('Error adding to cart:', err);
       showNotification('error', err.message || 'Failed to add to cart. Please try again.');
@@ -190,7 +190,7 @@ export default function ProductDetailsPage({ params }) {
   const selectImage = (index) => {
     setCurrentImageIndex(index);
   };
-  
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -200,14 +200,14 @@ export default function ProductDetailsPage({ params }) {
       </div>
     );
   }
-  
+
   if (error || !product) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-100 p-4 rounded-md text-red-700 mb-6">
           {error || 'Product not found'}
         </div>
-        <Link 
+        <Link
           href="/"
           className="text-blue-500 hover:underline"
         >
@@ -216,24 +216,24 @@ export default function ProductDetailsPage({ params }) {
       </div>
     );
   }
-  
+
   // Get product images
   const productImages = product.images || [];
   const hasMultipleImages = productImages.length > 1;
-  
+
   // Use enhanced inventory status
   const { hasStock, isLowStock, totalAvailable } = product.inventoryStatus || {};
-  
+
   // Check if it's low stock (less than 5 items)
   const isLowStockDisplay = hasStock && totalAvailable <= 5;
-  
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Cart Count Display */}
       {cartCount > 0 && (
         <div className="mb-4">
-          <Link 
-            href="/cart" 
+          <Link
+            href="/cart"
             className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium hover:bg-blue-200"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -243,7 +243,7 @@ export default function ProductDetailsPage({ params }) {
           </Link>
         </div>
       )}
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Product Image Gallery */}
         <div className="space-y-4">
@@ -251,13 +251,13 @@ export default function ProductDetailsPage({ params }) {
           <div className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
             {productImages.length > 0 && !imageError ? (
               <>
-                <img 
+                <img
                   src={productImages[currentImageIndex]?.url || product.primaryImage}
                   alt={productImages[currentImageIndex]?.alt || product.name}
                   className="w-full h-full object-cover"
                   onError={handleImageError}
                 />
-                
+
                 {/* Navigation arrows for multiple images */}
                 {hasMultipleImages && (
                   <>
@@ -297,16 +297,16 @@ export default function ProductDetailsPage({ params }) {
             ) : (
               /* Placeholder for no image */
               <div className="flex items-center justify-center h-full text-gray-400">
-                <svg 
-                  className="w-32 h-32" 
-                  fill="none" 
-                  stroke="currentColor" 
+                <svg
+                  className="w-32 h-32"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth="1" 
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1"
                     d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
                   />
                 </svg>
@@ -321,9 +321,8 @@ export default function ProductDetailsPage({ params }) {
                 <button
                   key={image.id || index}
                   onClick={() => selectImage(index)}
-                  className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${
-                    index === currentImageIndex ? 'border-blue-500' : 'border-transparent hover:border-gray-300'
-                  }`}
+                  className={`relative aspect-square bg-gray-100 rounded-lg overflow-hidden border-2 transition-colors ${index === currentImageIndex ? 'border-blue-500' : 'border-transparent hover:border-gray-300'
+                    }`}
                 >
                   <img
                     src={image.url}
@@ -340,18 +339,18 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
         </div>
-        
+
         {/* Product Details */}
         <div>
           <h1 className="text-3xl font-semibold text-gray-900 mb-2">{String(product.name || '')}</h1>
-          
+
           {/* Category */}
           {product.category && (
             <div className="text-gray-600 mb-4">
               {String(product.category.name || '')}
             </div>
           )}
-          
+
           {/* Price - Updated to use currency context */}
           {/* Price */}
           <div className="flex items-center mb-6">
@@ -377,7 +376,7 @@ export default function ProductDetailsPage({ params }) {
               </span>
             )}
           </div>
-          
+
           {/* Description */}
           {product.description && (
             <div className="mb-6">
@@ -385,7 +384,7 @@ export default function ProductDetailsPage({ params }) {
               <p className="text-gray-700">{String(product.description || '')}</p>
             </div>
           )}
-          
+
           {/* Size Selection */}
           {product.productType === 'sized' && product.availableSizes?.length > 0 ? (
             <div className="mb-6">
@@ -397,15 +396,13 @@ export default function ProductDetailsPage({ params }) {
                     <button
                       key={String(sizeVariant.id)}
                       onClick={() => sizeVariant.inventory > 0 ? handleSizeSelect(sizeVariant) : null}
-                      className={`h-12 min-w-[50px] px-4 border rounded-md text-sm font-medium transition-colors ${
-                        selectedSize?.id === sizeVariant.id 
-                          ? 'border-blue-500 bg-blue-50 text-blue-700' 
-                          : 'border-gray-300 text-gray-700 hover:border-gray-400'
-                      } ${
-                        sizeVariant.inventory <= 0 
-                          ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400' 
+                      className={`h-12 min-w-[50px] px-4 border rounded-md text-sm font-medium transition-colors ${selectedSize?.id === sizeVariant.id
+                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 text-gray-700 hover:border-gray-400'
+                        } ${sizeVariant.inventory <= 0
+                          ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400'
                           : ''
-                      }`}
+                        }`}
                       disabled={sizeVariant.inventory <= 0}
                     >
                       <div className="text-center">
@@ -423,8 +420,8 @@ export default function ProductDetailsPage({ params }) {
               {selectedSize && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-md">
                   <div className="text-sm text-gray-600">
-                    <strong>{selectedSize.sizeName}</strong> - 
-                    Price: {formatPrice(selectedSize.price)} | 
+                    <strong>{selectedSize.sizeName}</strong> -
+                    Price: {formatPrice(selectedSize.price)} |
                     Stock: {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
                     Price: ${Number(selectedSize.price).toLocaleString()}
                   </div>
@@ -447,7 +444,7 @@ export default function ProductDetailsPage({ params }) {
               </div>
             </div>
           ) : null}
-          
+
           {/* Quantity Selector */}
           <div className="mb-6">
             <h2 className="text-lg font-medium mb-2">Quantity</h2>
@@ -466,8 +463,8 @@ export default function ProductDetailsPage({ params }) {
                 onClick={increaseQuantity}
                 className="h-10 w-10 border border-gray-300 rounded-r-md flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={
-                  !hasStock || 
-                  quantity >= 99 || 
+                  !hasStock ||
+                  quantity >= 99 ||
                   addingToCart ||
                   (selectedSize ? quantity >= Number(selectedSize?.inventory || 0) : quantity >= Number(product?.inventory || 0))
                 }
@@ -476,32 +473,31 @@ export default function ProductDetailsPage({ params }) {
               </button>
             </div>
           </div>
-          
+
           {/* Add to Cart Button */}
           <div className="mb-6">
             <button
               onClick={handleAddToCart}
               disabled={!hasStock || addingToCart || (product.requiresSizeSelection && !selectedSize)}
-              className={`w-full py-3 px-6 rounded-md font-medium text-white transition-colors ${
-                !hasStock
+              className={`w-full py-3 px-6 rounded-md font-medium text-white transition-colors ${!hasStock
+                ? 'bg-gray-300 cursor-not-allowed'
+                : (product.requiresSizeSelection && !selectedSize)
                   ? 'bg-gray-300 cursor-not-allowed'
-                  : (product.requiresSizeSelection && !selectedSize)
-                    ? 'bg-gray-300 cursor-not-allowed'
-                    : addingToCart
-                      ? 'bg-blue-400 cursor-wait'
-                      : 'bg-blue-500 hover:bg-blue-600'
-              }`}
+                  : addingToCart
+                    ? 'bg-blue-400 cursor-wait'
+                    : 'bg-blue-500 hover:bg-blue-600'
+                }`}
             >
-              {addingToCart 
-                ? 'Adding to Cart...' 
-                : !hasStock 
-                  ? 'Out of Stock' 
+              {addingToCart
+                ? 'Adding to Cart...'
+                : !hasStock
+                  ? 'Out of Stock'
                   : (product.requiresSizeSelection && !selectedSize)
-                    ? 'Select a Size' 
+                    ? 'Select a Size'
                     : `Add ${quantity} to Cart`}
             </button>
           </div>
-          
+
           {/* Stock Warning */}
           {isLowStockDisplay && (
             <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -515,7 +511,7 @@ export default function ProductDetailsPage({ params }) {
               </div>
             </div>
           )}
-          
+
           {/* Basic Product Info */}
           <div>
             <h2 className="text-lg font-medium mb-2">Product Information</h2>
@@ -527,6 +523,34 @@ export default function ProductDetailsPage({ params }) {
                     <dd className="text-sm text-gray-900">{String(product.category.name || '')}</dd>
                   </div>
                 )}
+                <div className="py-2 grid grid-cols-2">
+                  <dt className="text-sm text-gray-500">Color</dt>
+                  <dd className="text-sm text-gray-900">
+                    <span className="flex items-center">
+                      {product.color? product.color : 'N/A'}
+                    </span>
+                  </dd>
+                </div>
+
+                <div className="py-2 grid grid-cols-2">
+                  <dt className="text-sm text-gray-500">Fabric</dt>
+                  <dd className="text-sm text-gray-900">
+                    <span className="flex items-center">
+                      {product.fabric? product.fabric : 'N/A'}
+                    </span>
+                  </dd>
+                </div>
+
+                <div className="py-2 grid grid-cols-2">
+                  <dt className="text-sm text-gray-500">Work Details</dt>
+                  <dd className="text-sm text-gray-900">
+                    <span className="flex items-center">
+                      {product.workDetails ? product.workDetails : 'N/A'}
+                    </span>
+                  </dd>
+                </div>
+
+                
                 <div className="py-2 grid grid-cols-2">
                   <dt className="text-sm text-gray-500">Availability</dt>
                   <dd className="text-sm text-gray-900">
@@ -561,12 +585,14 @@ export default function ProductDetailsPage({ params }) {
                     </span>
                   </dd>
                 </div>
+
+                
               </dl>
             </div>
           </div>
         </div>
       </div>
-      
+
       {/* Mobile Image Gallery */}
       <div className="md:hidden mt-8">
         <h3 className="text-lg font-medium mb-4">Product Gallery</h3>
@@ -592,51 +618,6 @@ export default function ProductDetailsPage({ params }) {
         </div>
       </div>
 
-      {/* Additional Product Information Section - Updated to use currency context */}
-      {product.productType === 'sized' && product.availableSizes?.length > 0 && (
-        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-medium mb-4">Size & Pricing Information</h3>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Price ({currentCurrency.code})
-                  </th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stock</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {[...product.availableSizes, ...product.outOfStockSizes]
-                  .sort((a, b) => a.sortOrder - b.sortOrder)
-                  .map((size) => (
-                    <tr key={size.id} className={size.inventory <= 0 ? 'opacity-50' : ''}>
-                      <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                        {size.inventory <= 5 && size.inventory > 0 ? (
-                          <span className="text-orange-600">{size.inventory}</span>
-                        ) : size.inventory > 0 ? (
-                          <span className="text-green-600">Available</span>
-                        ) : (
-                          <span className="text-red-600">0</span>
-                        )}
-                      </td>
-                      <td className="px-4 py-2 whitespace-nowrap">
-                        {size.inventory > 0 ? (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            In Stock
-                          </span>
-                        ) : (
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                            Out of Stock
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
       {/* Product Reviews Section - NEW ADDITION */}
       <div className="mt-12">
         <ProductReviews productId={product.id} />
@@ -647,7 +628,7 @@ export default function ProductDetailsPage({ params }) {
         <div className="mt-12">
           <h3 className="text-2xl font-semibold text-gray-900 mb-6">Related Products</h3>
           <div className="text-gray-600">
-            <Link 
+            <Link
               href={`/categories/${product.category.id}`}
               className="inline-flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors"
             >
@@ -662,7 +643,7 @@ export default function ProductDetailsPage({ params }) {
 
       {/* Back to Products Button */}
       <div className="mt-8 text-center">
-        <Link 
+        <Link
           href="/"
           className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
         >
@@ -672,12 +653,11 @@ export default function ProductDetailsPage({ params }) {
           Back to All Products
         </Link>
       </div>
-      
+
       {/* Notification */}
       {notification && (
-        <div className={`fixed bottom-4 right-4 p-4 rounded-md shadow-lg max-w-md z-50 ${
-          notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div className={`fixed bottom-4 right-4 p-4 rounded-md shadow-lg max-w-md z-50 ${notification.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           <div className="flex items-center">
             <div className="flex-shrink-0">
               {notification.type === 'success' ? (
@@ -694,7 +674,7 @@ export default function ProductDetailsPage({ params }) {
               <p className="text-sm font-medium">{notification.message}</p>
             </div>
             <div className="ml-auto pl-3">
-              <button 
+              <button
                 onClick={() => setNotification(null)}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -706,6 +686,8 @@ export default function ProductDetailsPage({ params }) {
           </div>
         </div>
       )}
+      {/* </div>
+      )} */}
     </div>
   );
 }

@@ -30,6 +30,7 @@ import {
 // Import auth utility
 import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
+import { color } from 'framer-motion';
 
 // Image Upload Component with ProductImage model support
 const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage }) => {
@@ -191,6 +192,9 @@ export default function ProductModal({
   // Form state
   const initialState = {
     name: '',
+    color: '',
+    fabric: '',
+    workDetails: '',
     description: '',
     price: '',
     discountedPrice: '',
@@ -303,7 +307,18 @@ export default function ProductModal({
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
     }
-    
+    if (!formData.color.trim()) {
+      newErrors.color = 'Color is required';
+    }
+
+    if (!formData.fabric.trim()) {
+      newErrors.fabric = 'Fabric is required';
+    }
+
+    if (!formData.workDetails.trim()) {
+      newErrors.workDetails = ' Work Details are required';
+    }
+
     if (!formData.price.trim()) {
       newErrors.price = 'Price is required';
     } else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) < 0) {
@@ -355,6 +370,9 @@ export default function ProductModal({
       
       // Append form fields
       formDataToSend.append('name', formData.name);
+      formDataToSend.append('color', formData.color);
+      formDataToSend.append('fabric', formData.fabric);
+      formDataToSend.append('workDetails', formData.workDetails);
       formDataToSend.append('description', formData.description);
       formDataToSend.append('price', parseFloat(formData.price));
       if (formData.discountedPrice) {
@@ -476,6 +494,42 @@ export default function ProductModal({
                   />
                 </div>
                 
+                <div className="space-y-2">
+                  <Label htmlFor="description">Color <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="color"
+                    name="color"
+                    placeholder="Enter product color"
+                    value={formData.color}
+                    onChange={handleChange}
+                    rows={4}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="description">Fabric <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="fabric"
+                    name="fabric"
+                    placeholder="Enter product fabric"
+                    value={formData.fabric}
+                    onChange={handleChange}
+                    rows={4}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="description">Work Details <span className="text-red-500">*</span></Label>
+                  <Input
+                    id="workDetails"
+                    name="workDetails"
+                    placeholder="Enter work details (e.g. Embroidered And Embellished)"
+                    value={formData.workDetails}
+                    onChange={handleChange}
+                    rows={4}
+                  />
+                </div>
+
                 <div className="space-y-2">
                   <Label htmlFor="categoryId">
                     Category <span className="text-red-500">*</span>
