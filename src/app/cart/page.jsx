@@ -1,7 +1,7 @@
-// src/app/cart/page.js
+// src/app/cart/page.js - Updated with discounted price debugging
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/contexts/cartContext';
 import { useCurrency } from '@/contexts/currencyContext';
@@ -23,6 +23,34 @@ export default function CartPage() {
   const [notification, setNotification] = useState(null);
   const [updatingItems, setUpdatingItems] = useState(new Set());
   const [imageErrors, setImageErrors] = useState(new Set());
+
+  // DEBUG: Log cart items whenever they change
+  useEffect(() => {
+    if (cartItems.length > 0) {
+      console.log("🛍️ === CART PAGE PRICING DEBUG ===");
+      cartItems.forEach((item, index) => {
+        console.log(`🛍️ Cart Item ${index + 1}: ${item.product?.name}`);
+        console.log(`🛍️   - Product ID: ${item.product?.id}`);
+        console.log(`🛍️   - Size Variant Price: ${item.sizeVariant?.price}`);
+        console.log(`🛍️   - Product Discounted Price: ${item.product?.discountedPrice}`);
+        console.log(`🛍️   - Product Regular Price: ${item.product?.price}`);
+        console.log(`🛍️   - Quantity: ${item.quantity}`);
+        
+        // Show the same calculation logic as in the render
+        const calculatedPrice = item.sizeVariant?.price || item.product?.discountedPrice || item.product?.price || 0;
+        const originalPrice = item.product?.price;
+        const hasDiscount = item.product?.discountedPrice && item.product?.discountedPrice < originalPrice;
+        
+        console.log(`🛍️   - Calculated Final Price: ${calculatedPrice}`);
+        console.log(`🛍️   - Has Discount: ${hasDiscount}`);
+        console.log(`🛍️   - Item Total: ${calculatedPrice * item.quantity}`);
+        console.log(`🛍️   - Full Item Object:`, JSON.stringify(item, null, 2));
+        console.log(`🛍️   ---`);
+      });
+      console.log(`🛍️ Cart Total from Context: ${cartTotal}`);
+      console.log("🛍️ === END CART PAGE PRICING DEBUG ===");
+    }
+  }, [cartItems, cartTotal]);
 
   const showNotification = (type, message) => {
     setNotification({ type, message });
@@ -110,7 +138,7 @@ export default function CartPage() {
           strokeLinecap="round"
           strokeLinejoin="round"
           strokeWidth="1"
-          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 002 2z"
         />
       </svg>
     );
@@ -180,11 +208,30 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="space-y-4">
-            {cartItems.map((item) => {
+            {cartItems.map((item, itemIndex) => {
               const isUpdating = updatingItems.has(item.id);
-              const price = item.sizeVariant?.price || item.product?.discountedPrice || item.product?.price || 0;
+              
+              // Fixed price calculation logic to handle discounts properly
+              const sizePrice = item.sizeVariant?.price;
+              const discountedPrice = item.product?.discountedPrice;
+              const regularPrice = item.product?.price;
+              
+              // Use discounted price if it exists and is lower than size/regular price
+              const price = discountedPrice && discountedPrice < (sizePrice || regularPrice) 
+                ? discountedPrice 
+                : (sizePrice || regularPrice || 0);
+              
               const originalPrice = item.product?.price;
-              const hasDiscount = item.product?.discountedPrice && item.product?.discountedPrice < originalPrice;
+              const hasDiscount = discountedPrice && discountedPrice < originalPrice;
+
+              // DEBUG: Log pricing calculation for each item render
+              console.log(`🛍️ RENDER Item ${itemIndex + 1} (${item.product?.name}):`);
+              console.log(`🛍️   Size Variant Price: ${sizePrice}`);
+              console.log(`🛍️   Product Discounted Price: ${discountedPrice}`);
+              console.log(`🛍️   Product Regular Price: ${regularPrice}`);
+              console.log(`🛍️   Final Calculated Price: ${price}`);
+              console.log(`🛍️   Has Discount: ${hasDiscount}`);
+              console.log(`🛍️   Discount Logic: discountedPrice (${discountedPrice}) exists and < sizePrice/regularPrice (${sizePrice || regularPrice}) = ${discountedPrice && discountedPrice < (sizePrice || regularPrice)}`);
 
               return (
                 <div
@@ -213,6 +260,8 @@ export default function CartPage() {
                               {item.product.name}
                             </Link>
                           </h3>
+                          
+                          
                           
                           {/* Product Category */}
                           {item.product?.category && (
@@ -350,6 +399,7 @@ export default function CartPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Order Summary
             </h2>
+
 
             {/* Currency Information */}
             <div className="mb-4 p-3 bg-white border border-gray-200 rounded-md">

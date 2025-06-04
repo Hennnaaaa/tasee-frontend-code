@@ -17,7 +17,9 @@ import {
   Newspaper,
   User2Icon,
   LucideListOrdered,
-  ListOrderedIcon
+  ListOrderedIcon,
+  FileEditIcon,
+  Edit3Icon
 } from 'lucide-react';
 
 // Import UI components
@@ -132,6 +134,12 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
       href: '/admin/OrderManagement',
       active: pathname === '/admin/OrderManagement',
     },
+    {
+      title: 'Reviews',
+      icon: <Edit3Icon size={20} />,
+      href: '/admin/reviews',
+      active: pathname === '/admin/reviews',  
+    }
   ];
 
   // Render navigation item
