@@ -246,6 +246,13 @@ const Navbar = () => {
                       >
                         My Orders
                       </Link>
+                      <Link 
+                        href="/customer/my-reviews" 
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        My Reviews
+                      </Link>
                       <button 
                         onClick={() => {
                           logout();

@@ -11,7 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // Import API routes
 import {
@@ -35,8 +34,7 @@ export default function UserReviewsPage() {
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState(null);
   
-  // State for filters
-  const [statusFilter, setStatusFilter] = useState('all');
+  // State for pagination
   const [currentPage, setCurrentPage] = useState(1);
   
   // State for review form
@@ -51,7 +49,7 @@ export default function UserReviewsPage() {
     }
     
     fetchMyReviews();
-  }, [router, currentPage, statusFilter]);
+  }, [router, currentPage]);
 
   // Fetch user's reviews
   const fetchMyReviews = async () => {
@@ -69,7 +67,6 @@ export default function UserReviewsPage() {
         params: {
           page: currentPage,
           limit: 10,
-          status: statusFilter,
         },
         headers: {
           Authorization: `Bearer ${auth.token}`,
@@ -162,20 +159,6 @@ export default function UserReviewsPage() {
     ));
   };
 
-  // Get status badge variant
-  const getStatusBadgeVariant = (review) => {
-    if (review.isHidden) return 'destructive';
-    if (!review.isApproved) return 'secondary';
-    return 'success';
-  };
-
-  // Get status text
-  const getStatusText = (review) => {
-    if (review.isHidden) return 'Hidden';
-    if (!review.isApproved) return 'Pending';
-    return 'Approved';
-  };
-
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
       {/* Page header */}
@@ -183,7 +166,7 @@ export default function UserReviewsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">My Reviews</h1>
           <p className="text-muted-foreground">
-            Manage your product reviews and ratings
+            View and manage your product reviews and ratings
           </p>
         </div>
         <Button variant="outline" onClick={fetchMyReviews}>
@@ -191,31 +174,6 @@ export default function UserReviewsPage() {
           Refresh
         </Button>
       </div>
-
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Status</label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Reviews</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="hidden">Hidden</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Error message */}
       {error && (
@@ -248,11 +206,28 @@ export default function UserReviewsPage() {
         </Card>
       ) : (
         <div className="space-y-6">
+          {/* Reviews count */}
+          <div className="text-sm text-muted-foreground">
+            {pagination && `Showing ${reviews.length} of ${pagination.totalReviews} reviews`}
+          </div>
+
           {reviews.map((review) => (
             <Card key={review.id}>
               <CardContent className="pt-6">
                 <div className="flex flex-col md:flex-row gap-6">
-                  
+                  {/* Product Image */}
+                  {review.product?.images && review.product.images.length > 0 && (
+                    <div className="flex-shrink-0">
+                      <div className="w-24 h-24 relative bg-gray-100 rounded-lg overflow-hidden">
+                        <Image
+                          src={review.product.images[0].url}
+                          alt={review.product.name}
+                          fill
+                          className="object-cover"
+                        />
+                      </div>
+                    </div>
+                  )}
 
                   {/* Review Content */}
                   <div className="flex-grow">
@@ -266,9 +241,6 @@ export default function UserReviewsPage() {
                           <span className="text-sm text-muted-foreground">
                             {review.rating}/5
                           </span>
-                          <Badge variant={getStatusBadgeVariant(review)}>
-                            {getStatusText(review)}
-                          </Badge>
                           {review.isVerifiedPurchase && (
                             <Badge variant="outline">Verified Purchase</Badge>
                           )}
@@ -315,7 +287,7 @@ export default function UserReviewsPage() {
 
                     {/* Review Stats */}
                     <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>{review.helpfulCount} people found this helpful</span>
+                      <span>{review.helpfulCount || 0} people found this helpful</span>
                       {review.product?.price && (
                         <span>Product Price: ${review.product.price}</span>
                       )}
