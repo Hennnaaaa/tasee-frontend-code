@@ -6,15 +6,21 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/authcontext';
 import { useCurrency } from '@/contexts/currencyContext';
 import { GET_USER_ORDERS } from '@/utils/routes/orderRoutes';
+import { Button } from '@/components/ui/button';
+import { Plus } from 'lucide-react';
 import OrderCard from '@/components/orderComponents/OrderCard';
 import OrderFilters from '@/components/orderComponents/orderFilters';
 import Link from 'next/link';
-
+import ReviewForm from '@/components/customerComponents/reviews/ReviewForm';
+import axios from 'axios';
+import { getUserData } from '@/utils/auth';
+import { CREATE_REVIEW } from '@/utils/routes/reviewRoutes';
+import { toast } from 'react-toastify';
 export default function OrdersPage() {
   const { user, isAuthenticated } = useAuth();
   const { formatPrice, currentCurrency, convertPrice } = useCurrency();
   const router = useRouter();
-  
+
   const [orders, setOrders] = useState([]);
   const [pagination, setPagination] = useState({
     total: 0,
@@ -24,7 +30,7 @@ export default function OrdersPage() {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Filter states
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -32,6 +38,9 @@ export default function OrdersPage() {
   // Currency display preference
   const [showInCurrentCurrency, setShowInCurrentCurrency] = useState(false);
 
+  // State to show review form
+  const [isReviewFormOpen, setIsReviewFormOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
   // Get unique currencies from orders
   const getOrderCurrencies = () => {
     const currencies = [...new Set(orders.map(order => order.currency).filter(Boolean))];
@@ -48,13 +57,13 @@ export default function OrdersPage() {
   // Fetch orders
   const fetchOrders = async (page = 1, status = '') => {
     if (!user?.id) return;
-    
+
     setIsLoading(true);
     setError('');
-    
+
     try {
       const token = localStorage.getItem('token');
-      
+
       if (!token) {
         throw new Error('No authentication token found');
       }
@@ -124,23 +133,59 @@ export default function OrdersPage() {
   // Helper function to format order prices
   const formatOrderPrice = (amount, orderCurrency) => {
     if (!amount) return formatPrice(0);
-    
+
     // If showing in current currency and order currency differs
     if (showInCurrentCurrency && orderCurrency && orderCurrency !== currentCurrency.code) {
       // Convert and show in current currency with note
       const convertedAmount = convertPrice(amount, orderCurrency);
       return `${formatPrice(convertedAmount)} (converted from ${orderCurrency})`;
     }
-    
+
     // If order has a different currency, show in original currency
     if (orderCurrency && orderCurrency !== currentCurrency.code) {
       return `${orderCurrency} ${Number(amount).toFixed(2)}`;
     }
-    
+
     // Use current currency formatting
     return formatPrice(amount);
   };
 
+  const handleReviewSubmission = async (reviewData) => {
+    try {
+      const auth = getUserData();
+      if (!auth || !auth.token) {
+        setError('Please login to write a review');
+        setTimeout(() => setError(null), 5000);
+        return;
+      }
+      console.log('Submitting review for product:', selectedProduct);
+
+      const response = await axios.post(CREATE_REVIEW, {
+        productId: selectedProduct.productId,
+        ...reviewData,
+      }, {
+        headers: {
+          Authorization: `Bearer ${auth.token}`,
+        }
+      });
+
+      console.log('Review creation response :', response.data);
+      if (response.data.success) {
+        toast.success('Review created successfully');
+        setError(null);
+      }
+    } catch (err) {
+      console.error('Error creating review:', err);
+      if (err.response?.status === 401) {
+        toast.error('Please login to write a review');
+      } else {
+        toast.error(err.response?.data?.message || 'Error creating review');
+      }
+    } finally {
+      setIsReviewFormOpen(false);
+      setSelectedProduct(null);
+    }
+  }
   if (!isAuthenticated || !user) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -176,13 +221,13 @@ export default function OrdersPage() {
                 Your orders contain multiple currencies: {getOrderCurrencies().join(', ')}
               </p>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div className="flex items-center text-sm text-blue-800">
                 <span className="mr-2">{currentCurrency.flag}</span>
                 <span>Currently viewing in {currentCurrency.name}</span>
               </div>
-              
+
               <label className="flex items-center cursor-pointer">
                 <input
                   type="checkbox"
@@ -194,7 +239,7 @@ export default function OrdersPage() {
               </label>
             </div>
           </div>
-          
+
           {showInCurrentCurrency && (
             <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
               <span className="font-medium">Note:</span> Converted amounts are estimates based on current exchange rates and may differ from original charges.
@@ -204,7 +249,7 @@ export default function OrdersPage() {
       )}
 
       {/* Filters */}
-      <OrderFilters 
+      <OrderFilters
         statusFilter={statusFilter}
         onStatusFilterChange={handleStatusFilterChange}
       />
@@ -249,8 +294,8 @@ export default function OrdersPage() {
                 {statusFilter ? `No ${statusFilter} orders found` : 'No orders found'}
               </h3>
               <p className="text-gray-600 mb-6">
-                {statusFilter ? 
-                  'Try changing the filter to see other orders.' : 
+                {statusFilter ?
+                  'Try changing the filter to see other orders.' :
                   "You haven't placed any orders yet. Start shopping to create your first order!"
                 }
               </p>
@@ -279,7 +324,7 @@ export default function OrdersPage() {
                           Placed on {order.orderDate ? new Date(order.orderDate).toLocaleDateString() : new Date().toLocaleDateString()}
                         </p>
                       </div>
-                      
+
                       <div className="mt-2 sm:mt-0 flex items-center space-x-3">
                         {/* Currency Badge */}
                         {order.currency && (
@@ -287,15 +332,14 @@ export default function OrdersPage() {
                             {order.currency}
                           </span>
                         )}
-                        
+
                         {/* Status Badge */}
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                          order.status === 'delivered' ? 'bg-green-100 text-green-800' :
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${order.status === 'delivered' ? 'bg-green-100 text-green-800' :
                           order.status === 'shipped' ? 'bg-blue-100 text-blue-800' :
-                          order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
-                          order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                            order.status === 'processing' ? 'bg-yellow-100 text-yellow-800' :
+                              order.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                          }`}>
                           {order.status ? order.status.charAt(0).toUpperCase() + order.status.slice(1) : 'Pending'}
                         </span>
                       </div>
@@ -304,27 +348,42 @@ export default function OrdersPage() {
                     {/* Order Items Preview */}
                     {order.items && order.items.length > 0 && (
                       <div className="mb-4">
-                        <div className="flex items-center space-x-3">
+                        <div className="flex items-center justify-between space-x-3">
                           {/* Show first few items */}
                           {order.items.slice(0, 3).map((item, index) => (
-                            <div key={index} className="flex items-center space-x-2">
-                              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                                {item.productImage ? (
-                                  <img
-                                    src={item.productImage}
-                                    alt={item.productName}
-                                    className="w-full h-full object-cover rounded-lg"
-                                  />
-                                ) : (
-                                  <div className="w-6 h-6 bg-gray-300 rounded"></div>
-                                )}
+                            <div key={index} className="flex items-center justify-between w-full">
+                              {/* Product info at the start */}
+                              <div className="flex items-center space-x-2">
+                                <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                                  {item.productImage ? (
+                                    <img
+                                      src={item.productImage}
+                                      alt={item.productName}
+                                      className="w-full h-full object-cover rounded-lg"
+                                    />
+                                  ) : (
+                                    <div className="w-6 h-6 bg-gray-300 rounded"></div>
+                                  )}
+                                </div>
+                                <span className="text-sm text-gray-600 max-w-24">
+                                  {item.productName}
+                                </span>
                               </div>
-                              <span className="text-sm text-gray-600 truncate max-w-24">
-                                {item.productName}
-                              </span>
+
+                              {/* Review button at the end */}
+                              <Button
+                                onClick={() => {
+                                  setSelectedProduct(item);
+                                  setIsReviewFormOpen(true);
+                                }}
+                                className="text-sm"
+                              >
+                                <Plus className="mr-2 h-4 w-4" />
+                                Write a Review
+                              </Button>
                             </div>
                           ))}
-                          
+
                           {order.items.length > 3 && (
                             <span className="text-sm text-gray-500">
                               +{order.items.length - 3} more items
@@ -348,7 +407,7 @@ export default function OrdersPage() {
                           </p>
                         )}
                       </div>
-                      
+
                       <div className="flex space-x-3">
                         <Link
                           href={`/orders/${order.id}`}
@@ -356,18 +415,7 @@ export default function OrdersPage() {
                         >
                           View Details
                         </Link>
-                        
-                        {order.status === 'delivered' && (
-                          <button className="text-gray-600 hover:text-gray-800 text-sm font-medium">
-                            Reorder
-                          </button>
-                        )}
-                        
-                        {(order.status === 'pending' || order.status === 'processing') && (
-                          <button className="text-red-600 hover:text-red-800 text-sm font-medium">
-                            Cancel
-                          </button>
-                        )}
+
                       </div>
                     </div>
 
@@ -391,22 +439,21 @@ export default function OrdersPage() {
                   >
                     Previous
                   </button>
-                  
+
                   {/* Page Numbers */}
                   {Array.from({ length: pagination.pages }, (_, i) => i + 1).map((page) => (
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`px-3 py-2 text-sm font-medium rounded-md ${
-                        page === currentPage
-                          ? 'bg-blue-500 text-white'
-                          : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-                      }`}
+                      className={`px-3 py-2 text-sm font-medium rounded-md ${page === currentPage
+                        ? 'bg-blue-500 text-white'
+                        : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
                     >
                       {page}
                     </button>
                   ))}
-                  
+
                   <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === pagination.pages}
@@ -424,7 +471,7 @@ export default function OrdersPage() {
                     Showing {orders.length} of {pagination.total} orders
                     {statusFilter && ` with status: ${statusFilter}`}
                   </p>
-                  
+
                   {getOrderCurrencies().length > 1 && (
                     <div className="text-xs text-gray-500">
                       Orders in: {getOrderCurrencies().join(', ')}
@@ -436,6 +483,13 @@ export default function OrdersPage() {
           )}
         </>
       )}
+
+      {/* Review Form Modal */}
+      <ReviewForm
+        isOpen={isReviewFormOpen}
+        onClose={() => setIsReviewFormOpen(false)}
+        onSubmit={handleReviewSubmission}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { AddressProvider } from "@/contexts/addressContext";
 import { CurrencyProvider } from "@/contexts/currencyContext";
 import { WishlistProvider } from "@/contexts/wishlistContext"; // Match your filename case
 import { Toaster } from "@/components/ui/toaster";
+import { ToastContainer } from "react-toastify";
 import ConditionalLayout from "../components/ConditionalLayout";
 
 const inter = Inter({ subsets: ["latin"] });
