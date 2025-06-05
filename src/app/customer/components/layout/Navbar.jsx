@@ -25,6 +25,13 @@ const Navbar = () => {
   useEffect(() => {
     setIsClient(true);
   }, []);
+  useEffect(() => {
+  // Check if admin user is accessing customer interface
+  if (isClient && isAuthenticated && user?.role === 'admin') {
+    console.log('🚫 Admin user detected in customer navbar, logging out...');
+    logout();
+  }
+}, [isClient, isAuthenticated, user, logout]);
 
   // Fetch categories on component mount
   useEffect(() => {
@@ -81,7 +88,7 @@ const Navbar = () => {
             <div className="flex-shrink-0">
               <Link href="/customer/home" className="flex items-center">
                 <img 
-                  src="/images/tasee-logo.png" 
+                  src="/tasee_30x.png" 
                   alt="Tasee" 
                   className="h-8 w-auto object-contain"
                 />

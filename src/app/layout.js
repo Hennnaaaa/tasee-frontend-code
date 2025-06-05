@@ -1,5 +1,4 @@
 // app/layout.js
-
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "@/contexts/authcontext";
@@ -8,11 +7,9 @@ import { AddressProvider } from "@/contexts/addressContext";
 import { CurrencyProvider } from "@/contexts/currencyContext";
 import { WishlistProvider } from "@/contexts/wishlistContext"; // Match your filename case
 import { Toaster } from "@/components/ui/toaster";
-import { ToastContainer } from "react-toastify";
+// import { ToastContainer } from "react-toastify";
 import ConditionalLayout from "../components/ConditionalLayout";
-
 const inter = Inter({ subsets: ["latin"] });
-
 export const metadata = {
   title: "Tasee - Premium Women's Fashion",
   description: "Discover the latest trends in women's clothing and accessories",

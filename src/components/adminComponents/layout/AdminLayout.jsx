@@ -231,13 +231,7 @@ const AdminLayout = ({ children }) => {
                 <h1 className="text-xl font-semibold text-gray-800">
                   {pageTitle}
                 </h1>
-                {/* Polling status indicator */}
-                <div className="flex items-center mt-1">
-                  <div className={`w-2 h-2 rounded-full mr-2 ${isPolling ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-xs text-gray-500">
-                    {isPolling ? 'Live notifications' : 'Disconnected'}
-                  </span>
-                </div>
+               
               </div>
             </div>
             

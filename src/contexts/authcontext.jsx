@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.jsx - Fixed for hydration
+// src/contexts/AuthContext.jsx - Fixed for shared login with role-based redirection
 "use client"
  
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -50,7 +50,8 @@ export const AuthProvider = ({ children }) => {
       'authExpiry',
       'refreshToken',
       'userPreferences',
-      'recentlyViewed'
+      'recentlyViewed',
+      'adminToken' // Add adminToken to cleanup
     ];
     
     // Remove each key
@@ -61,16 +62,94 @@ export const AuthProvider = ({ children }) => {
       }
     });
     
-    // Optional: Clear any keys that start with 'user_' or 'auth_'
+    // Optional: Clear any keys that start with 'user_' or 'auth_' or 'admin_'
     const allKeys = Object.keys(localStorage);
     allKeys.forEach(key => {
-      if (key.startsWith('user_') || key.startsWith('auth_')) {
+      if (key.startsWith('user_') || key.startsWith('auth_') || key.startsWith('admin_')) {
         console.log(`🔍 Removing prefixed key ${key} from localStorage`);
         localStorage.removeItem(key);
       }
     });
     
     console.log('🔍 localStorage cleanup completed');
+  };
+
+  // ⭐ NEW: Function to clear only admin session without affecting cart
+  const clearAdminSessionOnly = () => {
+    if (typeof window === 'undefined') return;
+    
+    console.log('🔍 Clearing admin session only (preserving guest cart)...');
+    
+    // Only clear auth-related data, preserve cart
+    const keysToRemove = [
+      'token',
+      'user',
+      'adminToken',
+      'authExpiry',
+      'refreshToken'
+    ];
+    
+    keysToRemove.forEach(key => {
+      if (localStorage.getItem(key)) {
+        console.log(`🔍 Removing ${key} from localStorage`);
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Clear user state
+    setUser(null);
+    
+    // ⭐ CRITICAL: Trigger cart context to refresh and handle the user change
+    setTimeout(() => {
+      triggerCartUpdate();
+      
+      // Force cart to reinitialize as guest cart
+      if (window.cartLogoutCallback) {
+        console.log('🔍 Calling cart logout callback to switch to guest mode...');
+        window.cartLogoutCallback();
+      }
+    }, 100);
+    
+    // Show notification
+    setTimeout(() => {
+      alert('Admin users cannot access the customer interface. You have been logged out.');
+    }, 200);
+    
+    console.log('🔍 Admin session cleared, switching to guest cart mode');
+  };
+
+  // ⭐ Helper function to force refresh user data for cart context
+  const refreshUserData = () => {
+    if (typeof window === 'undefined') return;
+    
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    
+    if (token && userData) {
+      try {
+        const parsedUser = JSON.parse(userData);
+        // Only set user if it's not admin on customer interface
+        if (!(parsedUser.role === 'admin' || parsedUser.role === 'ADMIN') || !isCustomerInterface()) {
+          setUser(parsedUser);
+        }
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    } else {
+      setUser(null);
+    }
+    
+    // Always trigger cart update
+    triggerCartUpdate();
+  };
+  const isCustomerInterface = () => {
+    if (typeof window === 'undefined') return false;
+    const currentPath = window.location.pathname;
+    return !currentPath.startsWith('/admin') && 
+           !currentPath.includes('/login') && 
+           !currentPath.includes('/signup') &&
+           !currentPath.includes('/verify-otp') &&
+           !currentPath.includes('/forgot-password');
   };
 
   // Check for existing token and user data on mount
@@ -91,15 +170,35 @@ export const AuthProvider = ({ children }) => {
       if (token) {
         const userData = JSON.parse(localStorage.getItem('user') || 'null');
         if (userData) {
-          setUser(userData);
-          // Don't trigger cart merge on initial load
+          
+          // ⭐ CRITICAL: Check if admin user is on customer interface pages
+          if ((userData.role === 'admin' || userData.role === 'ADMIN') && isCustomerInterface()) {
+            console.log('🚫 Admin user detected on customer interface. Clearing admin session only...');
+            
+            // Clear only admin session, preserve guest cart
+            clearAdminSessionOnly();
+            
+            setLoading(false);
+            return;
+          }
+          
+          // ⭐ Only set user state if they're on appropriate interface
+          if (userData.role === 'admin' || userData.role === 'ADMIN') {
+            // Admin user - only set state if on admin pages or auth pages
+            if (!isCustomerInterface()) {
+              setUser(userData);
+            }
+          } else {
+            // Customer user - can access customer interface
+            setUser(userData);
+          }
         } else {
           localStorage.removeItem('token');
         }
       }
     } catch (error) {
       console.error('Auth initialization error:', error);
-      clearAllUserData(); // Use enhanced cleanup
+      clearAllUserData();
     } finally {
       setLoading(false);
     }
@@ -188,95 +287,103 @@ export const AuthProvider = ({ children }) => {
     }
   };
  
- const loginWithRole = async (email, password, expectedRole = null) => {
-  if (!isClient) return { success: false, error: 'Not initialized' };
-  
-  try {
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
+  const loginWithRole = async (email, password, expectedRole = null) => {
+    if (!isClient) return { success: false, error: 'Not initialized' };
+    
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
+     
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password }),
-    });
- 
-    if (!response.ok) {
-      const text = await response.text();
-      console.error('Login error response:', text);
-      return { success: false, error: `Server error: ${response.status}` };
-    }
- 
-    const data = await response.json();
-   
-    if (data.success && data.data) {
-      if (expectedRole && data.data.user.role !== expectedRole) {
-        return {
-          success: false,
-          error: `Access denied. You don't have ${expectedRole} privileges.`
-        };
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Login error response:', text);
+        return { success: false, error: `Server error: ${response.status}` };
       }
+   
+      const data = await response.json();
      
-      console.log('🔍 === AUTH LOGIN DEBUG ===');
-      console.log('🔍 Login successful, user:', data.data.user);
-     
-      // Check if guest cart exists before login
-      const guestCartBeforeLogin = localStorage.getItem('guestCart');
-      console.log('🔍 Guest cart before login:', guestCartBeforeLogin);
-      const hasGuestCart = guestCartBeforeLogin && JSON.parse(guestCartBeforeLogin).length > 0;
-     
-      // Save token and user data FIRST
-      localStorage.setItem('token', data.data.token);
-      localStorage.setItem('user', JSON.stringify(data.data.user));
-      setUser(data.data.user);
-     
-      console.log('🔍 User state updated, triggering cart operations...');
-     
-      // Trigger cart operations with proper sequencing
-      setTimeout(async () => {
-        console.log('🔍 Triggering cart update and merge...');
-       
-        // Trigger cart context to detect user change
-        triggerCartUpdate();
-       
-        // If there's a guest cart, trigger merge
-        if (hasGuestCart && window.cartInitCallback) {
-          console.log('🔍 Calling cartInitCallback with merge = true');
-          await window.cartInitCallback(data.data.user, true);
-        } else if (window.cartInitCallback) {
-          console.log('🔍 Calling cartInitCallback without merge');
-          await window.cartInitCallback(data.data.user, false);
+      if (data.success && data.data) {
+        
+        // ⭐ Role-based access control (only if expectedRole is specified)
+        if (expectedRole && data.data.user.role !== expectedRole) {
+          return {
+            success: false,
+            error: `Access denied. You don't have ${expectedRole} privileges.`
+          };
         }
        
-        // Force a cart refresh after a short delay to ensure everything is synced
+        console.log('🔍 === AUTH LOGIN DEBUG ===');
+        console.log('🔍 Login successful, user:', data.data.user);
+       
+        // Save token and user data FIRST
+        localStorage.setItem('token', data.data.token);
+        localStorage.setItem('user', JSON.stringify(data.data.user));
+        setUser(data.data.user);
+       
+        // ⭐ Handle cart operations only for customer users
+        if (data.data.user.role === 'customer') {
+          // Check if guest cart exists before login
+          const guestCartBeforeLogin = localStorage.getItem('guestCart');
+          console.log('🔍 Guest cart before login:', guestCartBeforeLogin);
+          const hasGuestCart = guestCartBeforeLogin && JSON.parse(guestCartBeforeLogin).length > 0;
+          
+          console.log('🔍 User state updated, triggering cart operations...');
+         
+          // Trigger cart operations with proper sequencing
+          setTimeout(async () => {
+            console.log('🔍 Triggering cart update and merge...');
+           
+            // Trigger cart context to detect user change
+            triggerCartUpdate();
+           
+            // If there's a guest cart, trigger merge
+            if (hasGuestCart && window.cartInitCallback) {
+              console.log('🔍 Calling cartInitCallback with merge = true');
+              await window.cartInitCallback(data.data.user, true);
+            } else if (window.cartInitCallback) {
+              console.log('🔍 Calling cartInitCallback without merge');
+              await window.cartInitCallback(data.data.user, false);
+            }
+           
+            // Force a cart refresh after a short delay to ensure everything is synced
+            setTimeout(() => {
+              if (window.forceCartRefresh) {
+                console.log('🔍 Force refreshing cart...');
+                window.forceCartRefresh();
+              }
+            }, 200);
+           
+          }, 300);
+        }
+       
+        // ⭐ Role-based redirection with delay to allow cart operations
         setTimeout(() => {
-          if (window.forceCartRefresh) {
-            console.log('🔍 Force refreshing cart...');
-            window.forceCartRefresh();
+          if (data.data.user.role === 'admin' || data.data.user.role === 'ADMIN') {
+            console.log('🔍 Redirecting admin to dashboard...');
+            router.push('/admin/dashboard');
+          } else {
+            console.log('🔍 Redirecting customer to home...');
+            router.push('/customer/home');
           }
-        }, 200);
+        }, data.data.user.role === 'customer' ? 500 : 100); // Longer delay for customers due to cart operations
        
-      }, 300);
-     
-      // Redirect based on role (after cart operations)
-      setTimeout(() => {
-        if (data.data.user.role === 'admin') {
-          router.push('/admin/dashboard');
-        } else {
-          router.push('/customer/home');
-        }
-      }, 500);
-     
-      return { success: true };
+        return { success: true };
+      }
+      return { success: false, error: data.message || 'Login failed' };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error: error.message };
     }
-    return { success: false, error: data.message || 'Login failed' };
-  } catch (error) {
-    console.error('Login error:', error);
-    return { success: false, error: error.message };
-  }
-};
+  };
  
+  // ⭐ Updated login function - no role restriction for shared login page
   const login = async (email, password) => {
-    return loginWithRole(email, password, null);
+    return loginWithRole(email, password, null); // Allow any role
   };
 
   // Enhanced logout function with complete cleanup
@@ -284,12 +391,14 @@ export const AuthProvider = ({ children }) => {
     try {
       console.log('🔍 === LOGOUT PROCESS STARTING ===');
       
+      const currentUser = user; // Store current user for role-specific cleanup
+      
       // 1. Clear user state immediately
       setUser(null);
       console.log('🔍 User state cleared');
       
-      // 2. Call cart logout callback if available
-      if (typeof window !== 'undefined' && window.cartLogoutCallback) {
+      // 2. Call cart logout callback if available (only for customer users)
+      if (typeof window !== 'undefined' && window.cartLogoutCallback && currentUser?.role === 'customer') {
         console.log('🔍 Calling cart logout callback...');
         window.cartLogoutCallback();
       }
@@ -297,8 +406,10 @@ export const AuthProvider = ({ children }) => {
       // 3. Clear all localStorage data
       clearAllUserData();
       
-      // 4. Trigger cart update to reflect logout
-      triggerCartUpdate();
+      // 4. Trigger cart update to reflect logout (only for customer users)
+      if (currentUser?.role === 'customer') {
+        triggerCartUpdate();
+      }
       
       // 5. Optional: Call logout API endpoint to invalidate server-side token
       try {
@@ -321,9 +432,14 @@ export const AuthProvider = ({ children }) => {
         // Don't throw - this is not critical for client-side logout
       }
       
-      // 6. Navigate to home page
-      console.log('🔍 Redirecting to home page...');
-      router.push('/customer/home');
+      // 6. Navigate based on user role - UPDATED for customer home preservation
+      console.log('🔍 Redirecting after logout...');
+      if (currentUser?.role === 'admin' || currentUser?.role === 'ADMIN') {
+        router.push('/login'); // Redirect admin to login page
+      } else {
+        // ⭐ Keep customer on /customer/home after logout
+        router.push('/customer/home'); 
+      }
       
       console.log('🔍 === LOGOUT PROCESS COMPLETED ===');
       
@@ -332,7 +448,7 @@ export const AuthProvider = ({ children }) => {
       // Even if there's an error, ensure basic cleanup
       setUser(null);
       clearAllUserData();
-      router.push('/customer/home');
+      router.push('/login'); // Fallback to main login page
     }
   };
  
@@ -349,21 +465,51 @@ export const AuthProvider = ({ children }) => {
     if (typeof window === 'undefined') return false;
     
     const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const userStr = localStorage.getItem('user');
     
-    if (!token || !user) {
+    if (!token || !userStr) {
       return false;
     }
     
     try {
-      // Basic token validation (you might want to add expiry checking)
-      const userData = JSON.parse(user);
+      const userData = JSON.parse(userStr);
+      
+      // ⭐ Additional check: Admin users should not have valid tokens on customer interface
+      if ((userData.role === 'admin' || userData.role === 'ADMIN') && isCustomerInterface()) {
+        console.log('🚫 Admin token detected on customer interface during validity check');
+        return false;
+      }
+      
       return !!userData.id;
     } catch (error) {
       console.error('Token validation error:', error);
       return false;
     }
   };
+
+  // ⭐ Function to handle role-based interface access
+  const checkInterfaceAccess = () => {
+    if (!isClient || !user) return true;
+    
+    // ONLY check admin users, don't interfere with guest or customer users
+    if ((user.role === 'admin' || user.role === 'ADMIN') && isCustomerInterface()) {
+      console.log('🚫 Admin user trying to access customer interface. Logging out admin only...');
+      
+      // Clear admin session WITHOUT affecting cart functionality
+      clearAdminSessionOnly();
+      
+      return false;
+    }
+    
+    return true;
+  };
+
+  // ⭐ Run interface access check ONLY when user changes and ONLY for admin users
+  useEffect(() => {
+    if (isClient && user && (user.role === 'admin' || user.role === 'ADMIN')) {
+      checkInterfaceAccess();
+    }
+  }, [user, isClient]);
 
   // CRITICAL: Provide different values based on client-side state
   const contextValue = isClient ? {
@@ -379,7 +525,9 @@ export const AuthProvider = ({ children }) => {
     hasRole,
     loading,
     checkTokenValidity,
-    clearAllUserData
+    clearAllUserData,
+    clearAdminSessionOnly,
+    checkInterfaceAccess
   } : {
     // SSR-safe default values
     user: null,
@@ -394,7 +542,9 @@ export const AuthProvider = ({ children }) => {
     hasRole: () => false,
     loading: true,
     checkTokenValidity: () => false,
-    clearAllUserData: () => {}
+    clearAllUserData: () => {},
+    clearAdminSessionOnly: () => {},
+    checkInterfaceAccess: () => true
   };
 
   return (

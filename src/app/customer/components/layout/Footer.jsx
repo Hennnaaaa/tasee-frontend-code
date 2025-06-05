@@ -40,7 +40,11 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand & Description */}
           <div className="col-span-1 md:col-span-1">
-            <h2 className="text-xl font-bold mb-4">Tasee</h2>
+           <img 
+                  src="/tasee_30x_white.png" 
+                  alt="Tasee" 
+                  className="h-10 w-auto object-contain"
+                /><br></br>
             <p className="text-gray-400 mb-4">
               Premium women's fashion for every occasion. Discover the latest trends and timeless classics.
             </p>
