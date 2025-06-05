@@ -3,9 +3,12 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Heart } from 'lucide-react';
 import { getProductById } from '@/utils/routes/customerRoutes';
 import { useCart } from '@/contexts/cartContext';
 import { useCurrency } from '@/contexts/currencyContext';
+import { useWishlist } from '@/contexts/wishlistContext';
+import { getUserData } from '@/utils/auth';
 
 // Import the ProductReviews component
 import ProductReviews from '@/components/customerComponents/reviews/ProductReview';
@@ -14,6 +17,8 @@ export default function ProductDetailsPage({ params }) {
   const router = useRouter();
   const { addToCart, cartCount } = useCart();
   const { formatPrice, currentCurrency } = useCurrency();
+  const { toggleWishlist, checkWishlistStatus } = useWishlist();
+  
   const [productId, setProductId] = useState(null);
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -22,6 +27,7 @@ export default function ProductDetailsPage({ params }) {
   const [quantity, setQuantity] = useState(1);
   const [addingToCart, setAddingToCart] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
 
   // Image gallery state
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -30,6 +36,19 @@ export default function ProductDetailsPage({ params }) {
   // Zoom state
   const [isZooming, setIsZooming] = useState(false);
   const [zoomStyle, setZoomStyle] = useState({});
+
+  // Check authentication and wishlist status
+  const authData = getUserData();
+  const isAuthenticated = !!(authData?.token);
+  const [isInWishlist, setIsInWishlist] = useState(false);
+
+  // Check wishlist status when product changes
+  useEffect(() => {
+    if (product?.id) {
+      const wishlistStatus = checkWishlistStatus(product.id);
+      setIsInWishlist(wishlistStatus);
+    }
+  }, [product?.id, checkWishlistStatus]);
 
   // Handle params unwrapping for Next.js 15
   useEffect(() => {
@@ -84,6 +103,30 @@ export default function ProductDetailsPage({ params }) {
 
     fetchProductDetails();
   }, [productId]);
+
+  // Handle wishlist toggle
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Check authentication using token from localStorage
+    const authData = getUserData();
+    if (!authData?.token) {
+      showNotification('error', 'Please log in to manage your wishlist.');
+      return;
+    }
+
+    setIsWishlistLoading(true);
+    try {
+      await toggleWishlist(product.id, null, product);
+      showNotification('success', isInWishlist ? 'Removed from wishlist' : 'Added to wishlist');
+    } catch (error) {
+      console.error('Failed to toggle wishlist:', error);
+      showNotification('error', 'Failed to update wishlist. Please try again.');
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
 
   const handleSizeSelect = (size) => {
     console.log("📦 Size selected:", size);
@@ -328,6 +371,30 @@ export default function ProductDetailsPage({ params }) {
               onMouseLeave={handleMouseLeave}
               onMouseMove={handleMouseMove}
             >
+              {/* Wishlist Button - Top Right */}
+              <div className="absolute top-6 right-6 z-30">
+                <button
+                  onClick={handleWishlistToggle}
+                  disabled={isWishlistLoading}
+                  className={`
+                    p-4 rounded-full transition-all duration-300 shadow-xl backdrop-blur-md
+                    ${isInWishlist 
+                      ? 'bg-red-500/90 text-white hover:bg-red-600 hover:scale-110' 
+                      : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500 hover:scale-110'
+                    }
+                    ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                    transform
+                  `}
+                  aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+                >
+                  <Heart 
+                    className={`w-6 h-6 transition-all duration-200 ${
+                      isInWishlist ? 'fill-current' : ''
+                    } ${isWishlistLoading ? 'animate-pulse' : ''}`}
+                  />
+                </button>
+              </div>
+
               {productImages.length > 0 && !imageError ? (
                 <>
                   {/* Advanced Zoom Container */}
@@ -363,7 +430,7 @@ export default function ProductDetailsPage({ params }) {
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-md hover:bg-white rounded-full p-4 shadow-xl transition-all duration-300 hover:scale-110 opacity-0 hover:opacity-100 z-10"
+                        className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-md hover:bg-white rounded-full p-4 shadow-xl transition-all duration-300 hover:scale-110 opacity-0 hover:opacity-100 z-10 mr-20"
                       >
                         <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -374,14 +441,14 @@ export default function ProductDetailsPage({ params }) {
 
                   {/* Image counter */}
                   {hasMultipleImages && (
-                    <div className="absolute top-6 right-6 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-medium tracking-wide">
+                    <div className="absolute top-6 left-6 bg-black/80 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-medium tracking-wide">
                       {currentImageIndex + 1} / {productImages.length}
                     </div>
                   )}
 
                   {/* Stock status badge */}
                   {isLowStockDisplay && (
-                    <div className="absolute top-6 left-6 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-lg animate-pulse">
+                    <div className="absolute top-20 left-6 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-5 py-2.5 rounded-full text-sm font-semibold shadow-lg animate-pulse">
                       <span className="flex items-center">
                         <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92z" clipRule="evenodd" />
@@ -682,6 +749,30 @@ export default function ProductDetailsPage({ params }) {
               width: '100%'
             }}
           >
+            {/* Wishlist Button - Top Right (Mobile) */}
+            <div className="absolute top-4 right-4 z-30">
+              <button
+                onClick={handleWishlistToggle}
+                disabled={isWishlistLoading}
+                className={`
+                  p-3 rounded-full transition-all duration-300 shadow-lg backdrop-blur-sm
+                  ${isInWishlist 
+                    ? 'bg-red-500/90 text-white hover:bg-red-600' 
+                    : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500'
+                  }
+                  ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                  transform hover:scale-110
+                `}
+                aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+              >
+                <Heart 
+                  className={`w-5 h-5 transition-all duration-200 ${
+                    isInWishlist ? 'fill-current' : ''
+                  } ${isWishlistLoading ? 'animate-pulse' : ''}`}
+                />
+              </button>
+            </div>
+
             {productImages.length > 0 && !imageError ? (
               <>
                 <div className="relative w-full h-full overflow-hidden bg-white">
@@ -710,7 +801,7 @@ export default function ProductDetailsPage({ params }) {
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full p-3 shadow-lg transition-all duration-300 z-10"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full p-3 shadow-lg transition-all duration-300 z-10 mr-16"
                     >
                       <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -721,14 +812,14 @@ export default function ProductDetailsPage({ params }) {
 
                 {/* Mobile Image counter */}
                 {hasMultipleImages && (
-                  <div className="absolute top-4 right-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
+                  <div className="absolute top-4 left-4 bg-black/70 backdrop-blur-sm text-white px-3 py-1.5 rounded-full text-sm font-medium">
                     {currentImageIndex + 1} / {productImages.length}
                   </div>
                 )}
 
                 {/* Mobile Stock status badge */}
                 {isLowStockDisplay && (
-                  <div className="absolute top-4 left-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold">
+                  <div className="absolute top-16 left-4 bg-gradient-to-r from-amber-400 to-orange-500 text-white px-3 py-1.5 rounded-full text-xs font-semibold">
                     <span className="flex items-center">
                       <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92z" clipRule="evenodd" />

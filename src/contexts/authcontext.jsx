@@ -1,4 +1,4 @@
-// src/contexts/AuthContext.jsx - Enhanced with complete logout functionality
+// src/contexts/AuthContext.jsx - Fixed for hydration
 "use client"
  
 import { createContext, useContext, useState, useEffect } from 'react';
@@ -12,16 +12,29 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [pendingEmail, setPendingEmail] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // CRITICAL: Add client-side hydration protection
+  const [isClient, setIsClient] = useState(false);
+  
   const router = useRouter();
+
+  // Ensure client-side rendering
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
  
   // Helper function to trigger cart context update
   const triggerCartUpdate = () => {
     // Dispatch custom event that cart context listens for
-    window.dispatchEvent(new CustomEvent('authChange'));
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('authChange'));
+    }
   };
 
   // Enhanced function to clear all user-related localStorage data
   const clearAllUserData = () => {
+    if (typeof window === 'undefined') return;
+    
     console.log('🔍 Clearing all user data from localStorage...');
     
     // List of all possible keys that should be cleared on logout
@@ -62,30 +75,39 @@ export const AuthProvider = ({ children }) => {
 
   // Check for existing token and user data on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const userData = JSON.parse(localStorage.getItem('user') || 'null');
-          if (userData) {
-            setUser(userData);
-            // Don't trigger cart merge on initial load
-          } else {
-            localStorage.removeItem('token');
-          }
-        }
-      } catch (error) {
-        console.error('Auth initialization error:', error);
-        clearAllUserData(); // Use enhanced cleanup
-      } finally {
+    if (isClient) {
+      checkAuth();
+    }
+  }, [isClient]);
+
+  const checkAuth = async () => {
+    try {
+      if (typeof window === 'undefined') {
         setLoading(false);
+        return;
       }
-    };
- 
-    checkAuth();
-  }, []);
+      
+      const token = localStorage.getItem('token');
+      if (token) {
+        const userData = JSON.parse(localStorage.getItem('user') || 'null');
+        if (userData) {
+          setUser(userData);
+          // Don't trigger cart merge on initial load
+        } else {
+          localStorage.removeItem('token');
+        }
+      }
+    } catch (error) {
+      console.error('Auth initialization error:', error);
+      clearAllUserData(); // Use enhanced cleanup
+    } finally {
+      setLoading(false);
+    }
+  };
  
   const signup = async (userData) => {
+    if (!isClient) return { success: false, error: 'Not initialized' };
+    
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/create`;
       console.log('Signup URL:', url);
@@ -130,6 +152,8 @@ export const AuthProvider = ({ children }) => {
   };
  
   const verifyOTP = async (email, otp) => {
+    if (!isClient) return { success: false, error: 'Not initialized' };
+    
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/verify-OTP`;
       console.log('Verify OTP URL:', url);
@@ -165,6 +189,8 @@ export const AuthProvider = ({ children }) => {
   };
  
  const loginWithRole = async (email, password, expectedRole = null) => {
+  if (!isClient) return { success: false, error: 'Not initialized' };
+  
   try {
     const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
    
@@ -263,7 +289,7 @@ export const AuthProvider = ({ children }) => {
       console.log('🔍 User state cleared');
       
       // 2. Call cart logout callback if available
-      if (window.cartLogoutCallback) {
+      if (typeof window !== 'undefined' && window.cartLogoutCallback) {
         console.log('🔍 Calling cart logout callback...');
         window.cartLogoutCallback();
       }
@@ -276,17 +302,19 @@ export const AuthProvider = ({ children }) => {
       
       // 5. Optional: Call logout API endpoint to invalidate server-side token
       try {
-        const token = localStorage.getItem('token');
-        if (token) {
-          const logoutUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/logout`;
-          await fetch(logoutUrl, {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          console.log('🔍 Server-side logout completed');
+        if (typeof window !== 'undefined') {
+          const token = localStorage.getItem('token');
+          if (token) {
+            const logoutUrl = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/logout`;
+            await fetch(logoutUrl, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            });
+            console.log('🔍 Server-side logout completed');
+          }
         }
       } catch (apiError) {
         console.warn('🔍 Server-side logout failed (non-critical):', apiError);
@@ -318,6 +346,8 @@ export const AuthProvider = ({ children }) => {
 
   // Helper function to check if user session is still valid
   const checkTokenValidity = () => {
+    if (typeof window === 'undefined') return false;
+    
     const token = localStorage.getItem('token');
     const user = localStorage.getItem('user');
     
@@ -335,22 +365,40 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // CRITICAL: Provide different values based on client-side state
+  const contextValue = isClient ? {
+    user,
+    pendingEmail,
+    signup,
+    verifyOTP,
+    login,
+    loginWithRole,
+    logout,
+    isAuthenticated: !!user,
+    isAdmin,
+    hasRole,
+    loading,
+    checkTokenValidity,
+    clearAllUserData
+  } : {
+    // SSR-safe default values
+    user: null,
+    pendingEmail: '',
+    signup: async () => ({ success: false, error: 'Not initialized' }),
+    verifyOTP: async () => ({ success: false, error: 'Not initialized' }),
+    login: async () => ({ success: false, error: 'Not initialized' }),
+    loginWithRole: async () => ({ success: false, error: 'Not initialized' }),
+    logout: async () => {},
+    isAuthenticated: false,
+    isAdmin: () => false,
+    hasRole: () => false,
+    loading: true,
+    checkTokenValidity: () => false,
+    clearAllUserData: () => {}
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      pendingEmail,
-      signup,
-      verifyOTP,
-      login,
-      loginWithRole,
-      logout,
-      isAuthenticated: !!user,
-      isAdmin,
-      hasRole,
-      loading,
-      checkTokenValidity,
-      clearAllUserData // Expose for emergency cleanup
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

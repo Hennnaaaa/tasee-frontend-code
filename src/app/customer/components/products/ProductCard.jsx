@@ -1,16 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { Heart } from 'lucide-react';
 import { useCurrency } from '@/contexts/currencyContext';
+import { useWishlist } from '@/contexts/wishlistContext';
+import { getUserData } from '@/utils/auth';
 
 const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [isWishlistLoading, setIsWishlistLoading] = useState(false);
+  const [isInWishlist, setIsInWishlist] = useState(false);
   
   // Currency context
   const { formatPrice, currentCurrency } = useCurrency();
+  
+  // Wishlist and Currency contexts
+  const { toggleWishlist, checkWishlistStatus } = useWishlist();
+  
+  // Check authentication using localStorage token
+  const authData = getUserData();
+  const isAuthenticated = !!(authData?.token);
+  const userData = authData?.userData;
+  
+  // Check wishlist status when product changes
+  useEffect(() => {
+    if (product?.id) {
+      const wishlistStatus = checkWishlistStatus(product.id);
+      setIsInWishlist(wishlistStatus);
+    }
+  }, [product?.id, checkWishlistStatus]);
   
   // Get product images
   const productImages = product.images || [];
@@ -47,6 +68,35 @@ const ProductCard = ({ product }) => {
   // Check if it's low stock (less than 10 items)
   const isLowStock = hasInventory && totalInventory < 10;
 
+  // Handle wishlist toggle
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Check authentication using token from localStorage
+    const authData = getUserData();
+    if (!authData?.token) {
+      // Show authentication required message
+      alert('Authentication required. Please log in to manage your wishlist.');
+      // Optional: redirect to login
+      // window.location.href = '/login';
+      return;
+    }
+
+    setIsWishlistLoading(true);
+    try {
+      await toggleWishlist(product.id, null, product);
+      // Update local state after successful toggle
+      setIsInWishlist(!isInWishlist);
+    } catch (error) {
+      console.error('Failed to toggle wishlist:', error);
+      // Show error message
+      alert('Failed to update wishlist. Please try again.');
+    } finally {
+      setIsWishlistLoading(false);
+    }
+  };
+
   // Handle image navigation
   const nextImage = (e) => {
     e.preventDefault();
@@ -76,6 +126,30 @@ const ProductCard = ({ product }) => {
     >
       <Link href={`/customer/products/${product.id}`}>
         <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 w-full">
+          {/* Wishlist Button - Top Left */}
+          <div className="absolute top-6 left-6 z-20">
+            <button
+              onClick={handleWishlistToggle}
+              disabled={isWishlistLoading}
+              className={`
+                p-3 rounded-full transition-all duration-300 shadow-lg backdrop-blur-sm
+                ${isInWishlist 
+                  ? 'bg-red-500/90 text-white hover:bg-red-600' 
+                  : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500'
+                }
+                ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+                transform hover:scale-110
+              `}
+              aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+            >
+              <Heart 
+                className={`w-5 h-5 transition-all duration-200 ${
+                  isInWishlist ? 'fill-current' : ''
+                } ${isWishlistLoading ? 'animate-pulse' : ''}`}
+              />
+            </button>
+          </div>
+
           {/* Product Images */}
           {productImages.length > 0 && !imageError ? (
             <>
@@ -91,7 +165,7 @@ const ProductCard = ({ product }) => {
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 transition-all duration-200 shadow-lg"
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 transition-all duration-200 shadow-lg z-10"
                   >
                     <svg className="w-5 h-5 text-stone-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 19l-7-7 7-7" />
@@ -99,7 +173,7 @@ const ProductCard = ({ product }) => {
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 transition-all duration-200 shadow-lg"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 transition-all duration-200 shadow-lg z-10"
                   >
                     <svg className="w-5 h-5 text-stone-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
@@ -107,7 +181,7 @@ const ProductCard = ({ product }) => {
                   </button>
                   
                   {/* Image Indicators */}
-                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
                     {productImages.map((_, index) => (
                       <button
                         key={index}
@@ -146,7 +220,7 @@ const ProductCard = ({ product }) => {
 
           {/* Discount badge */}
           {discountPercentage > 0 && (
-            <div className="absolute top-6 right-6">
+            <div className="absolute top-6 right-6 z-10">
               <span className="bg-red-600 text-white text-sm font-light px-4 py-2 tracking-wider">
                 {discountPercentage}% OFF
               </span>
@@ -155,13 +229,13 @@ const ProductCard = ({ product }) => {
 
           {/* Low stock warning - UPDATED: Only show for products with less than 10 items */}
           {isLowStock && (
-            <div className="absolute top-6 left-6 bg-yellow-500 text-white text-xs font-light px-3 py-1 tracking-wider">
+            <div className="absolute top-20 left-6 bg-yellow-500 text-white text-xs font-light px-3 py-1 tracking-wider z-10">
               ONLY {totalInventory} LEFT
             </div>
           )}
 
           {/* Lock icon for secured products */}
-          <div className="absolute bottom-6 right-6">
+          <div className="absolute bottom-6 right-6 z-10">
             <div className="bg-black/80 text-white p-2 rounded-full">
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
@@ -171,7 +245,7 @@ const ProductCard = ({ product }) => {
           
           {/* Out of stock overlay */}
           {!hasInventory && (
-            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
               <div className="bg-white px-8 py-4 font-light text-stone-800 tracking-widest text-lg">
                 OUT OF STOCK
               </div>
@@ -179,7 +253,7 @@ const ProductCard = ({ product }) => {
           )}
 
           {/* Hover overlay with quick actions */}
-          <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 ${
+          <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 z-10 ${
             isHovered ? 'opacity-100' : 'opacity-0'
           }`}>
             <div className="text-center">
@@ -194,7 +268,7 @@ const ProductCard = ({ product }) => {
       {/* Product Information */}
       <div className="p-8 bg-white text-center">
         {/* Product Name */}
-        <Link href={`/products/${product.id}`}>
+        <Link href={`/customer/products/${product.id}`}>
           <h3 className="text-lg font-normal text-stone-800 mb-2 hover:text-stone-600 transition-colors tracking-wide uppercase">
             {product.name}
           </h3>
@@ -233,6 +307,14 @@ const ProductCard = ({ product }) => {
         <div className="text-xs text-stone-400 mb-2 font-light tracking-wider">
           PRICE IN {currentCurrency.name.toUpperCase()}
         </div>
+
+        {/* Wishlist Status Indicator (Optional) */}
+        {isInWishlist && (
+          <div className="text-xs text-red-500 mb-2 font-light tracking-wider flex items-center justify-center gap-1">
+            <Heart className="w-3 h-3 fill-current" />
+            IN WISHLIST
+          </div>
+        )}
 
         {/* Stock Status - UPDATED: Only show count for low stock items */}
         <div className="text-xs font-light tracking-wide">

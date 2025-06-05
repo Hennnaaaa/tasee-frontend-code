@@ -4,11 +4,13 @@ import Link from 'next/link';
 import axios from 'axios';
 import { useCart } from '@/contexts/cartContext';
 import { useAuth } from '@/contexts/authcontext';
+import { useWishlist } from '@/contexts/wishlistContext';
 import { useCurrency, CURRENCIES } from '@/contexts/currencyContext';
 import { GET_NAVIGATION_CATEGORIES } from '@/utils/routes/productManagementRoutes';
  
 const Navbar = () => {
   const { cartCount } = useCart();
+  const { itemCount: wishlistCount } = useWishlist();
   const { user, logout, isAuthenticated } = useAuth();
   const { selectedCurrency, setSelectedCurrency, currentCurrency } = useCurrency();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -17,11 +19,19 @@ const Navbar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  // Ensure client-side rendering
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Fetch categories on component mount
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (isClient) {
+      fetchCategories();
+    }
+  }, [isClient]);
 
   const fetchCategories = async () => {
     try {
@@ -60,15 +70,68 @@ const Navbar = () => {
     setSelectedCurrency(currencyCode);
     setShowCurrencyMenu(false);
   };
+
+  // Don't render dynamic content until client-side
+  if (!isClient) {
+    return (
+      <nav className="bg-white shadow-md sticky top-0 z-50">
+        <div className="container mx-auto px-4">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <Link href="/customer/home" className="flex items-center">
+                <img 
+                  src="/images/tasee-logo.png" 
+                  alt="Tasee" 
+                  className="h-8 w-auto object-contain"
+                />
+              </Link>
+            </div>
+            
+            {/* Basic nav for SSR */}
+            <div className="hidden md:flex space-x-8">
+              <Link href="/customer/home" className="text-gray-700 hover:text-blue-500">
+                Home
+              </Link>
+            </div>
+            
+            {/* Basic icons for SSR */}
+            <div className="flex items-center space-x-4">
+              <button className="text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+              <button className="text-gray-600">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </button>
+              <Link href="/cart" className="text-gray-600 relative">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
  
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Logo */}
+          {/* Logo - Updated to use image */}
           <div className="flex-shrink-0">
-            <Link href="/customer/home" className="text-xl font-bold text-blue-600">
-              Tasee
+            <Link href="/customer/home" className="flex items-center">
+              <img 
+                src="/tasee_30x.png" 
+                alt="Tasee" 
+                className="h-6 w-auto object-contain"
+                // You can adjust the height as needed (h-8 = 32px, h-10 = 40px, h-12 = 48px)
+              />
             </Link>
           </div>
          
@@ -200,6 +263,37 @@ const Navbar = () => {
                 ></path>
               </svg>
             </button>
+
+            {/* Wishlist Heart Icon */}
+            {isAuthenticated && (
+              <Link 
+                href="/customer/wishlist" 
+                className="text-gray-600 hover:text-red-500 relative transition-colors duration-200"
+                aria-label="Wishlist"
+              >
+                <svg 
+                  className="w-6 h-6" 
+                  fill={wishlistCount > 0 ? "currentColor" : "none"}
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24" 
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+                
+                {/* Wishlist Item Count Badge */}
+                {wishlistCount > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
+                    {wishlistCount > 99 ? '99+' : wishlistCount}
+                  </span>
+                )}
+              </Link>
+            )}
             
             {/* User Account with Dropdown */}
             <div className="relative">
@@ -239,6 +333,7 @@ const Navbar = () => {
                       >
                         My Account
                       </Link>
+                
                       <Link 
                         href="/orders" 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -366,6 +461,35 @@ const Navbar = () => {
               >
                 Home
               </Link>
+
+              {/* Add Wishlist Link to Mobile Menu */}
+              {isAuthenticated && (
+                <Link 
+                  href="/customer/wishlist" 
+                  className="text-gray-700 hover:text-red-500 px-2 py-1 flex items-center"
+                  onClick={() => setShowMobileMenu(false)}
+                >
+                  <svg 
+                    className="w-5 h-5 mr-2" 
+                    fill={wishlistCount > 0 ? "currentColor" : "none"}
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                  Wishlist
+                  {wishlistCount > 0 && (
+                    <span className="ml-2 bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">
+                      {wishlistCount}
+                    </span>
+                  )}
+                </Link>
+              )}
 
               {/* Mobile Currency Selector */}
               <div className="px-2">
