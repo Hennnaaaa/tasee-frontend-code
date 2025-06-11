@@ -19,7 +19,8 @@ import {
   LucideListOrdered,
   ListOrderedIcon,
   FileEditIcon,
-  Edit3Icon
+  Edit3Icon,
+  DollarSignIcon
 } from 'lucide-react';
 
 // Import UI components
@@ -139,6 +140,12 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
       icon: <Edit3Icon size={20} />,
       href: '/admin/reviews',
       active: pathname === '/admin/reviews',  
+    },
+    {
+      title: 'Transactions',
+      icon: <DollarSignIcon size={20} />,
+      href: '/admin/transactions',
+      active: pathname === '/admin/transactions',  
     }
   ];
 

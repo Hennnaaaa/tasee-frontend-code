@@ -628,6 +628,20 @@ export default function ProductDetailsPage({ params }) {
                   <dd className="text-gray-900 font-medium">{String(product.category.name || '')}</dd>
                 </div>
               )}
+                <div className="flex justify-between py-2">
+                  <dt className="text-gray-600">Color</dt>
+                  <dd className="text-gray-900 font-medium">{product.color? product.color : 'N/A'}</dd>
+                </div>
+
+                 <div className="flex justify-between py-2">
+                  <dt className="text-gray-600">Fabric</dt>
+                  <dd className="text-gray-900 font-medium">{product.fabric? product.fabric : 'N/A'}</dd>
+                </div>
+
+                 <div className="flex justify-between py-2">
+                  <dt className="text-gray-600">Work Details</dt>
+                  <dd className="text-gray-900 font-medium">{product.workDetails ? product.workDetails : 'N/A'}</dd>
+                </div>
               <div className="flex justify-between py-2">
                 <dt className="text-gray-600">Availability</dt>
                 <dd>
@@ -1046,7 +1060,7 @@ export default function ProductDetailsPage({ params }) {
           <h3 className="text-xl lg:text-2xl font-semibold text-gray-900 mb-4 lg:mb-6">Related Products</h3>
           <div className="text-gray-600">
             <Link
-              href={`/categories/${product.category.id}`}
+              href={`/category/${product.category.id}`}
               className="inline-flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors text-sm lg:text-base"
             >
               View More in {product.category.name}
