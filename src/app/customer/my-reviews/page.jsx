@@ -44,7 +44,7 @@ export default function UserReviewsPage() {
   useEffect(() => {
     const auth = getUserData();
     if (!auth || !auth.token || !auth.userData) {
-      router.push('/login');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
       return;
     }
     
@@ -59,7 +59,7 @@ export default function UserReviewsPage() {
       
       const auth = getUserData();
       if (!auth || !auth.token) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
 
@@ -83,7 +83,7 @@ export default function UserReviewsPage() {
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
       
@@ -99,7 +99,7 @@ export default function UserReviewsPage() {
     try {
       const auth = getUserData();
       if (!auth || !auth.token) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
 
@@ -127,7 +127,7 @@ export default function UserReviewsPage() {
     try {
       const auth = getUserData();
       if (!auth || !auth.token) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
 
@@ -199,7 +199,7 @@ export default function UserReviewsPage() {
             <p className="text-muted-foreground mb-4">
               You haven't written any reviews yet. Start shopping and share your experience!
             </p>
-            <Button onClick={() => router.push('/products')}>
+            <Button onClick={() => router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`)}>
               Browse Products
             </Button>
           </CardContent>

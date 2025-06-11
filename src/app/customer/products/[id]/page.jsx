@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
-import { getProductById } from '@/utils/routes/customerRoutes';
+import { GET_PRODUCT_BY_ID } from '@/utils/routes/customerRoutes';
 import { useCart } from '@/contexts/cartContext';
 import { useCurrency } from '@/contexts/currencyContext';
 import { useWishlist } from '@/contexts/wishlistContext';
@@ -14,7 +14,7 @@ import { getUserData } from '@/utils/auth';
 import ProductReviews from '@/components/customerComponents/reviews/ProductReview';
 
 export default function ProductDetailsPage({ params }) {
-  const router = useRouter();
+
   const { addToCart, cartCount } = useCart();
   const { formatPrice, currentCurrency } = useCurrency();
   const { toggleWishlist, checkWishlistStatus } = useWishlist();
@@ -41,8 +41,71 @@ export default function ProductDetailsPage({ params }) {
   const authData = getUserData();
   const isAuthenticated = !!(authData?.token);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const [activeTab, setActiveTab] = useState('details');
+  const [sizeChart, setSizeChart] = useState(null);
+  const [loadingSizeChart, setLoadingSizeChart] = useState(false);
 
-  // Check wishlist status when product changes
+  // Helper function for API calls
+  const apiCall = async (url, options = {}) => {
+    const defaultOptions = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const mergedOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    };
+
+    const response = await fetch(url, mergedOptions);
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Network error" }));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  };
+
+  // Simplified getProductById function
+  const getProductById = async (productId, includeSizes = true, includeSizeChart = false) => {
+    try {
+      console.log("🌐 getProductById API CALL:", {
+        productId,
+        includeSizes,
+        includeSizeChart,
+      });
+
+      const params = new URLSearchParams({
+        includeSizes: includeSizes.toString(),
+        includeSizeChart: includeSizeChart.toString(),
+      });
+
+      const fullUrl = `${GET_PRODUCT_BY_ID(productId)}?${params}`;
+      console.log("🌐 Full API URL:", fullUrl);
+
+      const data = await apiCall(fullUrl, {
+        method: "GET",
+      });
+
+      console.log("🌐 PARSED RESPONSE DATA:", data);
+      
+      return data;
+    } catch (error) {
+      console.error("🌐 getProductById API ERROR:", error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
     if (product?.id) {
       const wishlistStatus = checkWishlistStatus(product.id);
@@ -66,23 +129,35 @@ export default function ProductDetailsPage({ params }) {
     unwrapParams();
   }, [params]);
 
+  // Updated fetch product details with simplified API call
   useEffect(() => {
     const fetchProductDetails = async () => {
       if (!productId) return;
 
       try {
         setLoading(true);
-        const response = await getProductById(productId, true);
+        // Include size chart data when fetching product (true for sizes, true for sizeChart)
+        const response = await getProductById(productId, true, true);
 
         if (response.success) {
           const productData = response.data;
           setProduct(productData);
 
+          // Set size chart data if available
+          if (productData.sizeChart && !productData.sizeChart.error) {
+            setSizeChart(productData.sizeChart);
+            console.log("📊 Size chart loaded:", productData.sizeChart);
+          } else if (productData.sizeChart?.error) {
+            console.log("⚠️ Size chart error:", productData.sizeChart.error);
+          }
+
           console.log("📦 Product data loaded:", {
             productType: productData.productType,
             hasAvailableSizes: productData.hasAvailableSizes,
             totalInventory: productData.totalInventory,
-            availableSizesCount: productData.availableSizes?.length || 0
+            availableSizesCount: productData.availableSizes?.length || 0,
+            hasSizeChart: !!productData.sizeChart && !productData.sizeChart.error,
+            sizeChartSizes: productData.sizeChart?.sizes?.length || 0
           });
 
           // Auto-select the first available size if any
@@ -103,6 +178,22 @@ export default function ProductDetailsPage({ params }) {
 
     fetchProductDetails();
   }, [productId]);
+
+  const refreshSizeChart = async () => {
+    if (!product?.id) return;
+    
+    setLoadingSizeChart(true);
+    try {
+      const response = await getProductById(product.id, true, true);
+      if (response.success && response.data.sizeChart && !response.data.sizeChart.error) {
+        setSizeChart(response.data.sizeChart);
+      }
+    } catch (error) {
+      console.error('Error refreshing size chart:', error);
+    } finally {
+      setLoadingSizeChart(false);
+    }
+  };
 
   // Handle wishlist toggle
   const handleWishlistToggle = async (e) => {
@@ -204,10 +295,8 @@ export default function ProductDetailsPage({ params }) {
       }
 
       showNotification('success', `Added ${quantity} item(s) to cart successfully!`);
-
       // Reset quantity to 1 after successful add
       setQuantity(1);
-
     } catch (err) {
       console.error('Error adding to cart:', err);
       showNotification('error', err.message || 'Failed to add to cart. Please try again.');
@@ -277,7 +366,7 @@ export default function ProductDetailsPage({ params }) {
           {error || 'Product not found'}
         </div>
         <Link
-          href="/"
+          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
           className="text-blue-500 hover:underline"
         >
           Back to Products
@@ -302,7 +391,7 @@ export default function ProductDetailsPage({ params }) {
       {cartCount > 0 && (
         <div className="mb-4">
           <Link
-            href="/cart"
+            href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/cart`}
             className="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium hover:bg-blue-200"
           >
             <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -686,51 +775,278 @@ export default function ProductDetailsPage({ params }) {
           )}
 
           {/* Product Information */}
-          <div className="border-t pt-6">
-            <h2 className="text-xl font-medium mb-4">Product Information</h2>
-            <div className="space-y-3">
-              {product.category && (
-                <div className="flex justify-between py-2">
-                  <dt className="text-gray-600">Category</dt>
-                  <dd className="text-gray-900 font-medium">{String(product.category.name || '')}</dd>
-                </div>
-              )}
-              <div className="flex justify-between py-2">
-                <dt className="text-gray-600">Availability</dt>
-                <dd>
-                  {hasStock ? (
-                    totalAvailable < 5 ? (
-                      <span className="text-amber-600 font-medium">
-                        Low Stock ({totalAvailable} available)
-                      </span>
-                    ) : (
-                      <span className="text-green-600 font-medium">
-                        In Stock
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-red-600 font-medium">Out of Stock</span>
-                  )}
-                </dd>
+          {/* Product Information - Updated with Toggle */}
+<div className="border-t pt-6">
+  {/* Tab Navigation */}
+  <div className="flex border-b border-gray-200 mb-6">
+    <button
+      onClick={() => setActiveTab('details')}
+      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
+        activeTab === 'details'
+          ? 'border-black text-black'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+      }`}
+    >
+      Product Details
+    </button>
+    {product.productType === 'sized' && product.availableSizes?.length > 0 && (
+      <button
+        onClick={() => setActiveTab('measurements')}
+        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
+          activeTab === 'measurements'
+            ? 'border-black text-black'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        }`}
+      >
+        Size Chart
+      </button>
+    )}
+  </div>
+
+  {/* Tab Content */}
+  {activeTab === 'details' ? (
+    // Product Details Tab
+    <div>
+      <h2 className="text-xl font-medium mb-4">Product Information</h2>
+      <div className="space-y-3">
+        {product.category && (
+          <div className="flex justify-between py-2">
+            <dt className="text-gray-600">Category</dt>
+            <dd className="text-gray-900 font-medium">{String(product.category.name || '')}</dd>
+          </div>
+        )}
+        <div className="flex justify-between py-2">
+          <dt className="text-gray-600">Availability</dt>
+          <dd>
+            {hasStock ? (
+              totalAvailable < 5 ? (
+                <span className="text-amber-600 font-medium">
+                  Low Stock ({totalAvailable} available)
+                </span>
+              ) : (
+                <span className="text-green-600 font-medium">
+                  In Stock
+                </span>
+              )
+            ) : (
+              <span className="text-red-600 font-medium">Out of Stock</span>
+            )}
+          </dd>
+        </div>
+        {product.discountInfo?.hasDiscount && (
+          <div className="flex justify-between py-2">
+            <dt className="text-gray-600">You Save</dt>
+            <dd className="text-green-600 font-semibold">
+              {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
+            </dd>
+          </div>
+        )}
+        <div className="flex justify-between py-2">
+          <dt className="text-gray-600">Currency</dt>
+          <dd className="text-gray-900 font-medium">
+            <span className="flex items-center">
+              {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
+            </span>
+          </dd>
+        </div>
+        {product.productType === 'sized' && sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+          <div className="flex justify-between py-2">
+            <dt className="text-gray-600">Available Sizes</dt>
+            <dd className="text-gray-900 font-medium">
+              {sizeChart.statistics.availableSizes} sizes
+              <span className="text-sm text-gray-500 ml-1">
+                ({sizeChart.statistics.inStockSizes} in stock)
+              </span>
+            </dd>
+          </div>
+        )}
+      </div>
+    </div>
+  ) : (
+    // Size Chart Tab
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-medium">Size Chart</h2>
+        <div className="flex items-center space-x-2">
+          {sizeChart?.category && (
+            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+              {sizeChart.category.replace('_', ' ')}
+            </span>
+          )}
+          {sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+            <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
+              {sizeChart.statistics.availableSizes} sizes available
+            </span>
+          )}
+        </div>
+      </div>
+
+      {loadingSizeChart ? (
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-500"></div>
+          <span className="ml-2 text-gray-600">Loading size chart...</span>
+        </div>
+      ) : sizeChart && !sizeChart.error ? (
+        <div className="space-y-6">
+          
+
+          {/* Size Chart Table - Only Available Sizes */}
+          {(() => {
+            const availableSizes = sizeChart.sizes?.filter(size => size.isAvailableForProduct) || [];
+            return availableSizes.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                        Size
+                      </th>
+                      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                        Code
+                      </th>
+                      {availableSizes.some(size => size.numericSize) && (
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                          Numeric
+                        </th>
+                      )}
+                      {availableSizes.some(size => size.bust) && (
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                          Bust (inches)
+                        </th>
+                      )}
+                      {availableSizes.some(size => size.waist) && (
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                          Waist (inches)
+                        </th>
+                      )}
+                      {availableSizes.some(size => size.hips) && (
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                          Hips (inches)
+                        </th>
+                      )}
+                      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+                        Stock Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    {availableSizes.map((size, index) => {
+                      const isSelectedSize = selectedSize?.sizeName === size.name || selectedSize?.size?.name === size.name;
+                      const isInStock = size.inStock;
+                      
+                      return (
+                        <tr 
+                          key={size.id} 
+                          className={`transition-colors duration-150 ${
+                            isSelectedSize 
+                              ? 'bg-blue-50 border-blue-200' 
+                              : isInStock 
+                                ? 'hover:bg-green-50' 
+                                : 'hover:bg-orange-50'
+                          }`}
+                        >
+                          <td className={`border border-gray-300 px-4 py-3 text-sm ${
+                            isSelectedSize ? 'font-semibold text-blue-900' : 'text-gray-900'
+                          }`}>
+                            <div className="flex items-center">
+                              {size.name}
+                              {isSelectedSize && (
+                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  Selected
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600 font-mono">
+                            {size.code}
+                          </td>
+                          {availableSizes.some(s => s.numericSize) && (
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
+                              {size.numericSize || '-'}
+                            </td>
+                          )}
+                          {availableSizes.some(s => s.bust) && (
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
+                              {size.bust || '-'}
+                            </td>
+                          )}
+                          {availableSizes.some(s => s.waist) && (
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
+                              {size.waist || '-'}
+                            </td>
+                          )}
+                          {availableSizes.some(s => s.hips) && (
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
+                              {size.hips || '-'}
+                            </td>
+                          )}
+                          <td className="border border-gray-300 px-4 py-3 text-sm">
+                            {isInStock ? (
+                              <div className="flex items-center space-x-2">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  In Stock
+                                </span>
+                                {size.inventory && size.inventory <= 5 && (
+                                  <span className="text-xs text-orange-600 font-medium">
+                                    ({size.inventory} left)
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                Out of Stock
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              {product.discountInfo?.hasDiscount && (
-                <div className="flex justify-between py-2">
-                  <dt className="text-gray-600">You Save</dt>
-                  <dd className="text-green-600 font-semibold">
-                    {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
-                  </dd>
-                </div>
-              )}
-              <div className="flex justify-between py-2">
-                <dt className="text-gray-600">Currency</dt>
-                <dd className="text-gray-900 font-medium">
-                  <span className="flex items-center">
-                    {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
-                  </span>
-                </dd>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p>No sizes available for this product</p>
+              </div>
+            );
+          })()}
+
+          {/* Additional Notes */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-sm text-gray-600">
+                <p className="font-medium mb-1">Size Guide Notes:</p>
+                <ul className="space-y-1 text-xs">
+                  <li>• All measurements are in inches unless otherwise specified</li>
+                  <li>• For the best fit, measure yourself and compare with the size chart</li>
+                  <li>• If you're between sizes, we recommend sizing up</li>
+                  <li>• Only sizes available for this product are shown above</li>
+                  <li>• Contact customer service if you need help choosing the right size</li>
+                </ul>
               </div>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="text-center py-8 text-gray-500">
+          <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p>Size chart not available</p>
+          <p className="text-sm mt-1">
+            {sizeChart?.error || "This product category doesn't have measurement data"}
+          </p>
+        </div>
+      )}
+    </div>
+  )}
+</div>
         </div>
       </div>
 
@@ -1078,51 +1394,265 @@ export default function ProductDetailsPage({ params }) {
           )}
 
           {/* Mobile Product Information */}
-          <div className="border-t pt-4">
-            <h2 className="text-lg font-medium mb-3">Product Information</h2>
-            <div className="space-y-2">
-              {product.category && (
-                <div className="flex justify-between py-1">
-                  <dt className="text-gray-600 text-sm">Category</dt>
-                  <dd className="text-gray-900 font-medium text-sm">{String(product.category.name || '')}</dd>
-                </div>
-              )}
-              <div className="flex justify-between py-1">
-                <dt className="text-gray-600 text-sm">Availability</dt>
-                <dd className="text-sm">
-                  {hasStock ? (
-                    totalAvailable < 5 ? (
-                      <span className="text-amber-600 font-medium">
-                        Low Stock ({totalAvailable})
-                      </span>
-                    ) : (
-                      <span className="text-green-600 font-medium">
-                        In Stock
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-red-600 font-medium">Out of Stock</span>
-                  )}
-                </dd>
+          {/* Product Information - Mobile Responsive with Tabs */}
+<div className="border-t pt-4">
+  {/* Tab Navigation - Mobile Optimized */}
+  <div className="flex border-b border-gray-200 mb-4 overflow-x-auto">
+    <button
+      onClick={() => setActiveTab('details')}
+      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap ${
+        activeTab === 'details'
+          ? 'border-black text-black'
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+      }`}
+    >
+      Details
+    </button>
+    {product.productType === 'sized' && product.availableSizes?.length > 0 && (
+      <button
+        onClick={() => setActiveTab('measurements')}
+        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap ${
+          activeTab === 'measurements'
+            ? 'border-black text-black'
+            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+        }`}
+      >
+        Size Chart
+       
+      </button>
+    )}
+  </div>
+
+  {/* Tab Content */}
+  {activeTab === 'details' ? (
+    // Product Details Tab - Mobile Optimized
+    <div>
+      <h2 className="text-lg font-medium mb-3">Product Information</h2>
+      <div className="space-y-2">
+        {product.category && (
+          <div className="flex justify-between py-1">
+            <dt className="text-gray-600 text-sm">Category</dt>
+            <dd className="text-gray-900 font-medium text-sm text-right">
+              {String(product.category.name || '')}
+            </dd>
+          </div>
+        )}
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600 text-sm">Availability</dt>
+          <dd className="text-sm text-right">
+            {hasStock ? (
+              totalAvailable < 5 ? (
+                <span className="text-amber-600 font-medium">
+                  Low Stock ({totalAvailable})
+                </span>
+              ) : (
+                <span className="text-green-600 font-medium">
+                  In Stock
+                </span>
+              )
+            ) : (
+              <span className="text-red-600 font-medium">Out of Stock</span>
+            )}
+          </dd>
+        </div>
+        {product.discountInfo?.hasDiscount && (
+          <div className="flex justify-between py-1">
+            <dt className="text-gray-600 text-sm">You Save</dt>
+            <dd className="text-green-600 font-semibold text-sm text-right">
+              {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
+            </dd>
+          </div>
+        )}
+        <div className="flex justify-between py-1">
+          <dt className="text-gray-600 text-sm">Currency</dt>
+          <dd className="text-gray-900 font-medium text-sm">
+            <span className="flex items-center justify-end">
+              {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
+            </span>
+          </dd>
+        </div>
+        {product.productType === 'sized' && sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+          <div className="flex justify-between py-1">
+            <dt className="text-gray-600 text-sm">Available Sizes</dt>
+            <dd className="text-gray-900 font-medium text-sm text-right">
+              {sizeChart.statistics.availableSizes} sizes
+              <span className="text-xs text-gray-500 block">
+                ({sizeChart.statistics.inStockSizes} in stock)
+              </span>
+            </dd>
+          </div>
+        )}
+      </div>
+    </div>
+  ) : (
+    // Size Chart Tab - Mobile Optimized
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-lg font-medium">Size Chart</h2>
+        <div className="flex flex-col items-end space-y-1">
+          {sizeChart?.category && (
+            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+              {sizeChart.category.replace('_', ' ')}
+            </span>
+          )}
+          {sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+            <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
+              {sizeChart.statistics.availableSizes} available
+            </span>
+          )}
+        </div>
+      </div>
+
+      {loadingSizeChart ? (
+        <div className="flex items-center justify-center py-6">
+          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-500"></div>
+          <span className="ml-2 text-gray-600 text-sm">Loading...</span>
+        </div>
+      ) : sizeChart && !sizeChart.error ? (
+        <div className="space-y-4">
+         
+
+          {/* Size Chart Table - Mobile Optimized */}
+          {(() => {
+            const availableSizes = sizeChart.sizes?.filter(size => size.isAvailableForProduct) || [];
+            return availableSizes.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden text-xs">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-semibold text-gray-900">
+                        Size
+                      </th>
+                      {availableSizes.some(size => size.bust) && (
+                        <th className="border border-gray-300 px-2 py-2 text-left text-xs font-semibold text-gray-900">
+                          Bust
+                        </th>
+                      )}
+                      {availableSizes.some(size => size.waist) && (
+                        <th className="border border-gray-300 px-2 py-2 text-left text-xs font-semibold text-gray-900">
+                          Waist
+                        </th>
+                      )}
+                      {availableSizes.some(size => size.hips) && (
+                        <th className="border border-gray-300 px-2 py-2 text-left text-xs font-semibold text-gray-900">
+                          Hips
+                        </th>
+                      )}
+                      <th className="border border-gray-300 px-2 py-2 text-left text-xs font-semibold text-gray-900">
+                        Status
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    {availableSizes.map((size) => {
+                      const isSelectedSize = selectedSize?.sizeName === size.name || selectedSize?.size?.name === size.name;
+                      const isInStock = size.inStock;
+                      
+                      return (
+                        <tr 
+                          key={size.id} 
+                          className={`transition-colors duration-150 ${
+                            isSelectedSize 
+                              ? 'bg-blue-50 border-blue-200' 
+                              : isInStock 
+                                ? 'hover:bg-green-50' 
+                                : 'hover:bg-orange-50'
+                          }`}
+                        >
+                          <td className={`border border-gray-300 px-2 py-2 text-xs ${
+                            isSelectedSize ? 'font-semibold text-blue-900' : 'text-gray-900'
+                          }`}>
+                            <div className="flex flex-col">
+                              <span>{size.name}</span>
+                              <span className="text-gray-500 font-mono text-xs">{size.code}</span>
+                              {isSelectedSize && (
+                                <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 mt-0.5">
+                                  Selected
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          {availableSizes.some(s => s.bust) && (
+                            <td className="border border-gray-300 px-2 py-2 text-xs text-gray-600">
+                              {size.bust || '-'}
+                            </td>
+                          )}
+                          {availableSizes.some(s => s.waist) && (
+                            <td className="border border-gray-300 px-2 py-2 text-xs text-gray-600">
+                              {size.waist || '-'}
+                            </td>
+                          )}
+                          {availableSizes.some(s => s.hips) && (
+                            <td className="border border-gray-300 px-2 py-2 text-xs text-gray-600">
+                              {size.hips || '-'}
+                            </td>
+                          )}
+                          <td className="border border-gray-300 px-2 py-2 text-xs">
+                            {isInStock ? (
+                              <div className="flex flex-col space-y-0.5">
+                                <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                                  In Stock
+                                </span>
+                                {size.inventory && size.inventory <= 5 && (
+                                  <span className="text-xs text-orange-600 font-medium">
+                                    ({size.inventory} left)
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                                Out of Stock
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              {product.discountInfo?.hasDiscount && (
-                <div className="flex justify-between py-1">
-                  <dt className="text-gray-600 text-sm">You Save</dt>
-                  <dd className="text-green-600 font-semibold text-sm">
-                    {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
-                  </dd>
-                </div>
-              )}
-              <div className="flex justify-between py-1">
-                <dt className="text-gray-600 text-sm">Currency</dt>
-                <dd className="text-gray-900 font-medium text-sm">
-                  <span className="flex items-center">
-                    {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
-                  </span>
-                </dd>
+            ) : (
+              <div className="text-center py-6 text-gray-500">
+                <svg className="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <p className="text-sm">No sizes available</p>
+              </div>
+            );
+          })()}
+
+          {/* Additional Notes - Mobile Optimized */}
+          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <div className="flex items-start">
+              <svg className="w-4 h-4 text-gray-400 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="text-xs text-gray-600">
+                <p className="font-medium mb-1">Size Guide:</p>
+                <ul className="space-y-0.5 text-xs">
+                  <li>• Measurements are in inches</li>
+                  <li>• Compare with size chart for best fit</li>
+                  <li>• If between sizes, size up</li>
+                  <li>• Only available sizes shown</li>
+                </ul>
               </div>
             </div>
           </div>
+        </div>
+      ) : (
+        <div className="text-center py-6 text-gray-500">
+          <svg className="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p className="text-sm">Size chart not available</p>
+          <p className="text-xs mt-1">
+            {sizeChart?.error || "No measurement data"}
+          </p>
+        </div>
+      )}
+    </div>
+  )}
+</div>
         </div>
       </div>
 
@@ -1137,7 +1667,7 @@ export default function ProductDetailsPage({ params }) {
           <h3 className="text-xl lg:text-2xl font-semibold text-gray-900 mb-4 lg:mb-6">Related Products</h3>
           <div className="text-gray-600">
             <Link
-              href={`/categories/${product.category.id}`}
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/categories/${product.category.id}`}
               className="inline-flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors text-sm lg:text-base"
             >
               View More in {product.category.name}
@@ -1152,7 +1682,7 @@ export default function ProductDetailsPage({ params }) {
       {/* Back to Products Button */}
       <div className="mt-6 lg:mt-8 text-center">
         <Link
-          href="/"
+          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
           className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors text-sm lg:text-base"
         >
           <svg className="mr-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

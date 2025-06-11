@@ -38,7 +38,7 @@ export default function OrderDetailsPage() {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login?redirect=/orders');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login?redirect=/orders`);
     }
   }, [isAuthenticated, router]);
 
@@ -280,7 +280,7 @@ export default function OrderDetailsPage() {
           <h2 className="text-2xl font-semibold mb-4">Please Log In</h2>
           <p className="text-gray-600 mb-6">You need to be logged in to view order details.</p>
           <Link
-            href="/login?redirect=/orders"
+            href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login?redirect=/orders`}
             className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600"
           >
             Log In
@@ -315,7 +315,7 @@ export default function OrderDetailsPage() {
           <h2 className="text-2xl font-semibold mb-4 text-red-600">Error Loading Order</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <div className="space-x-4">
-            <Link href="/orders" className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 inline-block">
+            <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`} className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 inline-block">
               Back to Orders
             </Link>
             <button 
@@ -336,7 +336,7 @@ export default function OrderDetailsPage() {
         <div className="text-center">
           <h2 className="text-2xl font-semibold mb-4">Order Not Found</h2>
           <p className="text-gray-600 mb-6">The order you're looking for doesn't exist or you don't have permission to view it.</p>
-          <Link href="/orders" className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600">
+          <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`} className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600">
             Back to Orders
           </Link>
         </div>
@@ -351,7 +351,7 @@ export default function OrderDetailsPage() {
       {/* Header */}
       <div className="mb-8">
         <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-4">
-          <Link href="/orders" className="hover:text-blue-600">Orders</Link>
+          <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`} className="hover:text-blue-600">Orders</Link>
           <span>→</span>
           <span className="text-gray-900">Order #{order.orderNumber || order.id?.slice(0, 8)}</span>
         </nav>
@@ -585,7 +585,7 @@ export default function OrderDetailsPage() {
               </button>
               
               <Link 
-                href="/orders" 
+                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`} 
                 className="block w-full text-center bg-gray-100 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-200 font-medium transition-colors"
               >
                 Back to Orders

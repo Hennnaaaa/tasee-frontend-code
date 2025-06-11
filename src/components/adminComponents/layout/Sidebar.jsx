@@ -75,7 +75,7 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
       await logout();
       
       // Redirect to login page
-      router.push('/login');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
       
       // Optional: Show success message
       console.log('✅ Logout successful');
@@ -83,7 +83,7 @@ const Sidebar = ({ onToggle, onNavigateToComponent }) => {
     } catch (error) {
       console.error('❌ Logout error:', error);
       // Even if there's an error, still redirect to login for security
-      router.push('/login');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
     } finally {
       setIsLoggingOut(false);
     }

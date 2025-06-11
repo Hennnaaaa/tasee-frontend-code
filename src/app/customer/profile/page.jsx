@@ -21,6 +21,37 @@ export default function ProfileScreen() {
     phone: ''
   });
 
+  // Helper function for API calls
+  const apiCall = async (url, options = {}) => {
+    const defaultOptions = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const mergedOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    };
+
+    const response = await fetch(url, mergedOptions);
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Network error" }));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  };
+
   // Fetch profile data
   const fetchProfile = async () => {
     setIsLoading(true);
@@ -29,21 +60,10 @@ export default function ProfileScreen() {
     try {
       console.log('🔍 Fetching profile...');
 
-      const response = await fetch(GET_PROFILE, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
+      const data = await apiCall(GET_PROFILE, {
+        method: "GET",
       });
 
-      console.log('🔍 Profile response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch profile');
-      }
-
-      const data = await response.json();
       console.log('🔍 Profile data:', data);
 
       if (data.success) {
@@ -73,22 +93,11 @@ export default function ProfileScreen() {
     try {
       console.log('🔄 Updating profile with data:', formData);
 
-      const response = await fetch(UPDATE_PROFILE, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
+      const data = await apiCall(UPDATE_PROFILE, {
+        method: "PUT",
+        body: JSON.stringify(formData),
       });
 
-      console.log('🔄 Update response status:', response.status);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update profile');
-      }
-
-      const data = await response.json();
       console.log('🔄 Update response data:', data);
 
       if (data.success) {
@@ -158,7 +167,7 @@ export default function ProfileScreen() {
         {/* Back to Home Button */}
         <div className="mb-4 sm:mb-6">
           <button
-            onClick={() => router.push('/customer/home')}
+            onClick={() => router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`)}
             className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors group"
           >
             <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
@@ -175,7 +184,7 @@ export default function ProfileScreen() {
         {/* Navigation Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 sm:mb-8">
           <button
-            onClick={() => router.push('/customer/home')}
+            onClick={() => router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`)}
             className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 text-left"
           >
             <div className="bg-purple-100 p-2 sm:p-3 rounded-full flex-shrink-0">
@@ -188,7 +197,7 @@ export default function ProfileScreen() {
           </button>
 
           <button
-            onClick={() => router.push('/cart')}
+            onClick={() => router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/cart`)}
             className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 text-left"
           >
             <div className="bg-blue-100 p-2 sm:p-3 rounded-full flex-shrink-0">
@@ -201,7 +210,7 @@ export default function ProfileScreen() {
           </button>
 
           <button
-            onClick={() => router.push('/orders')}
+            onClick={() => router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`)}
             className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow flex items-center space-x-3 sm:space-x-4 text-left sm:col-span-2 lg:col-span-1"
           >
             <div className="bg-green-100 p-2 sm:p-3 rounded-full flex-shrink-0">

@@ -115,7 +115,7 @@ export default function UserManagement() {
       // Get authentication data
       const auth = getUserData();
       if (!auth || !auth.token) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
       
@@ -153,7 +153,7 @@ export default function UserManagement() {
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
       
@@ -182,7 +182,7 @@ export default function UserManagement() {
       // Get authentication data
       const auth = getUserData();
       if (!auth || !auth.token) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
       
@@ -207,7 +207,7 @@ export default function UserManagement() {
       // Get authentication data
       const auth = getUserData();
       if (!auth || !auth.token) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
       
@@ -250,7 +250,7 @@ export default function UserManagement() {
       // Get authentication data
       const auth = getUserData();
       if (!auth || !auth.token) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
       

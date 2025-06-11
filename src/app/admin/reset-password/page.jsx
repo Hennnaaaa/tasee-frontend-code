@@ -199,7 +199,7 @@ function ResetPasswordForm() {
             
             <div className="space-y-3">
               <button
-                onClick={() => router.push('/admin/forgot-password')}
+                onClick={() => router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/admin/forgot-password`)}
                 className="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-indigo-700 transition-colors duration-200"
               >
                 Request New Reset Link

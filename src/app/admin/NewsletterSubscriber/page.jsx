@@ -38,7 +38,7 @@ const NewsletterAdmin = () => {
     useEffect(() => {
         const auth = getUserData();
         if (!auth || !auth.token || !auth.userData || auth.userData.role !== 'admin') {
-            router.push('/login');
+            router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
             return;
         }
         
@@ -52,7 +52,7 @@ const NewsletterAdmin = () => {
             // Get authentication data
             const auth = getUserData();
             if (!auth || !auth.token) {
-                router.push('/login');
+                router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
                 return;
             }
 
@@ -69,7 +69,7 @@ const NewsletterAdmin = () => {
                 if (response.status === 401) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
-                    router.push('/login');
+                    router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
                     return;
                 }
                 throw new Error('Failed to fetch stats');
@@ -95,7 +95,7 @@ const NewsletterAdmin = () => {
             if (error.message.includes('401') || error.message.includes('Unauthorized')) {
                 localStorage.removeItem('token');
                 localStorage.removeItem('user');
-                router.push('/login');
+                router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
                 return;
             }
         } finally {
@@ -415,7 +415,7 @@ const WriteNewsletterTab = () => {
             // Get authentication data
             const auth = getUserData();
             if (!auth || !auth.token) {
-                router.push('/login');
+                router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
                 return;
             }
 
@@ -442,7 +442,7 @@ const WriteNewsletterTab = () => {
                 if (response.status === 401) {
                     localStorage.removeItem('token');
                     localStorage.removeItem('user');
-                    router.push('/login');
+                    router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
                     return;
                 }
                 throw new Error('Failed to send newsletter');

@@ -1,13 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams} from 'next/navigation';
 import Link from 'next/link';
-import ProductCard from '@/app/customer/components/products/ProductCard';
+import ProductCard from '@/components/customerComponents/products/ProductCard';
 
 const CategoryPage = () => {
   const params = useParams();
-  const router = useRouter();
+ 
   const { categorySlug } = params || {};
 
   const [products, setProducts] = useState([]);
@@ -152,7 +152,7 @@ const CategoryPage = () => {
               {subcategories.map((subcategory, index) => (
                 <Link
                   key={subcategory.id}
-                  href={`/customer/category/${categorySlug}/${subcategory.slug}`}
+                  href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${categorySlug}/${subcategory.slug}`}
                   onClick={() => handleSubcategoryFilter(subcategory.id)}
                   className={`px-6 py-3 font-light tracking-wide text-sm border-l border-stone-200 transition-colors ${
                     selectedSubcategory === subcategory.id 
@@ -236,7 +236,7 @@ const CategoryPage = () => {
               We couldn't find any products in this category at the moment. Please check back soon or explore other categories.
             </p>
             <Link 
-              href="/customer/home"
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
               className="inline-block bg-stone-800 text-white px-12 py-4 font-light tracking-widest hover:bg-stone-900 transition-colors duration-300"
             >
               EXPLORE ALL COLLECTIONS
@@ -257,7 +257,7 @@ const CategoryPage = () => {
               {subcategories.map((subcategory) => (
                 <Link
                   key={subcategory.id}
-                  href={`/customer/category/${categorySlug}/${subcategory.slug}`}
+                  href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${categorySlug}/${subcategory.slug}`}
                   className="bg-white border border-stone-200 p-8 text-center hover:bg-stone-50 transition-colors duration-300 group"
                 >
                   <h3 className="text-lg font-light text-stone-800 tracking-wide uppercase group-hover:text-stone-600 transition-colors">

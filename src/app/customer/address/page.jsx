@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAddress } from '@/contexts/AddressContext';
+import { useAddress } from '@/contexts/addressContext';
 import Link from 'next/link';
 
 export default function AddressesPage() {
@@ -137,22 +137,22 @@ export default function AddressesPage() {
     }
   };
 
-  if (!user) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center">
-          <h2 className="text-2xl font-semibold mb-4">Please Log In</h2>
-          <p className="text-gray-600 mb-6">You need to be logged in to manage addresses.</p>
-          <Link
-            href="/login?redirect=/addresses"
-            className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600"
-          >
-            Log In
-          </Link>
-        </div>
+ if (!user) {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center">
+        <h2 className="text-2xl font-semibold mb-4">Please Log In</h2>
+        <p className="text-gray-600 mb-6">You need to be logged in to manage addresses.</p>
+        <Link
+          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login?redirect=/addresses`}
+          className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600"
+        >
+          Log In
+        </Link>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -218,7 +218,7 @@ export default function ProductModal({
     const auth = getUserData();
     if (!auth || !auth.token || !auth.userData || auth.userData.role !== 'admin') {
       onClose();
-      router.push('/login');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
       return;
     }
   }, [isOpen, router, onClose]);
@@ -357,7 +357,7 @@ export default function ProductModal({
     const auth = getUserData();
     if (!auth || !auth.token) {
       setApiError('Authentication required');
-      router.push('/login');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
       return;
     }
     
@@ -430,7 +430,7 @@ export default function ProductModal({
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
       

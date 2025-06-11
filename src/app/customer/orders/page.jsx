@@ -2,14 +2,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+
 import { useAuth } from '@/contexts/authcontext';
 import { useCurrency } from '@/contexts/currencyContext';
 import { GET_USER_ORDERS } from '@/utils/routes/orderRoutes';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import OrderCard from '@/components/orderComponents/OrderCard';
-import OrderFilters from '@/components/orderComponents/orderFilters';
+import OrderFilters from '@/components/customerComponents/orderFilters';
 import Link from 'next/link';
 import ReviewForm from '@/components/customerComponents/reviews/ReviewForm';
 import axios from 'axios';
@@ -19,7 +18,7 @@ import { toast } from 'react-toastify';
 export default function OrdersPage() {
   const { user, isAuthenticated } = useAuth();
   const { formatPrice, currentCurrency, convertPrice } = useCurrency();
-  const router = useRouter();
+ 
 
   const [orders, setOrders] = useState([]);
   const [pagination, setPagination] = useState({
@@ -281,7 +280,7 @@ export default function OrdersPage() {
               </p>
               {!statusFilter && (
                 <Link
-                  href="/"
+                  href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
                   className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 inline-block"
                 >
                   Start Shopping
@@ -390,7 +389,7 @@ export default function OrdersPage() {
 
                       <div className="flex space-x-3">
                         <Link
-                          href={`/orders/${order.id}`}
+                          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/orders/${order.id}`}
                           className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                         >
                           View Details

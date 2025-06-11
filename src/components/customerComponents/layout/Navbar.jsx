@@ -86,7 +86,7 @@ const Navbar = () => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
-              <Link href="/customer/home" className="flex items-center">
+              <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`} className="flex items-center">
                 <img 
                   src="/tasee_30x.png" 
                   alt="Tasee" 
@@ -97,7 +97,7 @@ const Navbar = () => {
             
             {/* Basic nav for SSR */}
             <div className="hidden md:flex space-x-8">
-              <Link href="/customer/home" className="text-gray-700 hover:text-blue-500">
+              <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`} className="text-gray-700 hover:text-blue-500">
                 Home
               </Link>
             </div>
@@ -114,7 +114,7 @@ const Navbar = () => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </button>
-              <Link href="/cart" className="text-gray-600 relative">
+              <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/cart`} className="text-gray-600 relative">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
                 </svg>
@@ -132,7 +132,7 @@ const Navbar = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo - Updated to use image */}
           <div className="flex-shrink-0">
-            <Link href="/customer/home" className="flex items-center">
+            <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`} className="flex items-center">
               <img 
                 src="/tasee_30x.png" 
                 alt="Tasee" 
@@ -144,7 +144,7 @@ const Navbar = () => {
          
           {/* Desktop Nav Links */}
           <div className="hidden md:flex space-x-8">
-            <Link href="/customer/home" className="text-gray-700 hover:text-blue-500">
+            <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`} className="text-gray-700 hover:text-blue-500">
               Home
             </Link>
            
@@ -186,7 +186,7 @@ const Navbar = () => {
                     {category.subcategories.map((subcategory) => (
                       <Link
                         key={subcategory.id}
-                        href={`/customer/category/${category.slug}/${subcategory.slug}`}
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}/${subcategory.slug}`}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-blue-500"
                       >
                         {subcategory.name}
@@ -274,7 +274,7 @@ const Navbar = () => {
             {/* Wishlist Heart Icon */}
             {isAuthenticated && (
               <Link 
-                href="/customer/wishlist" 
+                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/wishlist`} 
                 className="text-gray-600 hover:text-red-500 relative transition-colors duration-200"
                 aria-label="Wishlist"
               >
@@ -334,7 +334,7 @@ const Navbar = () => {
                         {user?.firstName} {user?.lastName}
                       </div>
                       <Link 
-                        href="/customer/profile" 
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/profile`}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
@@ -342,14 +342,14 @@ const Navbar = () => {
                       </Link>
                 
                       <Link 
-                        href="/orders" 
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`} 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
                         My Orders
                       </Link>
                       <Link 
-                        href="/customer/my-reviews" 
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/my-reviews`} 
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
@@ -368,14 +368,14 @@ const Navbar = () => {
                   ) : (
                     <>
                       <Link 
-                        href="/login" 
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
                         Sign In
                       </Link>
                       <Link 
-                        href="/signup" 
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/signup`}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                         onClick={() => setShowProfileMenu(false)}
                       >
@@ -389,7 +389,7 @@ const Navbar = () => {
             
             {/* Cart */}
             <Link 
-              href="/cart" 
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/cart`} 
               className="text-gray-600 hover:text-blue-500 relative"
               aria-label="Shopping Cart"
             >
@@ -472,7 +472,7 @@ const Navbar = () => {
               {/* Add Wishlist Link to Mobile Menu */}
               {isAuthenticated && (
                 <Link 
-                  href="/customer/wishlist" 
+                  href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/wishlist`} 
                   className="text-gray-700 hover:text-red-500 px-2 py-1 flex items-center"
                   onClick={() => setShowMobileMenu(false)}
                 >
@@ -536,7 +536,7 @@ const Navbar = () => {
                 <div key={category.id} className="px-2">
                   <div className="flex items-center justify-between">
                     <Link
-                      href={`/customer/category/${category.slug}`}
+                      href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}`}
                       className="text-gray-700 hover:text-blue-500 py-1 flex-grow"
                       onClick={() => setShowMobileMenu(false)}
                     >
@@ -576,7 +576,7 @@ const Navbar = () => {
                       {category.subcategories.map((subcategory) => (
                         <Link
                           key={subcategory.id}
-                          href={`/customer/category/${category.slug}/${subcategory.slug}`}
+                          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}/${subcategory.slug}`}
                           className="block text-sm text-gray-600 hover:text-blue-500 py-1"
                           onClick={() => setShowMobileMenu(false)}
                         >

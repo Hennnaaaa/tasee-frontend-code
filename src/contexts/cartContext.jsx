@@ -1,8 +1,19 @@
-// src/contexts/cartContext.js - Updated with size support
+// src/contexts/cartContext.js - Complete updated version with simplified routes
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
 import { getUserData } from "@/utils/auth";
+import { 
+  ADD_TO_CART, 
+  GET_CART_ITEMS, 
+  UPDATE_CART_ITEM, 
+  REMOVE_CART_ITEM, 
+  CLEAR_CART, 
+  BATCH_ADD_TO_CART,
+  getGuestCart,
+  saveGuestCart,
+  clearGuestCart
+} from "@/utils/routes/cartRoutes";
 
 const CartContext = createContext();
 
@@ -21,6 +32,37 @@ export const CartProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [lastUserCheck, setLastUserCheck] = useState(null);
+
+  // Helper function for API calls
+  const apiCall = async (url, options = {}) => {
+    const defaultOptions = {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    };
+
+    const mergedOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    };
+
+    const response = await fetch(url, mergedOptions);
+
+    if (!response.ok) {
+      const errorData = await response
+        .json()
+        .catch(() => ({ message: "Network error" }));
+      throw new Error(
+        errorData.message || `HTTP error! status: ${response.status}`
+      );
+    }
+
+    return response.json();
+  };
 
   // Check for user data changes - OPTIMIZED VERSION
   useEffect(() => {
@@ -118,25 +160,17 @@ export const CartProvider = ({ children }) => {
 
       console.log("🛒 Fetching cart from database - User ID:", currentUser.id);
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/cart/items?userId=${currentUser.id}`;
-
-      const response = await fetch(url, {
+      // Use the simplified route
+      const data = await apiCall(GET_CART_ITEMS(currentUser.id), {
         method: "GET",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${authData.token}`,
         },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("🛒 Fetch response data:", data);
-        if (data.success) {
-          setCartItems(data.data.items || []);
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("❌ Fetch cart error:", errorData);
+      console.log("🛒 Fetch response data:", data);
+      if (data.success) {
+        setCartItems(data.data.items || []);
       }
     } catch (error) {
       console.error("❌ Error fetching cart from database:", error);
@@ -145,26 +179,12 @@ export const CartProvider = ({ children }) => {
 
   const loadCartFromLocalStorage = () => {
     try {
-      const savedCart = localStorage.getItem("guestCart");
-      console.log("🛒 Loading guest cart from localStorage:", savedCart ? "found" : "empty");
-      if (savedCart) {
-        const parsedCart = JSON.parse(savedCart);
-        setCartItems(parsedCart || []);
-      } else {
-        setCartItems([]);
-      }
+      const cartItems = getGuestCart();
+      console.log("🛒 Loading guest cart from localStorage:", cartItems.length > 0 ? "found" : "empty");
+      setCartItems(cartItems);
     } catch (error) {
       console.error("❌ Error loading cart from localStorage:", error);
       setCartItems([]);
-    }
-  };
-
-  const saveCartToLocalStorage = (items) => {
-    try {
-      localStorage.setItem("guestCart", JSON.stringify(items));
-      console.log("🛒 Saved guest cart to localStorage:", items.length, "items");
-    } catch (error) {
-      console.error("❌ Error saving cart to localStorage:", error);
     }
   };
 
@@ -234,22 +254,16 @@ export const CartProvider = ({ children }) => {
 
       console.log("🛒 Request body:", requestBody);
 
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/cart/add`;
-      const response = await fetch(url, {
+      // Use the simplified route
+      const data = await apiCall(ADD_TO_CART, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${authData.token}`,
         },
         body: JSON.stringify(requestBody),
       });
 
-      const data = await response.json();
       console.log("🛒 Add to cart response:", data);
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to add item to cart");
-      }
 
       if (data.success) {
         console.log("✅ Item added successfully, refreshing cart");
@@ -266,17 +280,14 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Business logic for adding to guest cart
   const addToCartLocalStorage = (product, sizeVariant, quantity) => {
     try {
       console.log("🛒 Adding to localStorage cart");
-      const newCartItems = [...cartItems];
+      const cartItems = getGuestCart();
 
       // Create unique identifier for cart item
-      const itemIdentifier = sizeVariant 
-        ? `${product.id}_${sizeVariant.sizeId}`
-        : `${product.id}_no_size`;
-
-      const existingItemIndex = newCartItems.findIndex(
+      const existingItemIndex = cartItems.findIndex(
         (item) => {
           if (sizeVariant) {
             return item.product.id === product.id && item.sizeVariant?.sizeId === sizeVariant.sizeId;
@@ -290,14 +301,14 @@ export const CartProvider = ({ children }) => {
       const availableInventory = sizeVariant ? sizeVariant.inventory : product.inventory;
 
       if (existingItemIndex > -1) {
-        const existingItem = newCartItems[existingItemIndex];
+        const existingItem = cartItems[existingItemIndex];
         const newQuantity = existingItem.quantity + quantity;
 
         if (newQuantity > availableInventory) {
           throw new Error(`Only ${availableInventory} items available`);
         }
 
-        newCartItems[existingItemIndex] = {
+        cartItems[existingItemIndex] = {
           ...existingItem,
           quantity: newQuantity,
         };
@@ -332,12 +343,12 @@ export const CartProvider = ({ children }) => {
           quantity: quantity,
         };
 
-        newCartItems.push(cartItem);
+        cartItems.push(cartItem);
         console.log("🛒 Added new item to guest cart:", cartItem);
       }
 
-      setCartItems(newCartItems);
-      saveCartToLocalStorage(newCartItems);
+      setCartItems(cartItems);
+      saveGuestCart(cartItems);
 
       return { success: true, message: "Item added to cart successfully" };
     } catch (error) {
@@ -359,24 +370,16 @@ export const CartProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const authData = getUserData();
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cart/item/${itemId}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authData.token}`,
-          },
-          body: JSON.stringify({ quantity }),
-        }
-      );
+      
+      // Use the simplified route
+      const data = await apiCall(UPDATE_CART_ITEM(itemId), {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${authData.token}`,
+        },
+        body: JSON.stringify({ quantity }),
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to update cart item");
-      }
-
-      const data = await response.json();
       if (data.success) {
         await fetchCartFromDatabase();
         return data;
@@ -390,8 +393,10 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Business logic for updating guest cart item
   const updateCartItemLocalStorage = (itemId, quantity) => {
     try {
+      const cartItems = getGuestCart();
       const newCartItems = cartItems.map((item) => {
         if (item.id === itemId) {
           const availableInventory = item.sizeVariant 
@@ -407,7 +412,7 @@ export const CartProvider = ({ children }) => {
       });
 
       setCartItems(newCartItems);
-      saveCartToLocalStorage(newCartItems);
+      saveGuestCart(newCartItems);
 
       return { success: true, message: "Cart item updated successfully" };
     } catch (error) {
@@ -427,23 +432,15 @@ export const CartProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const authData = getUserData();
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cart/item/${itemId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authData.token}`,
-          },
-        }
-      );
+      
+      // Use the simplified route
+      const data = await apiCall(REMOVE_CART_ITEM(itemId), {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${authData.token}`,
+        },
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to remove cart item");
-      }
-
-      const data = await response.json();
       if (data.success) {
         await fetchCartFromDatabase();
         return data;
@@ -457,11 +454,13 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Business logic for removing guest cart item
   const removeCartItemLocalStorage = (itemId) => {
     try {
+      const cartItems = getGuestCart();
       const newCartItems = cartItems.filter((item) => item.id !== itemId);
       setCartItems(newCartItems);
-      saveCartToLocalStorage(newCartItems);
+      saveGuestCart(newCartItems);
 
       return { success: true, message: "Item removed from cart successfully" };
     } catch (error) {
@@ -481,24 +480,16 @@ export const CartProvider = ({ children }) => {
     setIsLoading(true);
     try {
       const authData = getUserData();
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/cart/clear`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${authData.token}`,
-          },
-          body: JSON.stringify({ userId: user.id }),
-        }
-      );
+      
+      // Use the simplified route
+      const data = await apiCall(CLEAR_CART, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${authData.token}`,
+        },
+        body: JSON.stringify({ userId: user.id }),
+      });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to clear cart");
-      }
-
-      const data = await response.json();
       if (data.success) {
         setCartItems([]);
         return data;
@@ -512,10 +503,11 @@ export const CartProvider = ({ children }) => {
     }
   };
 
+  // Business logic for clearing guest cart
   const clearCartLocalStorage = () => {
     try {
       setCartItems([]);
-      localStorage.removeItem("guestCart");
+      clearGuestCart();
       return { success: true, message: "Cart cleared successfully" };
     } catch (error) {
       throw error;
@@ -531,30 +523,18 @@ export const CartProvider = ({ children }) => {
     if (shouldMergeCart && newUser?.id) {
       console.log("🔍 Starting merge process...");
 
-      const guestCartFromStorage = localStorage.getItem("guestCart");
-      let guestCartItems = [];
-
-      if (guestCartFromStorage) {
-        try {
-          guestCartItems = JSON.parse(guestCartFromStorage);
-          console.log("🔍 Guest cart items from localStorage:", guestCartItems);
-        } catch (e) {
-          console.error("🔍 Error parsing guest cart from localStorage:", e);
-          return;
-        }
-      }
+      const guestCartItems = getGuestCart();
 
       if (guestCartItems.length > 0) {
         console.log("🔍 Found guest items to merge, processing...");
         setIsLoading(true);
 
         try {
-          // Prepare items for batch add - UPDATED to handle both sized and regular products
           const itemsToAdd = guestCartItems.map((item) => {
             console.log("🔍 Processing guest item:", item);
             return {
               productId: item.product.id,
-              sizeId: item.sizeVariant?.sizeId || null, // Can be null for regular products
+              sizeId: item.sizeVariant?.sizeId || null,
               quantity: item.quantity,
               price: item.sizeVariant?.price || item.product.discountedPrice || item.product.price,
             };
@@ -563,41 +543,33 @@ export const CartProvider = ({ children }) => {
           console.log("🔍 Items to add to database:", itemsToAdd);
 
           const authData = getUserData();
-          const url = `${process.env.NEXT_PUBLIC_API_URL}/api/cart/batch-add`;
-
           const requestBody = {
             userId: newUser.id,
             items: itemsToAdd,
           };
 
-          const response = await fetch(url, {
+          // Use the simplified route
+          const data = await apiCall(BATCH_ADD_TO_CART, {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
               Authorization: `Bearer ${authData.token}`,
             },
             body: JSON.stringify(requestBody),
           });
 
-          if (response.ok) {
-            const data = await response.json();
-            console.log("🔍 Batch add response data:", data);
+          console.log("🔍 Batch add response data:", data);
 
-            if (data.success) {
-              console.log("🔍 ✅ Merge successful, clearing guest cart...");
-              localStorage.removeItem("guestCart");
-              
-              setUser(newUser);
-              setCartItems([]);
-              await fetchCartFromDatabase();
+          if (data.success) {
+            console.log("🔍 ✅ Merge successful, clearing guest cart...");
+            clearGuestCart();
+            
+            setUser(newUser);
+            setCartItems([]);
+            await fetchCartFromDatabase();
 
-              console.log("🔍 ✅ Cart updated in UI");
-            } else {
-              console.log("🔍 ❌ Merge failed:", data.message);
-            }
+            console.log("🔍 ✅ Cart updated in UI");
           } else {
-            const errorData = await response.json();
-            console.error("🔍 ❌ Batch add failed:", errorData);
+            console.log("🔍 ❌ Merge failed:", data.message);
           }
         } catch (error) {
           console.error("🔍 ❌ Error merging guest cart:", error);

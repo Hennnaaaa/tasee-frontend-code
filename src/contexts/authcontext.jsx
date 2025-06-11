@@ -3,6 +3,8 @@
  
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import {LOGIN, SIGNUP, VERIFY_OTP} from '@/utils/routes/customerRoutes';
+
  
 const AuthContext = createContext({});
  
@@ -208,7 +210,7 @@ export const AuthProvider = ({ children }) => {
     if (!isClient) return { success: false, error: 'Not initialized' };
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/create`;
+      const url = SIGNUP;
       console.log('Signup URL:', url);
       console.log('Signup data:', userData);
      
@@ -240,7 +242,7 @@ export const AuthProvider = ({ children }) => {
      
       if (data.success) {
         setPendingEmail(userData.email);
-        router.push('/verify-otp');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/verify-otp`);
         return { success: true, message: data.message };
       }
       return { success: false, error: data.message || 'Signup failed' };
@@ -254,7 +256,7 @@ export const AuthProvider = ({ children }) => {
     if (!isClient) return { success: false, error: 'Not initialized' };
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/verify-OTP`;
+      const url =  VERIFY_OTP;
       console.log('Verify OTP URL:', url);
       console.log('OTP data:', { email, otp });
      
@@ -277,7 +279,7 @@ export const AuthProvider = ({ children }) => {
       console.log('Verify OTP response:', data);
      
       if (data.success) {
-        router.push('/login');
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return { success: true, message: data.message };
       }
       return { success: false, error: data.message || 'OTP verification failed' };
@@ -291,7 +293,7 @@ export const AuthProvider = ({ children }) => {
     if (!isClient) return { success: false, error: 'Not initialized' };
     
     try {
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/api/customer/login`;
+      const url =LOGIN;
      
       const response = await fetch(url, {
         method: 'POST',
@@ -365,10 +367,10 @@ export const AuthProvider = ({ children }) => {
         setTimeout(() => {
           if (data.data.user.role === 'admin' || data.data.user.role === 'ADMIN') {
             console.log('🔍 Redirecting admin to dashboard...');
-            router.push('/admin/dashboard');
+            router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/admin/dashboard`);
           } else {
             console.log('🔍 Redirecting customer to home...');
-            router.push('/customer/home');
+            router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`);
           }
         }, data.data.user.role === 'customer' ? 500 : 100); // Longer delay for customers due to cart operations
        
@@ -435,10 +437,10 @@ export const AuthProvider = ({ children }) => {
       // 6. Navigate based on user role - UPDATED for customer home preservation
       console.log('🔍 Redirecting after logout...');
       if (currentUser?.role === 'admin' || currentUser?.role === 'ADMIN') {
-        router.push('/login'); // Redirect admin to login page
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`); // Redirect admin to login page
       } else {
         // ⭐ Keep customer on /customer/home after logout
-        router.push('/customer/home'); 
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`); 
       }
       
       console.log('🔍 === LOGOUT PROCESS COMPLETED ===');
@@ -448,7 +450,7 @@ export const AuthProvider = ({ children }) => {
       // Even if there's an error, ensure basic cleanup
       setUser(null);
       clearAllUserData();
-      router.push('/login'); // Fallback to main login page
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`); // Fallback to main login page
     }
   };
  

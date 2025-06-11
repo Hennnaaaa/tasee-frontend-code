@@ -202,7 +202,7 @@ const SubcategoryPage = () => {
               We couldn't find any products in this category at the moment. Please check back soon or explore other categories.
             </p>
             <Link 
-              href="/customer/home"
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
               className="inline-block bg-stone-800 text-white px-12 py-4 font-light tracking-widest hover:bg-stone-900 transition-colors duration-300"
             >
               EXPLORE ALL COLLECTIONS

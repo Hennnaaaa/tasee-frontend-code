@@ -1,4 +1,4 @@
-// src/app/cart/page.js - Updated with discounted price debugging
+// src/app/cart/page.js - Cleaned up version
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -24,34 +24,7 @@ export default function CartPage() {
   const [updatingItems, setUpdatingItems] = useState(new Set());
   const [imageErrors, setImageErrors] = useState(new Set());
 
-  // DEBUG: Log cart items whenever they change
-  useEffect(() => {
-    if (cartItems.length > 0) {
-      console.log("🛍️ === CART PAGE PRICING DEBUG ===");
-      cartItems.forEach((item, index) => {
-        console.log(`🛍️ Cart Item ${index + 1}: ${item.product?.name}`);
-        console.log(`🛍️   - Product ID: ${item.product?.id}`);
-        console.log(`🛍️   - Size Variant Price: ${item.sizeVariant?.price}`);
-        console.log(`🛍️   - Product Discounted Price: ${item.product?.discountedPrice}`);
-        console.log(`🛍️   - Product Regular Price: ${item.product?.price}`);
-        console.log(`🛍️   - Quantity: ${item.quantity}`);
-        
-        // Show the same calculation logic as in the render
-        const calculatedPrice = item.sizeVariant?.price || item.product?.discountedPrice || item.product?.price || 0;
-        const originalPrice = item.product?.price;
-        const hasDiscount = item.product?.discountedPrice && item.product?.discountedPrice < originalPrice;
-        
-        console.log(`🛍️   - Calculated Final Price: ${calculatedPrice}`);
-        console.log(`🛍️   - Has Discount: ${hasDiscount}`);
-        console.log(`🛍️   - Item Total: ${calculatedPrice * item.quantity}`);
-        console.log(`🛍️   - Full Item Object:`, JSON.stringify(item, null, 2));
-        console.log(`🛍️   ---`);
-      });
-      console.log(`🛍️ Cart Total from Context: ${cartTotal}`);
-      console.log("🛍️ === END CART PAGE PRICING DEBUG ===");
-    }
-  }, [cartItems, cartTotal]);
-
+  // Utility functions
   const showNotification = (type, message) => {
     setNotification({ type, message });
     setTimeout(() => setNotification(null), 5000);
@@ -61,6 +34,24 @@ export default function CartPage() {
     setImageErrors(prev => new Set(prev).add(productId));
   };
 
+  // Price calculation utility - extracted for consistency
+  const calculateItemPrice = (item) => {
+    const sizePrice = item.sizeVariant?.price;
+    const discountedPrice = item.product?.discountedPrice;
+    const regularPrice = item.product?.price;
+    
+    // Use discounted price if it exists and is lower than size/regular price
+    const price = discountedPrice && discountedPrice < (sizePrice || regularPrice) 
+      ? discountedPrice 
+      : (sizePrice || regularPrice || 0);
+    
+    const originalPrice = item.product?.price;
+    const hasDiscount = discountedPrice && discountedPrice < originalPrice;
+
+    return { price, originalPrice, hasDiscount };
+  };
+
+  // Event handlers
   const handleUpdateQuantity = async (itemId, newQuantity) => {
     if (newQuantity < 1) return;
 
@@ -109,7 +100,7 @@ export default function CartPage() {
     }
   };
 
-  // Component to render product image
+  // Component for product image
   const ProductImage = ({ product }) => {
     const productImages = product.images || [];
     const primaryImage = productImages.find(img => img.isPrimary) || productImages[0];
@@ -126,7 +117,6 @@ export default function CartPage() {
       );
     }
 
-    // Fallback placeholder
     return (
       <svg
         className="w-8 h-8 text-gray-400"
@@ -144,6 +134,144 @@ export default function CartPage() {
     );
   };
 
+  // Component for cart item
+  const CartItem = ({ item }) => {
+    const isUpdating = updatingItems.has(item.id);
+    const { price, originalPrice, hasDiscount } = calculateItemPrice(item);
+
+    return (
+      <div
+        className={`border border-gray-200 rounded-lg p-6 ${
+          isUpdating ? 'opacity-50' : ''
+        }`}
+      >
+        <div className="flex items-start space-x-4">
+          {/* Product Image */}
+          <div className="flex-shrink-0">
+            <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden">
+              <ProductImage product={item.product} />
+            </div>
+          </div>
+
+          {/* Product Details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h3 className="text-lg font-medium text-gray-900">
+                  <Link
+                    href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${item.product.id}`}
+                    className="hover:text-blue-600 transition-colors"
+                  >
+                    {item.product.name}
+                  </Link>
+                </h3>
+                
+                {/* Product Category */}
+                {item.product?.category && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    {item.product.category.name}
+                  </p>
+                )}
+                
+                {/* Size Information */}
+                {item.sizeVariant?.size && (
+                  <p className="text-sm text-gray-600 mt-1">
+                    <span className="font-medium">Size:</span> {item.sizeVariant.size.name || item.sizeVariant.size.code}
+                  </p>
+                )}
+
+                {/* SKU */}
+                {item.product?.sku && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    <span className="font-medium">SKU:</span> {item.product.sku}
+                  </p>
+                )}
+
+                {/* Price */}
+                <div className="flex items-center mt-3">
+                  <span className="text-xl font-semibold text-gray-900">
+                    {formatPrice(price)}
+                  </span>
+                  {hasDiscount && (
+                    <>
+                      <span className="ml-2 text-sm text-gray-500 line-through">
+                        {formatPrice(originalPrice)}
+                      </span>
+                      <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
+                        {Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {/* Remove Button */}
+              <button
+                onClick={() => handleRemoveItem(item.id)}
+                disabled={isUpdating}
+                className="ml-4 text-red-600 hover:text-red-800 disabled:opacity-50 p-1 rounded-full hover:bg-red-50 transition-colors"
+                title="Remove item"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Quantity Controls */}
+            <div className="flex items-center justify-between mt-4">
+              <div className="flex items-center">
+                <label className="text-sm font-medium text-gray-700 mr-3">
+                  Quantity:
+                </label>
+                <div className="flex items-center border border-gray-300 rounded-md">
+                  <button
+                    onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                    disabled={item.quantity <= 1 || isUpdating}
+                    className="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-md"
+                  >
+                    -
+                  </button>
+                  <div className="h-8 px-3 flex items-center justify-center min-w-[50px] bg-white border-l border-r border-gray-300">
+                    {item.quantity}
+                  </div>
+                  <button
+                    onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                    disabled={
+                      item.quantity >= (item.sizeVariant?.inventory || 99) || 
+                      item.quantity >= 99 || 
+                      isUpdating
+                    }
+                    className="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-md"
+                  >
+                    +
+                  </button>
+                </div>
+                
+                {item.sizeVariant?.inventory && (
+                  <div className="ml-3 text-sm text-gray-500">
+                    {item.sizeVariant.inventory} available
+                  </div>
+                )}
+              </div>
+
+              {/* Item Total */}
+              <div className="text-right">
+                <span className="text-lg font-semibold text-gray-900">
+                  {formatPrice(price * item.quantity)}
+                </span>
+                <div className="text-sm text-gray-500">
+                  {item.quantity} × {formatPrice(price)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -154,6 +282,7 @@ export default function CartPage() {
     );
   }
 
+  // Empty cart state
   if (cartItems.length === 0) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -180,7 +309,7 @@ export default function CartPage() {
             Start shopping to add items to your cart.
           </p>
           <Link
-            href="/"
+            href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
             className="inline-flex items-center px-6 py-3 bg-blue-500 text-white font-medium rounded-md hover:bg-blue-600 transition-colors"
           >
             Continue Shopping
@@ -208,168 +337,12 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="lg:col-span-2">
           <div className="space-y-4">
-            {cartItems.map((item, itemIndex) => {
-              const isUpdating = updatingItems.has(item.id);
-              
-              // Fixed price calculation logic to handle discounts properly
-              const sizePrice = item.sizeVariant?.price;
-              const discountedPrice = item.product?.discountedPrice;
-              const regularPrice = item.product?.price;
-              
-              // Use discounted price if it exists and is lower than size/regular price
-              const price = discountedPrice && discountedPrice < (sizePrice || regularPrice) 
-                ? discountedPrice 
-                : (sizePrice || regularPrice || 0);
-              
-              const originalPrice = item.product?.price;
-              const hasDiscount = discountedPrice && discountedPrice < originalPrice;
-
-              // DEBUG: Log pricing calculation for each item render
-              console.log(`🛍️ RENDER Item ${itemIndex + 1} (${item.product?.name}):`);
-              console.log(`🛍️   Size Variant Price: ${sizePrice}`);
-              console.log(`🛍️   Product Discounted Price: ${discountedPrice}`);
-              console.log(`🛍️   Product Regular Price: ${regularPrice}`);
-              console.log(`🛍️   Final Calculated Price: ${price}`);
-              console.log(`🛍️   Has Discount: ${hasDiscount}`);
-              console.log(`🛍️   Discount Logic: discountedPrice (${discountedPrice}) exists and < sizePrice/regularPrice (${sizePrice || regularPrice}) = ${discountedPrice && discountedPrice < (sizePrice || regularPrice)}`);
-
-              return (
-                <div
-                  key={item.id}
-                  className={`border border-gray-200 rounded-lg p-6 ${
-                    isUpdating ? 'opacity-50' : ''
-                  }`}
-                >
-                  <div className="flex items-start space-x-4">
-                    {/* Product Image - Updated */}
-                    <div className="flex-shrink-0">
-                      <div className="w-24 h-24 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 overflow-hidden">
-                        <ProductImage product={item.product} />
-                      </div>
-                    </div>
-
-                    {/* Product Details */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h3 className="text-lg font-medium text-gray-900">
-                            <Link
-                              href={`/products/${item.product.id}`}
-                              className="hover:text-blue-600 transition-colors"
-                            >
-                              {item.product.name}
-                            </Link>
-                          </h3>
-                          
-                          
-                          
-                          {/* Product Category */}
-                          {item.product?.category && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              {item.product.category.name}
-                            </p>
-                          )}
-                          
-                          {/* Size Information */}
-                          {item.sizeVariant?.size && (
-                            <p className="text-sm text-gray-600 mt-1">
-                              <span className="font-medium">Size:</span> {item.sizeVariant.size.name || item.sizeVariant.size.code}
-                            </p>
-                          )}
-
-                          {/* SKU */}
-                          {item.product?.sku && (
-                            <p className="text-sm text-gray-500 mt-1">
-                              <span className="font-medium">SKU:</span> {item.product.sku}
-                            </p>
-                          )}
-
-                          {/* Price - Updated to use currency context */}
-                          <div className="flex items-center mt-3">
-                            <span className="text-xl font-semibold text-gray-900">
-                              {formatPrice(price)}
-                            </span>
-                            {hasDiscount && (
-                              <>
-                                <span className="ml-2 text-sm text-gray-500 line-through">
-                                  {formatPrice(originalPrice)}
-                                </span>
-                                <span className="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded-full">
-                                  {Math.round(((originalPrice - price) / originalPrice) * 100)}% OFF
-                                </span>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Remove Button */}
-                        <button
-                          onClick={() => handleRemoveItem(item.id)}
-                          disabled={isUpdating}
-                          className="ml-4 text-red-600 hover:text-red-800 disabled:opacity-50 p-1 rounded-full hover:bg-red-50 transition-colors"
-                          title="Remove item"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center justify-between mt-4">
-                        <div className="flex items-center">
-                          <label className="text-sm font-medium text-gray-700 mr-3">
-                            Quantity:
-                          </label>
-                          <div className="flex items-center border border-gray-300 rounded-md">
-                            <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                              disabled={item.quantity <= 1 || isUpdating}
-                              className="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-l-md"
-                            >
-                              -
-                            </button>
-                            <div className="h-8 px-3 flex items-center justify-center min-w-[50px] bg-white border-l border-r border-gray-300">
-                              {item.quantity}
-                            </div>
-                            <button
-                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                              disabled={
-                                item.quantity >= (item.sizeVariant?.inventory || 99) || 
-                                item.quantity >= 99 || 
-                                isUpdating
-                              }
-                              className="h-8 w-8 flex items-center justify-center text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed rounded-r-md"
-                            >
-                              +
-                            </button>
-                          </div>
-                          
-                          {item.sizeVariant?.inventory && (
-                            <div className="ml-3 text-sm text-gray-500">
-                              {item.sizeVariant.inventory} available
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Item Total - Updated to use currency context */}
-                        <div className="text-right">
-                          <span className="text-lg font-semibold text-gray-900">
-                            {formatPrice(price * item.quantity)}
-                          </span>
-                          <div className="text-sm text-gray-500">
-                            {item.quantity} × {formatPrice(price)}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {cartItems.map((item) => (
+              <CartItem key={item.id} item={item} />
+            ))}
           </div>
 
-          {/* Clear Cart Button */}
+          {/* Cart Actions */}
           <div className="mt-6 flex justify-between items-center">
             <button
               onClick={handleClearCart}
@@ -382,7 +355,7 @@ export default function CartPage() {
             </button>
 
             <Link
-              href="/"
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
               className="text-blue-600 hover:text-blue-800 text-sm font-medium flex items-center"
             >
               <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -399,7 +372,6 @@ export default function CartPage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Order Summary
             </h2>
-
 
             {/* Currency Information */}
             <div className="mb-4 p-3 bg-white border border-gray-200 rounded-md">
@@ -446,7 +418,7 @@ export default function CartPage() {
 
             <div className="mt-6 space-y-3">
               <Link
-                href="/checkout"
+                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/checkout`}
                 className="block w-full bg-blue-500 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-600 transition-colors text-center"
               >
                 Proceed to Checkout
@@ -464,7 +436,7 @@ export default function CartPage() {
               )}
               
               <Link
-                href="/"
+                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
                 className="block w-full text-center bg-white border border-gray-300 text-gray-700 py-3 px-4 rounded-md font-medium hover:bg-gray-50 transition-colors"
               >
                 Continue Shopping

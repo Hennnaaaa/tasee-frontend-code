@@ -105,7 +105,7 @@ const WishlistPage = () => {
   // Redirect if not authenticated
   useEffect(() => {
     if (!isAuthenticated) {
-      router.push('/login');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login` || '/login');
     }
   }, [isAuthenticated, router]);
 
@@ -172,7 +172,7 @@ const WishlistPage = () => {
 
   // Handle view product
   const handleViewProduct = (productId) => {
-    router.push(`/customer/products/${productId}`);
+    router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${productId}`);
   };
 
   if (!isAuthenticated) {

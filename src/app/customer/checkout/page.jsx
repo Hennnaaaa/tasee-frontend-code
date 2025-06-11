@@ -6,8 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useCart } from '@/contexts/cartContext';
 import { useAddress } from '@/contexts/addressContext';
 import { useCurrency } from '@/contexts/currencyContext';
-import { CheckoutAddresses } from '@/components/addressSelector';
-import GuestCheckout from '@/components/guestCheckout';
+import { CheckoutAddresses } from '@/components/customerComponents/addressSelector';
+import GuestCheckout from '@/components/customerComponents/guestCheckout';
 import { CREATE_ORDER } from '@/utils/routes/orderRoutes';
 import Link from 'next/link';
 
@@ -59,7 +59,7 @@ export default function CheckoutPage() {
   // Redirect if cart is empty and user is not placing an order
   useEffect(() => {
     if (!cartLoading && cartItems.length === 0 && !isPlacingOrder) {
-      router.push('/cart');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/cart`);
     }
   }, [cartItems.length, cartLoading, router, isPlacingOrder]);
 
@@ -201,7 +201,7 @@ export default function CheckoutPage() {
         await clearCart();
 
         // Redirect to order confirmation
-        router.push(`/orders/${data.data.id}/confirmation`);
+        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders/${data.data.id}/confirmation`);
       } else {
         throw new Error(data.message || 'Failed to place order');
       }
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
                 <div className="mt-6 text-center">
                   <p className="text-gray-600 mb-4">Already have an account?</p>
                   <Link
-                    href="/login?redirect=/checkout"
+                    href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login?redirect=/customer/checkout`}
                     className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     Sign In
@@ -283,7 +283,7 @@ export default function CheckoutPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-semibold text-gray-900">Checkout</h1>
         <div className="flex items-center mt-2 text-sm text-gray-600">
-          <Link href="/cart" className="hover:text-blue-600">Cart</Link>
+          <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/cart`} className="hover:text-blue-600">Cart</Link>
           <span className="mx-2">→</span>
           <span className="text-blue-600">Checkout</span>
           {checkoutType && (

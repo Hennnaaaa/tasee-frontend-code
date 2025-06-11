@@ -88,7 +88,7 @@ const Footer = () => {
                 categories.map((category) => (
                   <li key={category.id}>
                     <Link 
-                      href={`/customer/category/${category.slug}`} 
+                      href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}`} 
                       className="text-gray-400 hover:text-white transition-colors duration-200"
                     >
                       {category.name}
@@ -106,22 +106,22 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/customer/profile" className="text-gray-400 hover:text-white transition-colors duration-200">
+                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/profile`} className="text-gray-400 hover:text-white transition-colors duration-200">
                   My Account
                 </Link>
               </li>
               <li>
-                <Link href="/orders" className="text-gray-400 hover:text-white transition-colors duration-200">
+                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`} className="text-gray-400 hover:text-white transition-colors duration-200">
                   My Orders
                 </Link>
               </li>
               <li>
-                <Link href="/customer/wishlist" className="text-gray-400 hover:text-white transition-colors duration-200">
+                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/wishlist`} className="text-gray-400 hover:text-white transition-colors duration-200">
                   Wishlist
                 </Link>
               </li>
               <li>
-                <Link href="/cart" className="text-gray-400 hover:text-white transition-colors duration-200">
+                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/cart`} className="text-gray-400 hover:text-white transition-colors duration-200">
                   Shopping Cart
                 </Link>
               </li>
@@ -135,12 +135,12 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/customer/privacy-policy" className="text-gray-400 hover:text-white transition-colors duration-200">
+                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/privacy-policy`} className="text-gray-400 hover:text-white transition-colors duration-200">
                   Privacy Policy
                 </Link>
               </li>
               <li>
-                <Link href="/customer/terms-conditions" className="text-gray-400 hover:text-white transition-colors duration-200">
+                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/terms-conditions`} className="text-gray-400 hover:text-white transition-colors duration-200">
                   Terms & Conditions
                 </Link>
               </li>
@@ -156,10 +156,10 @@ const Footer = () => {
               &copy; {currentYear} Tasee. All rights reserved.
             </p>
             <div className="flex space-x-6 text-sm">
-              <Link href="/customer/privacy-policy" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/privacy-policy`} className="text-gray-400 hover:text-white transition-colors duration-200">
                 Privacy
               </Link>
-              <Link href="/customer/terms-conditions" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/terms-conditions`} className="text-gray-400 hover:text-white transition-colors duration-200">
                 Terms
               </Link>
               <a href="mailto:Hina@absinthesoftware.com" className="text-gray-400 hover:text-white transition-colors duration-200">

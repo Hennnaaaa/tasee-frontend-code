@@ -124,7 +124,7 @@ const ProductCard = ({ product }) => {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <Link href={`/customer/products/${product.id}`}>
+      <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
         <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 w-full">
           {/* Wishlist Button - Top Left */}
           <div className="absolute top-6 left-6 z-20">
@@ -268,7 +268,7 @@ const ProductCard = ({ product }) => {
       {/* Product Information */}
       <div className="p-8 bg-white text-center">
         {/* Product Name */}
-        <Link href={`/customer/products/${product.id}`}>
+        <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
           <h3 className="text-lg font-normal text-stone-800 mb-2 hover:text-stone-600 transition-colors tracking-wide uppercase">
             {product.name}
           </h3>

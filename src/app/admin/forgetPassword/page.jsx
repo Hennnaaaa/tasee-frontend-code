@@ -53,7 +53,7 @@ export default function ForgotPasswordPage() {
 
   const handleBackToLogin = () => {
     // In a real app, this would navigate to the login page
-    router.push(`${process.env.NEXT_PUBLIC_ADMIN_URL}/login` || '/login');
+    router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login` || '/login');
   };
 
   if (isSubmitted) {

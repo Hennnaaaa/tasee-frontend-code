@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import dynamic from 'next/dynamic';
 
 // Dynamically import components to prevent SSR issues
-const Navbar = dynamic(() => import("../app/customer/components/layout/Navbar"), {
+const Navbar = dynamic(() => import("@/components/customerComponents/layout/Navbar"), {
   ssr: false,
   loading: () => (
     <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -25,7 +25,7 @@ const Navbar = dynamic(() => import("../app/customer/components/layout/Navbar"),
   )
 });
 
-const Footer = dynamic(() => import("../app/customer/components/layout/Footer"), {
+const Footer = dynamic(() => import("@/components/customerComponents/layout/Footer"), {
   ssr: false,
   loading: () => (
     <footer className="bg-gray-800 text-white">

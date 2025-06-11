@@ -49,7 +49,7 @@ const AdminLayout = ({ children }) => {
   useEffect(() => {
     const auth = getUserData();
     if (!auth || !auth.token || !auth.userData || auth.userData.role !== 'admin') {
-      router.push('/login');
+      router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
       return;
     }
 
@@ -176,7 +176,7 @@ const AdminLayout = ({ children }) => {
     stopPolling();
     localStorage.removeItem('user');
     localStorage.removeItem('token');
-    router.push('/login');
+    router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
   };
 
   // Render the appropriate component or children

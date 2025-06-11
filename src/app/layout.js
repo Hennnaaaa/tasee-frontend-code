@@ -19,13 +19,14 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={inter.className}>
-        {/* WishlistProvider MUST be the outermost to wrap ConditionalLayout */}
         <WishlistProvider>
           <AuthProvider>
             <CartProvider>
               <CurrencyProvider>
                 <AddressProvider>
-                  <ConditionalLayout>{children}</ConditionalLayout>
+                  <ConditionalLayout>
+                    {children}
+                  </ConditionalLayout>
                   <Toaster />
                 </AddressProvider>
               </CurrencyProvider>

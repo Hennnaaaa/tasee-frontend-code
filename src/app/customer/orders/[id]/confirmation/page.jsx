@@ -115,7 +115,7 @@ export default function OrderConfirmationPage() {
           <p className="text-gray-600 mb-2">Order ID: {orderId}</p>
           <p className="text-gray-600 mb-6">Error: {error}</p>
           <div className="space-x-4">
-            <Link href="/" className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 inline-block">
+            <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`} className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 inline-block">
               Back to Home
             </Link>
             <button 
@@ -136,7 +136,7 @@ export default function OrderConfirmationPage() {
         <div className="text-center">
           <h2 className="text-2xl font-semibold mb-4">Order Not Found</h2>
           <p className="text-gray-600 mb-6">The order you're looking for doesn't exist or you don't have permission to view it.</p>
-          <Link href="/" className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600">
+          <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`} className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600">
             Back to Home
           </Link>
         </div>
@@ -320,14 +320,14 @@ export default function OrderConfirmationPage() {
         {/* Actions */}
         <div className="text-center space-x-4">
           <Link
-            href="/customer/home"
+            href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/home`}
             className="bg-blue-500 text-white px-6 py-3 rounded-md hover:bg-blue-600 inline-block"
           >
             Continue Shopping
           </Link>
           {order.user && (
             <Link
-              href="/orders"
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/orders`}
               className="bg-gray-200 text-gray-800 px-6 py-3 rounded-md hover:bg-gray-300 inline-block"
             >
               View All Orders
