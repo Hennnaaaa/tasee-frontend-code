@@ -7,8 +7,7 @@ import {
   RefreshCw,
   Search,
   Trash2,
-  Edit,
-  ChevronRight,
+  Edit
 } from 'lucide-react';
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
