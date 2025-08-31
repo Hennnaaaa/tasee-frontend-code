@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import ProductCard from '@/app/customer/components/products/ProductCard';
+import ProductCard from '../../../../../components/customerComponents/products/ProductCard';
 
 const SubcategoryPage = () => {
   const params = useParams();
