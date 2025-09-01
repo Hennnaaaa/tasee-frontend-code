@@ -97,7 +97,7 @@ export default function CategoriesPage() {
         return;
       }
       
-      setError(err.response?.data?.message || 'Error fetching categories');
+      setError(err.response?.data?.message || 'Error while fetching categories');
       console.error(err);
     } finally {
       setLoading(false);
