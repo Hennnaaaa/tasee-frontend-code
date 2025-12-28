@@ -128,7 +128,7 @@ const Footer = () => {
             </ul>
           </div>
           
-          {/* Legal & Policies */}
+          {/* Legal & Policies
           <div>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
               Legal
@@ -146,7 +146,7 @@ const Footer = () => {
               </li>
               
             </ul>
-          </div>
+          </div> */}
         </div>
         
         {/* Bottom Footer */}
