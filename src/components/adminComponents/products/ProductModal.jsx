@@ -30,9 +30,8 @@ import {
 // Import auth utility
 import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
-import { color } from 'framer-motion';
 
-// Image Upload Component with ProductImage model support
+// FIXED: Image Upload Component with proper ordering maintained
 const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -44,9 +43,12 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
         url: img.url,
         id: img.id,
         isPrimary: img.isPrimary,
+        sortOrder: img.sortOrder,
         alt: img.alt,
         isExisting: true
       }));
+      // Sort by sortOrder to maintain correct order
+      existingPreviews.sort((a, b) => a.sortOrder - b.sortOrder);
       setPreviews(existingPreviews);
     } else {
       setPreviews([]);
@@ -65,15 +67,25 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     const newImages = [...selectedImages, ...files];
     setSelectedImages(newImages);
     
-    // Create previews for new files
-    files.forEach(file => {
+    // Create previews for new files - MAINTAIN ORDER
+    const newPreviews = [...previews];
+    let processedFiles = 0;
+    
+    files.forEach((file, index) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setPreviews(prev => [...prev, {
+        newPreviews.push({
           url: e.target.result,
           file: file,
+          sortOrder: previews.length + index,
           isExisting: false
-        }]);
+        });
+        
+        processedFiles++;
+        // Update previews only when all files are processed to maintain order
+        if (processedFiles === files.length) {
+          setPreviews([...newPreviews]);
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -129,51 +141,59 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
         </label>
         
         <span className="text-sm text-gray-500">
-          Click on an image to set it as primary
+          Images will appear in the order you select them. First image is the primary image.
         </span>
       </div>
 
       {previews.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {previews.map((preview, index) => (
-            <div key={index} className="relative group">
-              <div 
-                className={`relative cursor-pointer rounded-lg border-2 ${
-                  preview.isPrimary ? 'border-blue-500' : 'border-gray-200'
-                }`}
-                onClick={() => setPrimaryImage(index)}
-              >
-                <img 
-                  src={preview.url} 
-                  alt={preview.alt || `Preview ${index}`} 
-                  className="w-full h-32 object-cover rounded-lg"
-                />
-                
-                {preview.isPrimary && (
-                  <span className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 text-xs rounded">
-                    Primary
+        <div className="space-y-2">
+          <p className="text-sm text-gray-600">
+            <strong>Note:</strong> The order shown below is the order customers will see. First image is the primary/main image.
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {previews.map((preview, index) => (
+              <div key={index} className="relative group">
+                <div 
+                  className={`relative rounded-lg border-2 ${
+                    index === 0 ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+                  }`}
+                >
+                  <img 
+                    src={preview.url} 
+                    alt={preview.alt || `Preview ${index + 1}`} 
+                    className="w-full h-32 object-cover rounded-lg"
+                  />
+                  
+                  {index === 0 && (
+                    <span className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 text-xs rounded font-semibold">
+                      PRIMARY / MAIN
+                    </span>
+                  )}
+                  
+                  <span className="absolute bottom-2 left-2 bg-gray-800 bg-opacity-75 text-white px-2 py-1 text-xs rounded">
+                    Position {index + 1}
                   </span>
-                )}
+                  
+                  {preview.isExisting && (
+                    <span className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
+                      Existing
+                    </span>
+                  )}
+                </div>
                 
-                {preview.isExisting && (
-                  <span className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
-                    Existing
-                  </span>
-                )}
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeImage(index);
+                  }}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 shadow-lg"
+                >
+                  ×
+                </button>
               </div>
-              
-              <button 
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  removeImage(index);
-                }}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                ×
-              </button>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
     </div>
@@ -200,7 +220,7 @@ export default function ProductModal({
     discountedPrice: '',
     categoryId: '',
     sku: '',
-    // inventory: 0,
+    inventory: 0,  // FIXED: Removed comment
     weight: '',
     isActive: true,
   };
@@ -228,19 +248,24 @@ export default function ProductModal({
     if (product) {
       setFormData({
         name: product.name || '',
+        color: product.color || '',
+        fabric: product.fabric || '',
+        workDetails: product.workDetails || '',
         description: product.description || '',
         price: product.price ? parseFloat(product.price).toString() : '',
         discountedPrice: product.discountedPrice ? parseFloat(product.discountedPrice).toString() : '',
         categoryId: product.categoryId || '',
         sku: product.sku || '',
-        // inventory: product.inventory || 0,
+        inventory: product.inventory || 0,  // FIXED: Removed comment
         weight: product.weight ? product.weight.toString() : '',
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
       
-      // Set existing images from ProductImage model - FIXED to use 'images' alias
+      // Set existing images - maintain sortOrder
       if (product.images && product.images.length > 0) {
-        setExistingImages(product.images);
+        // Sort by sortOrder before setting
+        const sortedImages = [...product.images].sort((a, b) => a.sortOrder - b.sortOrder);
+        setExistingImages(sortedImages);
       } else {
         setExistingImages([]);
       }
@@ -316,7 +341,7 @@ export default function ProductModal({
     }
 
     if (!formData.workDetails.trim()) {
-      newErrors.workDetails = ' Work Details are required';
+      newErrors.workDetails = 'Work Details are required';
     }
 
     if (!formData.price.trim()) {
@@ -337,9 +362,9 @@ export default function ProductModal({
       newErrors.weight = 'Weight must be a valid positive number';
     }
     
-    // if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
-    //   newErrors.inventory = 'Inventory must be a valid positive number';
-    // }
+    if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
+      newErrors.inventory = 'Inventory must be a valid positive number';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -382,7 +407,7 @@ export default function ProductModal({
       if (formData.sku) {
         formDataToSend.append('sku', formData.sku);
       }
-      formDataToSend.append('// inventory', parseInt(formData.inventory));
+      formDataToSend.append('inventory', parseInt(formData.inventory));  // FIXED: Removed comment characters
       if (formData.weight) {
         formDataToSend.append('weight', parseFloat(formData.weight));
       }
@@ -393,7 +418,7 @@ export default function ProductModal({
         formDataToSend.append('removeImageIds', JSON.stringify(removedImageIds));
       }
       
-      // Append new images
+      // Append new images - THEY WILL BE UPLOADED IN THE ORDER THEY WERE SELECTED
       selectedImages.forEach((image) => {
         formDataToSend.append('images', image);
       });
@@ -495,52 +520,51 @@ export default function ProductModal({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Color <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="color">Color <span className="text-red-500">*</span></Label>
                   <Input
                     id="color"
                     name="color"
-                    placeholder="Enter product color"
+                    placeholder="Enter color"
                     value={formData.color}
                     onChange={handleChange}
-                    rows={4}
                   />
+                  {errors.color && <p className="text-red-500 text-sm">{errors.color}</p>}
                 </div>
-                
+
                 <div className="space-y-2">
-                  <Label htmlFor="description">Fabric <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="fabric">Fabric <span className="text-red-500">*</span></Label>
                   <Input
                     id="fabric"
                     name="fabric"
-                    placeholder="Enter product fabric"
+                    placeholder="Enter fabric type"
                     value={formData.fabric}
                     onChange={handleChange}
-                    rows={4}
                   />
+                  {errors.fabric && <p className="text-red-500 text-sm">{errors.fabric}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Work Details <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="workDetails">Work Details <span className="text-red-500">*</span></Label>
                   <Input
                     id="workDetails"
                     name="workDetails"
-                    placeholder="Enter work details (e.g. Embroidered And Embellished)"
+                    placeholder="Enter work details"
                     value={formData.workDetails}
                     onChange={handleChange}
-                    rows={4}
                   />
+                  {errors.workDetails && <p className="text-red-500 text-sm">{errors.workDetails}</p>}
                 </div>
-
+                
                 <div className="space-y-2">
                   <Label htmlFor="categoryId">
                     Category <span className="text-red-500">*</span>
                   </Label>
-                  <Select
-                    name="categoryId"
-                    value={formData.categoryId}
+                  <Select 
+                    value={formData.categoryId} 
                     onValueChange={(value) => handleSelectChange('categoryId', value)}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a category" />
+                      <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((category) => (
@@ -552,31 +576,6 @@ export default function ProductModal({
                   </Select>
                   {errors.categoryId && <p className="text-red-500 text-sm">{errors.categoryId}</p>}
                 </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="sku">SKU</Label>
-                  <Input
-                    id="sku"
-                    name="sku"
-                    placeholder="Enter SKU (leave blank to auto-generate)"
-                    value={formData.sku}
-                    onChange={handleChange}
-                  />
-                  <p className="text-muted-foreground text-xs">Leave blank to auto-generate</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="isActive"
-                      name="isActive"
-                      checked={formData.isActive}
-                      onCheckedChange={(checked) => handleSelectChange('isActive', checked)}
-                    />
-                    <Label htmlFor="isActive">Active</Label>
-                  </div>
-                  <p className="text-muted-foreground text-xs">Inactive products won't be visible to customers</p>
-                </div>
               </div>
             </TabsContent>
             
@@ -586,108 +585,95 @@ export default function ProductModal({
                   <Label htmlFor="price">
                     Price <span className="text-red-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5">$</span>
-                    <Input
-                      id="price"
-                      name="price"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={formData.price}
-                      onChange={handleChange}
-                      className="pl-7"
-                    />
-                  </div>
+                  <Input
+                    id="price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.price}
+                    onChange={handleChange}
+                  />
                   {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
                 </div>
                 
                 <div className="space-y-2">
                   <Label htmlFor="discountedPrice">Discounted Price</Label>
-                  <div className="relative">
-                    <span className="absolute left-3 top-2.5">$</span>
-                    <Input
-                      id="discountedPrice"
-                      name="discountedPrice"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="0.00"
-                      value={formData.discountedPrice}
-                      onChange={handleChange}
-                      className="pl-7"
-                    />
-                  </div>
+                  <Input
+                    id="discountedPrice"
+                    name="discountedPrice"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.discountedPrice}
+                    onChange={handleChange}
+                  />
                   {errors.discountedPrice && <p className="text-red-500 text-sm">{errors.discountedPrice}</p>}
                 </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sku">SKU</Label>
+                  <Input
+                    id="sku"
+                    name="sku"
+                    placeholder="Auto-generated if empty"
+                    value={formData.sku}
+                    onChange={handleChange}
+                  />
+                </div>
                 
-                {/* <div className="space-y-2">
-                  <Label htmlFor="inventory">Base Inventory</Label>
+                <div className="space-y-2">
+                  <Label htmlFor="inventory">Inventory</Label>
                   <Input
                     id="inventory"
                     name="inventory"
                     type="number"
-                    min="0"
                     placeholder="0"
                     value={formData.inventory}
                     onChange={handleChange}
                   />
                   {errors.inventory && <p className="text-red-500 text-sm">{errors.inventory}</p>}
-                  <p className="text-muted-foreground text-xs">Base inventory (for products without size variants)</p>
-                </div> */}
-                
-                <div className="space-y-2">
-                  <Label htmlFor="weight">Weight (kg)</Label>
-                  <Input
-                    id="weight"
-                    name="weight"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="0.00"
-                    value={formData.weight}
-                    onChange={handleChange}
-                  />
-                  {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
                 </div>
               </div>
               
-              <div className="pt-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Note: If you need to manage size-specific inventory, save the product first, then use the "Manage Sizes" option.
-                </p>
+              <div className="space-y-2">
+                <Label htmlFor="weight">Weight (kg)</Label>
+                <Input
+                  id="weight"
+                  name="weight"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={formData.weight}
+                  onChange={handleChange}
+                />
+                {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Switch
+                  id="isActive"
+                  checked={formData.isActive}
+                  onCheckedChange={(checked) => handleSelectChange('isActive', checked)}
+                />
+                <Label htmlFor="isActive">Active</Label>
               </div>
             </TabsContent>
-
+            
             <TabsContent value="images" className="space-y-4 pt-4">
-              <div className="space-y-4">
-                <div>
-                  <h3 className="text-lg font-medium">Product Images</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Upload up to 5 images for your product. Click on an image to set it as the primary image.
-                  </p>
-                </div>
-                
-                <ImageUpload 
-                  onImagesChange={handleImagesChange}
-                  existingImages={existingImages}
-                  onRemoveExistingImage={handleRemoveExistingImage}
-                  maxImages={5}
-                />
-                
-                {existingImages.length === 0 && selectedImages.length === 0 && (
-                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                    <p className="text-gray-500">No images uploaded yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Upload some images to showcase your product</p>
-                  </div>
-                )}
-              </div>
+              <ImageUpload 
+                onImagesChange={handleImagesChange}
+                existingImages={existingImages.filter(img => !removedImageIds.includes(img.id))}
+                onRemoveExistingImage={handleRemoveExistingImage}
+                maxImages={5}
+              />
             </TabsContent>
           </Tabs>
           
           <DialogFooter className="mt-6">
-            <Button variant="outline" onClick={onClose} type="button">
+            <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>
