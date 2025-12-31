@@ -31,9 +31,8 @@ import {
 import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
 
-// Enhanced Image Upload Component with Drag-and-Drop Reordering
+// FIXED Image Upload Component with Working Drag-and-Drop
 const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage }) => {
-  const [selectedImages, setSelectedImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
 
@@ -48,7 +47,8 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
           isPrimary: img.isPrimary,
           sortOrder: img.sortOrder || index,
           alt: img.alt,
-          isExisting: true
+          isExisting: true,
+          file: null
         }));
       setPreviews(existingPreviews);
     } else {
@@ -59,38 +59,42 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
     
-    const totalImages = selectedImages.length + existingImages.length;
+    const totalImages = previews.filter(p => !p.isExisting).length + existingImages.length;
     if (files.length + totalImages > maxImages) {
       alert(`Maximum ${maxImages} images allowed`);
       return;
     }
 
-    const newImages = [...selectedImages, ...files];
-    setSelectedImages(newImages);
-    
-    // Create previews for new files - maintaining order
-    const newPreviews = [...previews];
-    let processedCount = 0;
-    
+    // Process all files and create previews
+    let loadedCount = 0;
+    const newPreviews = [];
+
     files.forEach((file, index) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         newPreviews.push({
           url: e.target.result,
           file: file,
-          sortOrder: previews.length + index,
-          isExisting: false
+          isExisting: false,
+          sortOrder: previews.length + index
         });
         
-        processedCount++;
-        if (processedCount === files.length) {
-          setPreviews([...newPreviews]);
+        loadedCount++;
+        
+        // When all files are loaded, update state
+        if (loadedCount === files.length) {
+          const updatedPreviews = [...previews, ...newPreviews];
+          setPreviews(updatedPreviews);
+          
+          // Extract files in current order and send to parent
+          const orderedFiles = updatedPreviews
+            .filter(p => !p.isExisting && p.file)
+            .map(p => p.file);
+          onImagesChange(orderedFiles);
         }
       };
       reader.readAsDataURL(file);
     });
-
-    onImagesChange(newImages);
   };
 
   const removeImage = (index) => {
@@ -99,27 +103,45 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     if (imageToRemove.isExisting) {
       // Handle removal of existing images
       onRemoveExistingImage(imageToRemove.id);
-      const newPreviews = previews.filter((_, i) => i !== index);
-      setPreviews(newPreviews);
-    } else {
-      // Handle removal of newly selected images
-      const newImageIndex = previews.slice(0, index).filter(p => !p.isExisting).length;
-      const newImages = selectedImages.filter((_, i) => i !== newImageIndex);
-      const newPreviews = previews.filter((_, i) => i !== index);
-      
-      setSelectedImages(newImages);
-      setPreviews(newPreviews);
-      onImagesChange(newImages);
     }
+    
+    // Remove from previews
+    const newPreviews = previews.filter((_, i) => i !== index);
+    setPreviews(newPreviews);
+    
+    // Update parent with new file order
+    const orderedFiles = newPreviews
+      .filter(p => !p.isExisting && p.file)
+      .map(p => p.file);
+    onImagesChange(orderedFiles);
   };
 
-  // Drag and drop handlers
+  // FIXED: Move image up or down
+  const moveImage = (index, direction) => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (newIndex < 0 || newIndex >= previews.length) return;
+    
+    const newPreviews = [...previews];
+    // Swap elements
+    [newPreviews[index], newPreviews[newIndex]] = [newPreviews[newIndex], newPreviews[index]];
+    
+    setPreviews(newPreviews);
+    
+    // Update parent with new file order
+    const orderedFiles = newPreviews
+      .filter(p => !p.isExisting && p.file)
+      .map(p => p.file);
+    onImagesChange(orderedFiles);
+  };
+
+  // FIXED: Drag and drop handlers
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e, index) => {
+  const handleDragOver = (e) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
   };
@@ -143,38 +165,15 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     setPreviews(newPreviews);
     setDraggedIndex(null);
     
-    // Update selectedImages order for new images
-    const newSelectedImages = [];
-    newPreviews.forEach(preview => {
-      if (!preview.isExisting && preview.file) {
-        newSelectedImages.push(preview.file);
-      }
-    });
-    setSelectedImages(newSelectedImages);
-    onImagesChange(newSelectedImages);
+    // Update parent with new file order
+    const orderedFiles = newPreviews
+      .filter(p => !p.isExisting && p.file)
+      .map(p => p.file);
+    onImagesChange(orderedFiles);
   };
 
-  const moveImage = (index, direction) => {
-    const newIndex = direction === 'up' ? index - 1 : index + 1;
-    
-    if (newIndex < 0 || newIndex >= previews.length) return;
-    
-    const newPreviews = [...previews];
-    const temp = newPreviews[index];
-    newPreviews[index] = newPreviews[newIndex];
-    newPreviews[newIndex] = temp;
-    
-    setPreviews(newPreviews);
-    
-    // Update selectedImages order
-    const newSelectedImages = [];
-    newPreviews.forEach(preview => {
-      if (!preview.isExisting && preview.file) {
-        newSelectedImages.push(preview.file);
-      }
-    });
-    setSelectedImages(newSelectedImages);
-    onImagesChange(newSelectedImages);
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
   };
 
   return (
@@ -217,19 +216,30 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
           <div className="grid grid-cols-1 gap-3">
             {previews.map((preview, index) => (
               <div 
-                key={index}
+                key={`${preview.id || index}-${index}`}
                 draggable
                 onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
+                onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
                 className={`relative group flex items-center gap-3 p-3 bg-white border-2 rounded-lg transition-all ${
                   draggedIndex === index 
-                    ? 'opacity-50 border-blue-400' 
+                    ? 'opacity-50 border-blue-400 scale-95' 
                     : index === 0 
                       ? 'border-blue-500 shadow-md' 
                       : 'border-gray-200 hover:border-gray-300'
                 } cursor-move`}
               >
+                {/* Drag Handle Visual Indicator */}
+                <div className="flex-shrink-0 cursor-grab active:cursor-grabbing">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                    <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  </div>
+                </div>
+
                 {/* Order Number Badge */}
                 <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
@@ -261,8 +271,8 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
                 </div>
 
                 {/* Image Info */}
-                <div className="flex-grow">
-                  <p className="text-sm font-medium text-gray-900">
+                <div className="flex-grow min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
                     {index === 0 ? '⭐ Main Product Image' : `Image ${index + 1}`}
                   </p>
                   <p className="text-xs text-gray-500">
@@ -280,12 +290,15 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
                   {/* Move Up */}
                   <button
                     type="button"
-                    onClick={() => moveImage(index, 'up')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveImage(index, 'up');
+                    }}
                     disabled={index === 0}
-                    className={`p-1 rounded ${
+                    className={`px-2 py-1 rounded text-sm font-bold ${
                       index === 0 
                         ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
                     }`}
                     title="Move up"
                   >
@@ -295,12 +308,15 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
                   {/* Move Down */}
                   <button
                     type="button"
-                    onClick={() => moveImage(index, 'down')}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveImage(index, 'down');
+                    }}
                     disabled={index === previews.length - 1}
-                    className={`p-1 rounded ${
+                    className={`px-2 py-1 rounded text-sm font-bold ${
                       index === previews.length - 1
                         ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
-                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        : 'bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700'
                     }`}
                     title="Move down"
                   >
@@ -310,17 +326,15 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
                   {/* Delete */}
                   <button
                     type="button"
-                    onClick={() => removeImage(index)}
-                    className="p-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeImage(index);
+                    }}
+                    className="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-600 active:bg-red-700 text-sm font-bold"
                     title="Delete"
                   >
                     ✕
                   </button>
-                </div>
-
-                {/* Drag Handle Indicator */}
-                <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-1 h-12 bg-gray-400 rounded-full"></div>
                 </div>
               </div>
             ))}
@@ -351,7 +365,6 @@ export default function ProductModal({
     discountedPrice: '',
     categoryId: '',
     sku: '',
-    // inventory: 0,
     weight: '',
     isActive: true,
   };
@@ -387,7 +400,6 @@ export default function ProductModal({
         discountedPrice: product.discountedPrice ? parseFloat(product.discountedPrice).toString() : '',
         categoryId: product.categoryId || '',
         sku: product.sku || '',
-        // inventory: product.inventory || 0,
         weight: product.weight ? product.weight.toString() : '',
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
@@ -449,6 +461,7 @@ export default function ProductModal({
 
   // Handle image selection
   const handleImagesChange = (images) => {
+    console.log('Images changed:', images.length);
     setSelectedImages(images);
   };
 
@@ -494,10 +507,6 @@ export default function ProductModal({
       newErrors.weight = 'Weight must be a valid positive number';
     }
     
-    // if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
-    //   newErrors.inventory = 'Inventory must be a valid positive number';
-    // }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -539,7 +548,6 @@ export default function ProductModal({
       if (formData.sku) {
         formDataToSend.append('sku', formData.sku);
       }
-      // formDataToSend.append('inventory', parseInt(formData.inventory));
       if (formData.weight) {
         formDataToSend.append('weight', parseFloat(formData.weight));
       }
@@ -551,7 +559,9 @@ export default function ProductModal({
       }
       
       // Append new images IN THE EXACT ORDER they appear in the UI
-      selectedImages.forEach((image) => {
+      console.log('Uploading images in order:', selectedImages.length);
+      selectedImages.forEach((image, index) => {
+        console.log(`Image ${index + 1}:`, image.name);
         formDataToSend.append('images', image);
       });
       
