@@ -31,24 +31,25 @@ import {
 import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
 
-// FIXED: Image Upload Component with proper ordering maintained
+// Enhanced Image Upload Component with Drag-and-Drop Reordering
 const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [previews, setPreviews] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
-  // Initialize with existing images
+  // Initialize with existing images - SORTED by sortOrder
   useEffect(() => {
     if (existingImages && existingImages.length > 0) {
-      const existingPreviews = existingImages.map(img => ({
-        url: img.url,
-        id: img.id,
-        isPrimary: img.isPrimary,
-        sortOrder: img.sortOrder,
-        alt: img.alt,
-        isExisting: true
-      }));
-      // Sort by sortOrder to maintain correct order
-      existingPreviews.sort((a, b) => a.sortOrder - b.sortOrder);
+      const existingPreviews = existingImages
+        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+        .map((img, index) => ({
+          url: img.url,
+          id: img.id,
+          isPrimary: img.isPrimary,
+          sortOrder: img.sortOrder || index,
+          alt: img.alt,
+          isExisting: true
+        }));
       setPreviews(existingPreviews);
     } else {
       setPreviews([]);
@@ -67,9 +68,9 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     const newImages = [...selectedImages, ...files];
     setSelectedImages(newImages);
     
-    // Create previews for new files - MAINTAIN ORDER
+    // Create previews for new files - maintaining order
     const newPreviews = [...previews];
-    let processedFiles = 0;
+    let processedCount = 0;
     
     files.forEach((file, index) => {
       const reader = new FileReader();
@@ -81,9 +82,8 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
           isExisting: false
         });
         
-        processedFiles++;
-        // Update previews only when all files are processed to maintain order
-        if (processedFiles === files.length) {
+        processedCount++;
+        if (processedCount === files.length) {
           setPreviews([...newPreviews]);
         }
       };
@@ -113,84 +113,215 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     }
   };
 
-  const setPrimaryImage = (index) => {
-    const newPreviews = previews.map((preview, i) => ({
-      ...preview,
-      isPrimary: i === index
-    }));
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newPreviews = [...previews];
+    const draggedItem = newPreviews[draggedIndex];
+    
+    // Remove from old position
+    newPreviews.splice(draggedIndex, 1);
+    // Insert at new position
+    newPreviews.splice(dropIndex, 0, draggedItem);
+    
     setPreviews(newPreviews);
+    setDraggedIndex(null);
+    
+    // Update selectedImages order for new images
+    const newSelectedImages = [];
+    newPreviews.forEach(preview => {
+      if (!preview.isExisting && preview.file) {
+        newSelectedImages.push(preview.file);
+      }
+    });
+    setSelectedImages(newSelectedImages);
+    onImagesChange(newSelectedImages);
+  };
+
+  const moveImage = (index, direction) => {
+    const newIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (newIndex < 0 || newIndex >= previews.length) return;
+    
+    const newPreviews = [...previews];
+    const temp = newPreviews[index];
+    newPreviews[index] = newPreviews[newIndex];
+    newPreviews[newIndex] = temp;
+    
+    setPreviews(newPreviews);
+    
+    // Update selectedImages order
+    const newSelectedImages = [];
+    newPreviews.forEach(preview => {
+      if (!preview.isExisting && preview.file) {
+        newSelectedImages.push(preview.file);
+      }
+    });
+    setSelectedImages(newSelectedImages);
+    onImagesChange(newSelectedImages);
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <input
-          type="file"
-          multiple
-          accept="image/*"
-          onChange={handleImageSelect}
-          className="hidden"
-          id="image-upload"
-        />
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-4">
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleImageSelect}
+            className="hidden"
+            id="image-upload"
+          />
+          
+          <label 
+            htmlFor="image-upload"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+          >
+            Upload Images ({previews.length}/{maxImages})
+          </label>
+        </div>
         
-        <label 
-          htmlFor="image-upload"
-          className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
-        >
-          Upload Images ({previews.length}/{maxImages})
-        </label>
-        
-        <span className="text-sm text-gray-500">
-          Images will appear in the order you select them. First image is the primary image.
-        </span>
+        <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+          <p className="text-sm text-blue-800 font-medium">📌 Image Ordering:</p>
+          <ul className="text-xs text-blue-700 mt-1 space-y-1">
+            <li>• <strong>Drag & Drop</strong> images to reorder them</li>
+            <li>• Use <strong>↑↓ arrows</strong> to move images up/down</li>
+            <li>• <strong>First image</strong> will be the main/primary image</li>
+            <li>• Customers will see images in this <strong>exact order</strong></li>
+          </ul>
+        </div>
       </div>
 
       {previews.length > 0 && (
         <div className="space-y-2">
-          <p className="text-sm text-gray-600">
-            <strong>Note:</strong> The order shown below is the order customers will see. First image is the primary/main image.
+          <p className="text-sm font-medium text-gray-700">
+            Current Order (Drag to reorder):
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 gap-3">
             {previews.map((preview, index) => (
-              <div key={index} className="relative group">
-                <div 
-                  className={`relative rounded-lg border-2 ${
-                    index === 0 ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
-                  }`}
-                >
+              <div 
+                key={index}
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDrop={(e) => handleDrop(e, index)}
+                className={`relative group flex items-center gap-3 p-3 bg-white border-2 rounded-lg transition-all ${
+                  draggedIndex === index 
+                    ? 'opacity-50 border-blue-400' 
+                    : index === 0 
+                      ? 'border-blue-500 shadow-md' 
+                      : 'border-gray-200 hover:border-gray-300'
+                } cursor-move`}
+              >
+                {/* Order Number Badge */}
+                <div className="flex-shrink-0 w-12 h-12 flex items-center justify-center">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
+                    index === 0 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-200 text-gray-700'
+                  }`}>
+                    {index + 1}
+                  </div>
+                </div>
+
+                {/* Image Preview */}
+                <div className="relative flex-shrink-0">
                   <img 
                     src={preview.url} 
-                    alt={preview.alt || `Preview ${index + 1}`} 
-                    className="w-full h-32 object-cover rounded-lg"
+                    alt={preview.alt || `Image ${index + 1}`} 
+                    className="w-24 h-24 object-cover rounded-md"
                   />
-                  
                   {index === 0 && (
-                    <span className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 text-xs rounded font-semibold">
-                      PRIMARY / MAIN
+                    <span className="absolute -top-2 -right-2 bg-blue-500 text-white px-2 py-1 text-xs rounded-full font-semibold shadow-lg">
+                      PRIMARY
                     </span>
                   )}
-                  
-                  <span className="absolute bottom-2 left-2 bg-gray-800 bg-opacity-75 text-white px-2 py-1 text-xs rounded">
-                    Position {index + 1}
-                  </span>
-                  
                   {preview.isExisting && (
-                    <span className="absolute top-2 right-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
-                      Existing
+                    <span className="absolute -bottom-2 -left-2 bg-green-500 text-white px-2 py-1 text-xs rounded-full">
+                      Saved
                     </span>
                   )}
                 </div>
-                
-                <button 
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    removeImage(index);
-                  }}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 shadow-lg"
-                >
-                  ×
-                </button>
+
+                {/* Image Info */}
+                <div className="flex-grow">
+                  <p className="text-sm font-medium text-gray-900">
+                    {index === 0 ? '⭐ Main Product Image' : `Image ${index + 1}`}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {preview.isExisting ? 'Already uploaded' : 'New image - will be uploaded'}
+                  </p>
+                  {index === 0 && (
+                    <p className="text-xs text-blue-600 font-medium mt-1">
+                      This appears first on product page & homepage
+                    </p>
+                  )}
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex-shrink-0 flex flex-col gap-1">
+                  {/* Move Up */}
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, 'up')}
+                    disabled={index === 0}
+                    className={`p-1 rounded ${
+                      index === 0 
+                        ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  
+                  {/* Move Down */}
+                  <button
+                    type="button"
+                    onClick={() => moveImage(index, 'down')}
+                    disabled={index === previews.length - 1}
+                    className={`p-1 rounded ${
+                      index === previews.length - 1
+                        ? 'bg-gray-100 text-gray-300 cursor-not-allowed' 
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  
+                  {/* Delete */}
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="p-1 bg-red-500 text-white rounded hover:bg-red-600"
+                    title="Delete"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* Drag Handle Indicator */}
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="w-1 h-12 bg-gray-400 rounded-full"></div>
+                </div>
               </div>
             ))}
           </div>
@@ -220,7 +351,7 @@ export default function ProductModal({
     discountedPrice: '',
     categoryId: '',
     sku: '',
-    inventory: 0,  // FIXED: Removed comment
+    // inventory: 0,
     weight: '',
     isActive: true,
   };
@@ -256,15 +387,16 @@ export default function ProductModal({
         discountedPrice: product.discountedPrice ? parseFloat(product.discountedPrice).toString() : '',
         categoryId: product.categoryId || '',
         sku: product.sku || '',
-        inventory: product.inventory || 0,  // FIXED: Removed comment
+        // inventory: product.inventory || 0,
         weight: product.weight ? product.weight.toString() : '',
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
       
-      // Set existing images - maintain sortOrder
+      // Set existing images - sorted by sortOrder
       if (product.images && product.images.length > 0) {
-        // Sort by sortOrder before setting
-        const sortedImages = [...product.images].sort((a, b) => a.sortOrder - b.sortOrder);
+        const sortedImages = [...product.images].sort((a, b) => 
+          (a.sortOrder || 0) - (b.sortOrder || 0)
+        );
         setExistingImages(sortedImages);
       } else {
         setExistingImages([]);
@@ -362,9 +494,9 @@ export default function ProductModal({
       newErrors.weight = 'Weight must be a valid positive number';
     }
     
-    if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
-      newErrors.inventory = 'Inventory must be a valid positive number';
-    }
+    // if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
+    //   newErrors.inventory = 'Inventory must be a valid positive number';
+    // }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -407,7 +539,7 @@ export default function ProductModal({
       if (formData.sku) {
         formDataToSend.append('sku', formData.sku);
       }
-      formDataToSend.append('inventory', parseInt(formData.inventory));  // FIXED: Removed comment characters
+      // formDataToSend.append('inventory', parseInt(formData.inventory));
       if (formData.weight) {
         formDataToSend.append('weight', parseFloat(formData.weight));
       }
@@ -418,7 +550,7 @@ export default function ProductModal({
         formDataToSend.append('removeImageIds', JSON.stringify(removedImageIds));
       }
       
-      // Append new images - THEY WILL BE UPLOADED IN THE ORDER THEY WERE SELECTED
+      // Append new images IN THE EXACT ORDER they appear in the UI
       selectedImages.forEach((image) => {
         formDataToSend.append('images', image);
       });
@@ -442,7 +574,6 @@ export default function ProductModal({
           }
         });
       }
-      console.log("Response from API:", response.data);
       
       if (response.data.success) {
         onSaved();
@@ -468,7 +599,7 @@ export default function ProductModal({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           <DialogDescription>
@@ -486,7 +617,7 @@ export default function ProductModal({
           <Tabs defaultValue="basic" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing & Inventory</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing & Details</TabsTrigger>
               <TabsTrigger value="images">Images</TabsTrigger>
             </TabsList>
             
@@ -502,7 +633,6 @@ export default function ProductModal({
                     placeholder="Enter product name"
                     value={formData.name}
                     onChange={handleChange}
-                    error={errors.name}
                   />
                   {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
                 </div>
@@ -519,28 +649,30 @@ export default function ProductModal({
                   />
                 </div>
                 
-                <div className="space-y-2">
-                  <Label htmlFor="color">Color <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="color"
-                    name="color"
-                    placeholder="Enter color"
-                    value={formData.color}
-                    onChange={handleChange}
-                  />
-                  {errors.color && <p className="text-red-500 text-sm">{errors.color}</p>}
-                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="color">Color <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="color"
+                      name="color"
+                      placeholder="Enter color"
+                      value={formData.color}
+                      onChange={handleChange}
+                    />
+                    {errors.color && <p className="text-red-500 text-sm">{errors.color}</p>}
+                  </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="fabric">Fabric <span className="text-red-500">*</span></Label>
-                  <Input
-                    id="fabric"
-                    name="fabric"
-                    placeholder="Enter fabric type"
-                    value={formData.fabric}
-                    onChange={handleChange}
-                  />
-                  {errors.fabric && <p className="text-red-500 text-sm">{errors.fabric}</p>}
+                  <div className="space-y-2">
+                    <Label htmlFor="fabric">Fabric <span className="text-red-500">*</span></Label>
+                    <Input
+                      id="fabric"
+                      name="fabric"
+                      placeholder="Enter fabric type"
+                      value={formData.fabric}
+                      onChange={handleChange}
+                    />
+                    {errors.fabric && <p className="text-red-500 text-sm">{errors.fabric}</p>}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -625,31 +757,18 @@ export default function ProductModal({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="inventory">Inventory</Label>
+                  <Label htmlFor="weight">Weight (kg)</Label>
                   <Input
-                    id="inventory"
-                    name="inventory"
+                    id="weight"
+                    name="weight"
                     type="number"
-                    placeholder="0"
-                    value={formData.inventory}
+                    step="0.01"
+                    placeholder="0.00"
+                    value={formData.weight}
                     onChange={handleChange}
                   />
-                  {errors.inventory && <p className="text-red-500 text-sm">{errors.inventory}</p>}
+                  {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
                 </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="weight">Weight (kg)</Label>
-                <Input
-                  id="weight"
-                  name="weight"
-                  type="number"
-                  step="0.01"
-                  placeholder="0.00"
-                  value={formData.weight}
-                  onChange={handleChange}
-                />
-                {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
               </div>
               
               <div className="flex items-center space-x-2">
