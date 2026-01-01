@@ -10,6 +10,7 @@ import { ArrowRight, Mail, RefreshCw } from 'lucide-react';
 export default function VerifyOTPPage() {
   const [otp, setOtp] = useState(new Array(6).fill(''));
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState(''); // ✅ ADD THIS
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
   const [timer, setTimer] = useState(60);
@@ -55,6 +56,7 @@ export default function VerifyOTPPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage(''); // ✅ CLEAR SUCCESS MESSAGE
     
     const otpString = otp.join('');
     if (otpString.length !== 6) {
@@ -64,30 +66,53 @@ export default function VerifyOTPPage() {
 
     setLoading(true);
 
-    const result = await verifyOTP(pendingEmail, otpString);
+    try {
+      const result = await verifyOTP(pendingEmail, otpString);
 
-    if (!result.success) {
-      setError(result.error || 'OTP verification failed');
+      if (!result.success) {
+        setError(result.error || 'OTP verification failed');
+        setOtp(new Array(6).fill(''));
+        inputRefs.current[0].focus();
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
       setOtp(new Array(6).fill(''));
       inputRefs.current[0].focus();
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleResend = async () => {
     setResendLoading(true);
     setError('');
+    setSuccessMessage(''); // ✅ CLEAR MESSAGES
     
-    // Call your resend OTP function here
-    const result = await resendOTP(pendingEmail);
-    
-    if (result.success) {
-      setTimer(60);
-    } else {
-      setError(result.error || 'Failed to resend OTP');
+    try {
+      // ✅ FIX: Properly handle the resendOTP response
+      const result = await resendOTP(pendingEmail);
+      
+      console.log('Resend OTP result:', result); // Debug log
+      
+      // ✅ FIX: Check if result exists and has success property
+      if (result && result.success) {
+        setTimer(60);
+        setSuccessMessage('OTP sent successfully! Check your email.');
+        
+        // Clear success message after 5 seconds
+        setTimeout(() => {
+          setSuccessMessage('');
+        }, 5000);
+      } else {
+        setError(result?.error || result?.message || 'Failed to resend OTP');
+      }
+      
+    } catch (err) {
+      console.error('Resend OTP error:', err);
+      setError('Failed to resend OTP. Please try again.');
+    } finally {
+      setResendLoading(false);
     }
-    
-    setResendLoading(false);
   };
 
   if (!pendingEmail) {
@@ -112,7 +137,6 @@ export default function VerifyOTPPage() {
                 alt="Logo" 
                 className="w-full h-full object-contain"
               />
-              
             </div>
             
             <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 border border-gray-300 rounded-2xl flex items-center justify-center">
@@ -131,6 +155,17 @@ export default function VerifyOTPPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
+            {/* ✅ ADD: Success message */}
+            {successMessage && (
+              <div className="border border-green-200 bg-green-50 text-green-600 p-4 rounded-xl text-sm backdrop-blur-sm text-center">
+                <div className="flex items-center justify-center gap-3">
+                  <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                  {successMessage}
+                </div>
+              </div>
+            )}
+
+            {/* ✅ KEEP: Error message */}
             {error && (
               <div className="border border-red-200 bg-red-50 text-red-600 p-4 rounded-xl text-sm backdrop-blur-sm text-center">
                 <div className="flex items-center justify-center gap-3">

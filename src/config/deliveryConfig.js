@@ -1,0 +1,37 @@
+// config/deliveryConfig.js
+// ✅ CHANGE DELIVERY DATES HERE - Updates everywhere automatically!
+
+export const deliveryConfig = {
+  // Standard shipping (default)
+  standard: {
+    minDays: 7,        // ← Change this number anytime
+    maxDays: 14,       // ← Change this number anytime
+    label: 'Standard Delivery',
+    description: 'Regular shipping to your location'
+  },
+  
+  // Express/Fast shipping
+  express: {
+    minDays: 2,
+    maxDays: 5,
+    label: 'Express Delivery',
+    description: 'Faster delivery for an additional fee',
+    cost: 15.00
+  },
+  
+  // International shipping
+  international: {
+    minDays: 10,
+    maxDays: 30,
+    label: 'International Delivery',
+    description: 'Delivery outside the country'
+  },
+  
+  // Pre-order (out of stock items)
+  preorder: {
+    minDays: 14,
+    maxDays: 21,
+    label: 'Pre-order Delivery',
+    description: 'Item will ship once back in stock'
+  },
+};

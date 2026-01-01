@@ -1,9 +1,9 @@
-// src/contexts/AuthContext.jsx - Fixed for shared login with role-based redirection
+// src/contexts/AuthContext.jsx - Fixed with resendOTP function added
 "use client"
  
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import {LOGIN, SIGNUP, VERIFY_OTP} from '@/utils/routes/customerRoutes';
+import {LOGIN, SIGNUP, VERIFY_OTP, RESEND_OTP} from '@/utils/routes/customerRoutes';
 
  
 const AuthContext = createContext({});
@@ -144,6 +144,7 @@ export const AuthProvider = ({ children }) => {
     // Always trigger cart update
     triggerCartUpdate();
   };
+
   const isCustomerInterface = () => {
     if (typeof window === 'undefined') return false;
     const currentPath = window.location.pathname;
@@ -256,7 +257,7 @@ export const AuthProvider = ({ children }) => {
     if (!isClient) return { success: false, error: 'Not initialized' };
     
     try {
-      const url =  VERIFY_OTP;
+      const url = VERIFY_OTP;
       console.log('Verify OTP URL:', url);
       console.log('OTP data:', { email, otp });
      
@@ -288,12 +289,60 @@ export const AuthProvider = ({ children }) => {
       return { success: false, error: error.message };
     }
   };
+
+  // ✅ ADD THIS: resendOTP function
+  const resendOTP = async (email) => {
+    if (!isClient) return { success: false, error: 'Not initialized' };
+    
+    try {
+      const url = RESEND_OTP; // Make sure this is defined in your routes
+      console.log('Resend OTP URL:', url);
+      console.log('Resending OTP to:', email);
+     
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+ 
+      console.log('Resend OTP response status:', response.status);
+     
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Resend OTP error response:', text);
+        return { success: false, error: `Server error: ${response.status}` };
+      }
+
+      const data = await response.json();
+      console.log('Resend OTP response:', data);
+     
+      // ✅ CRITICAL: Always return an object with success property
+      if (data.success) {
+        return { 
+          success: true, 
+          message: data.message || 'OTP sent successfully'
+        };
+      } else {
+        return { 
+          success: false, 
+          error: data.message || 'Failed to resend OTP' 
+        };
+      }
+    } catch (error) {
+      console.error('Resend OTP error:', error);
+      // ✅ CRITICAL: Return object even on error
+      return { 
+        success: false, 
+        error: error.message || 'Failed to resend OTP. Please try again.' 
+      };
+    }
+  };
  
   const loginWithRole = async (email, password, expectedRole = null) => {
     if (!isClient) return { success: false, error: 'Not initialized' };
     
     try {
-      const url =LOGIN;
+      const url = LOGIN;
      
       const response = await fetch(url, {
         method: 'POST',
@@ -519,6 +568,7 @@ export const AuthProvider = ({ children }) => {
     pendingEmail,
     signup,
     verifyOTP,
+    resendOTP, // ✅ ADD THIS to context value
     login,
     loginWithRole,
     logout,
@@ -536,6 +586,7 @@ export const AuthProvider = ({ children }) => {
     pendingEmail: '',
     signup: async () => ({ success: false, error: 'Not initialized' }),
     verifyOTP: async () => ({ success: false, error: 'Not initialized' }),
+    resendOTP: async () => ({ success: false, error: 'Not initialized' }), // ✅ ADD THIS
     login: async () => ({ success: false, error: 'Not initialized' }),
     loginWithRole: async () => ({ success: false, error: 'Not initialized' }),
     logout: async () => {},

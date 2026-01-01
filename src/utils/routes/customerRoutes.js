@@ -6,6 +6,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 export const LOGIN = `${BASE_URL}/api/customer/login`;
 export const SIGNUP = `${BASE_URL}/api/customer/create`;
 export const VERIFY_OTP = `${BASE_URL}/api/customer/verify-OTP`;
+export const RESEND_OTP = `${BASE_URL}/api/customer/resend-otp`;
 
 // Customer management routes
 export const SUBSCRIBE_NEWSLETTER = `${BASE_URL}/api/customer/subscribeNewsletter`;

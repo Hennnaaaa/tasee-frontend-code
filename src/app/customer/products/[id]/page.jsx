@@ -9,6 +9,7 @@ import { useCart } from '@/contexts/cartContext';
 import { useCurrency } from '@/contexts/currencyContext';
 import { useWishlist } from '@/contexts/wishlistContext';
 import { getUserData } from '@/utils/auth';
+import SimpleDeliveryBanner from '@/components/SimpleDeliveryBanner';
 
 // Import the ProductReviews component
 import ProductReviews from '@/components/customerComponents/reviews/ProductReview';
@@ -727,6 +728,12 @@ export default function ProductDetailsPage({ params }) {
               </button>
             </div>
           </div>
+           {/* ✅ ADD SIMPLE DELIVERY BANNER */}
+        <SimpleDeliveryBanner 
+          product={product}
+          className="mt-6"
+        />
+        
 
           {/* Add to Cart Button */}
           <div>

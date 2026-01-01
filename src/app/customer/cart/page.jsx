@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useCart } from '@/contexts/cartContext';
 import { useCurrency } from '@/contexts/currencyContext';
 
+import SimpleDeliveryBanner from '@/components/SimpleDeliveryBanner';
 export default function CartPage() {
   const {
     cartItems,
@@ -267,6 +268,14 @@ export default function CartPage() {
             </div>
           </div>
         </div>
+         {/* ✅ CORRECT - Component calculates dates automatically */}
+      <div className="mt-4 pt-4 border-t border-gray-200">
+        <SimpleDeliveryBanner 
+          product={item.product}
+          className="w-full"
+        />
+        {/* Component reads config file and calculates dates from TODAY */}
+      </div>
       </div>
     );
   };
@@ -341,6 +350,8 @@ export default function CartPage() {
               <CartItem key={item.id} item={item} />
             ))}
           </div>
+          
+
 
           {/* Cart Actions */}
           <div className="mt-6 flex justify-between items-center">

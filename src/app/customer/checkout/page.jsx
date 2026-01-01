@@ -10,6 +10,7 @@ import { CheckoutAddresses } from '@/components/customerComponents/addressSelect
 import GuestCheckout from '@/components/customerComponents/guestCheckout';
 import { CREATE_ORDER } from '@/utils/routes/orderRoutes';
 import Link from 'next/link';
+import SimpleDeliveryBanner from '@/components/SimpleDeliveryBanner';
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -383,6 +384,18 @@ export default function CheckoutPage() {
                 <span>Pricing in {currentCurrency.name}</span>
               </div>
             </div>
+             {/* ✅ CORRECT - Delivery banner with auto-calculated dates */}
+    <div className="mb-6">
+      <SimpleDeliveryBanner 
+        shippingType="standard"
+        className="w-full"
+      />
+      {/* Component automatically:
+          1. Reads config file
+          2. Calculates dates from today
+          3. Shows: "Estimated delivery dates: Jan 9, 2026 – Jan 16, 2026"
+          NO hardcoded dates! */}
+    </div>
 
             {/* Cart Items */}
             <div className="space-y-3 mb-6">

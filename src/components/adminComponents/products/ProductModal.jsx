@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GripVertical, Star } from 'lucide-react';
 
 // Import API routes
 import { 
@@ -30,23 +31,26 @@ import {
 // Import auth utility
 import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
-import { color } from 'framer-motion';
 
-// Image Upload Component with ProductImage model support
-const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage }) => {
+// ENHANCED Image Upload Component with Drag & Drop Reordering
+const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage, onReorderImages }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [previews, setPreviews] = useState([]);
+  const [draggedIndex, setDraggedIndex] = useState(null);
 
   // Initialize with existing images
   useEffect(() => {
     if (existingImages && existingImages.length > 0) {
-      const existingPreviews = existingImages.map(img => ({
-        url: img.url,
-        id: img.id,
-        isPrimary: img.isPrimary,
-        alt: img.alt,
-        isExisting: true
-      }));
+      const existingPreviews = existingImages
+        .sort((a, b) => a.sortOrder - b.sortOrder) // Sort by sortOrder
+        .map(img => ({
+          url: img.url,
+          id: img.id,
+          isPrimary: img.isPrimary,
+          alt: img.alt,
+          sortOrder: img.sortOrder,
+          isExisting: true
+        }));
       setPreviews(existingPreviews);
     } else {
       setPreviews([]);
@@ -66,14 +70,24 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     setSelectedImages(newImages);
     
     // Create previews for new files
-    files.forEach(file => {
+    const newPreviews = [...previews];
+    let loadedCount = 0;
+    
+    files.forEach((file, index) => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setPreviews(prev => [...prev, {
+        newPreviews.push({
           url: e.target.result,
           file: file,
+          sortOrder: previews.length + index,
+          isPrimary: previews.length === 0 && index === 0,
           isExisting: false
-        }]);
+        });
+        
+        loadedCount++;
+        if (loadedCount === files.length) {
+          setPreviews(newPreviews);
+        }
       };
       reader.readAsDataURL(file);
     });
@@ -88,15 +102,38 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
       // Handle removal of existing images
       onRemoveExistingImage(imageToRemove.id);
       const newPreviews = previews.filter((_, i) => i !== index);
-      setPreviews(newPreviews);
+      
+      // Recalculate sortOrder for remaining images
+      const reorderedPreviews = newPreviews.map((preview, i) => ({
+        ...preview,
+        sortOrder: i,
+        isPrimary: i === 0 // First image becomes primary if we removed the primary
+      }));
+      
+      setPreviews(reorderedPreviews);
+      
+      // Notify parent of order change
+      if (onReorderImages) {
+        const existingImagesOrder = reorderedPreviews
+          .filter(p => p.isExisting)
+          .map((p, i) => ({ id: p.id, sortOrder: i, isPrimary: p.isPrimary }));
+        onReorderImages(existingImagesOrder);
+      }
     } else {
       // Handle removal of newly selected images
       const newImageIndex = previews.slice(0, index).filter(p => !p.isExisting).length;
       const newImages = selectedImages.filter((_, i) => i !== newImageIndex);
       const newPreviews = previews.filter((_, i) => i !== index);
       
+      // Recalculate sortOrder
+      const reorderedPreviews = newPreviews.map((preview, i) => ({
+        ...preview,
+        sortOrder: i,
+        isPrimary: i === 0
+      }));
+      
       setSelectedImages(newImages);
-      setPreviews(newPreviews);
+      setPreviews(reorderedPreviews);
       onImagesChange(newImages);
     }
   };
@@ -107,6 +144,63 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
       isPrimary: i === index
     }));
     setPreviews(newPreviews);
+    
+    // Notify parent of primary change
+    if (onReorderImages) {
+      const existingImagesOrder = newPreviews
+        .filter(p => p.isExisting)
+        .map((p, i) => ({ id: p.id, sortOrder: p.sortOrder, isPrimary: p.isPrimary }));
+      onReorderImages(existingImagesOrder);
+    }
+  };
+
+  // DRAG AND DROP HANDLERS
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    
+    if (draggedIndex === null || draggedIndex === index) return;
+    
+    const newPreviews = [...previews];
+    const draggedItem = newPreviews[draggedIndex];
+    
+    // Remove from old position
+    newPreviews.splice(draggedIndex, 1);
+    // Insert at new position
+    newPreviews.splice(index, 0, draggedItem);
+    
+    // Update sortOrder for all images
+    const reorderedPreviews = newPreviews.map((preview, i) => ({
+      ...preview,
+      sortOrder: i
+    }));
+    
+    setPreviews(reorderedPreviews);
+    setDraggedIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    
+    // Notify parent of order change
+    if (onReorderImages) {
+      const existingImagesOrder = previews
+        .filter(p => p.isExisting)
+        .map((p, i) => ({ id: p.id, sortOrder: i, isPrimary: p.isPrimary }));
+      onReorderImages(existingImagesOrder);
+    }
+    
+    // Update new images order
+    const newImagesInOrder = previews
+      .filter(p => !p.isExisting)
+      .map(p => p.file);
+    setSelectedImages(newImagesInOrder);
+    onImagesChange(newImagesInOrder);
   };
 
   return (
@@ -129,52 +223,85 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
         </label>
         
         <span className="text-sm text-gray-500">
-          Click on an image to set it as primary
+          Drag to reorder • Click star to set primary
         </span>
       </div>
 
       {previews.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {previews.map((preview, index) => (
-            <div key={index} className="relative group">
+            <div 
+              key={preview.id || index} 
+              className="relative group cursor-move"
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragEnd={handleDragEnd}
+            >
               <div 
-                className={`relative cursor-pointer rounded-lg border-2 ${
-                  preview.isPrimary ? 'border-blue-500' : 'border-gray-200'
-                }`}
-                onClick={() => setPrimaryImage(index)}
+                className={`relative rounded-lg border-2 transition-all ${
+                  preview.isPrimary ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
+                } ${draggedIndex === index ? 'opacity-50' : ''}`}
               >
+                {/* Drag Handle */}
+                <div className="absolute top-2 left-2 bg-white/80 rounded p-1 cursor-grab active:cursor-grabbing">
+                  <GripVertical className="w-4 h-4 text-gray-600" />
+                </div>
+
                 <img 
                   src={preview.url} 
                   alt={preview.alt || `Preview ${index}`} 
                   className="w-full h-32 object-cover rounded-lg"
                 />
                 
-                {preview.isPrimary && (
-                  <span className="absolute top-2 left-2 bg-blue-500 text-white px-2 py-1 text-xs rounded">
-                    Primary
-                  </span>
-                )}
+                {/* Primary Star Button */}
+                <button
+                  type="button"
+                  onClick={() => setPrimaryImage(index)}
+                  className={`absolute top-2 right-10 p-1.5 rounded-full transition-all ${
+                    preview.isPrimary 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-white/80 text-gray-400 hover:text-yellow-500 hover:bg-white'
+                  }`}
+                  title="Set as primary image"
+                >
+                  <Star className="w-4 h-4" fill={preview.isPrimary ? 'currentColor' : 'none'} />
+                </button>
                 
+                {/* Existing Badge */}
                 {preview.isExisting && (
                   <span className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
                     Existing
                   </span>
                 )}
+
+                {/* Sort Order Badge */}
+                <span className="absolute bottom-2 right-2 bg-gray-800/70 text-white px-2 py-1 text-xs rounded">
+                  #{index + 1}
+                </span>
               </div>
               
+              {/* Delete Button */}
               <button 
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   removeImage(index);
                 }}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity z-10"
               >
                 ×
               </button>
             </div>
           ))}
         </div>
+      )}
+
+      {previews.length > 0 && (
+        <p className="text-xs text-gray-500 mt-2">
+          💡 Images will be displayed in this exact order on the customer side. 
+          The first image (marked with ⭐) will be shown on product listings.
+        </p>
       )}
     </div>
   );
@@ -200,7 +327,6 @@ export default function ProductModal({
     discountedPrice: '',
     categoryId: '',
     sku: '',
-    // inventory: 0,
     weight: '',
     isActive: true,
   };
@@ -212,6 +338,7 @@ export default function ProductModal({
   const [selectedImages, setSelectedImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [removedImageIds, setRemovedImageIds] = useState([]);
+  const [imageOrder, setImageOrder] = useState([]); // NEW: Track image order changes
   
   // Check authentication when modal opens
   useEffect(() => {
@@ -228,17 +355,19 @@ export default function ProductModal({
     if (product) {
       setFormData({
         name: product.name || '',
+        color: product.color || '',
+        fabric: product.fabric || '',
+        workDetails: product.workDetails || '',
         description: product.description || '',
         price: product.price ? parseFloat(product.price).toString() : '',
         discountedPrice: product.discountedPrice ? parseFloat(product.discountedPrice).toString() : '',
         categoryId: product.categoryId || '',
         sku: product.sku || '',
-        // inventory: product.inventory || 0,
         weight: product.weight ? product.weight.toString() : '',
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
       
-      // Set existing images from ProductImage model - FIXED to use 'images' alias
+      // Set existing images - FIXED to use 'images' alias
       if (product.images && product.images.length > 0) {
         setExistingImages(product.images);
       } else {
@@ -249,11 +378,13 @@ export default function ProductModal({
       setApiError('');
       setSelectedImages([]);
       setRemovedImageIds([]);
+      setImageOrder([]);
     } else {
       setFormData(initialState);
       setExistingImages([]);
       setSelectedImages([]);
       setRemovedImageIds([]);
+      setImageOrder([]);
     }
   }, [product, isOpen]);
   
@@ -265,7 +396,6 @@ export default function ProductModal({
       [name]: type === 'checkbox' ? checked : value,
     });
     
-    // Clear error for this field
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -281,7 +411,6 @@ export default function ProductModal({
       [name]: value,
     });
     
-    // Clear error for this field
     if (errors[name]) {
       setErrors({
         ...errors,
@@ -299,6 +428,11 @@ export default function ProductModal({
   const handleRemoveExistingImage = (imageId) => {
     setRemovedImageIds(prev => [...prev, imageId]);
   };
+
+  // NEW: Handle image reordering
+  const handleReorderImages = (newOrder) => {
+    setImageOrder(newOrder);
+  };
   
   // Validate form
   const validateForm = () => {
@@ -310,15 +444,12 @@ export default function ProductModal({
     if (!formData.color.trim()) {
       newErrors.color = 'Color is required';
     }
-
     if (!formData.fabric.trim()) {
       newErrors.fabric = 'Fabric is required';
     }
-
     if (!formData.workDetails.trim()) {
-      newErrors.workDetails = ' Work Details are required';
+      newErrors.workDetails = 'Work Details are required';
     }
-
     if (!formData.price.trim()) {
       newErrors.price = 'Price is required';
     } else if (isNaN(parseFloat(formData.price)) || parseFloat(formData.price) < 0) {
@@ -337,10 +468,6 @@ export default function ProductModal({
       newErrors.weight = 'Weight must be a valid positive number';
     }
     
-    // if (formData.inventory && (isNaN(parseInt(formData.inventory)) || parseInt(formData.inventory) < 0)) {
-    //   newErrors.inventory = 'Inventory must be a valid positive number';
-    // }
-    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -353,7 +480,6 @@ export default function ProductModal({
       return;
     }
     
-    // Get authentication data
     const auth = getUserData();
     if (!auth || !auth.token) {
       setApiError('Authentication required');
@@ -365,7 +491,6 @@ export default function ProductModal({
     setApiError('');
     
     try {
-      // Create FormData for file upload
       const formDataToSend = new FormData();
       
       // Append form fields
@@ -382,7 +507,6 @@ export default function ProductModal({
       if (formData.sku) {
         formDataToSend.append('sku', formData.sku);
       }
-      formDataToSend.append('// inventory', parseInt(formData.inventory));
       if (formData.weight) {
         formDataToSend.append('weight', parseFloat(formData.weight));
       }
@@ -392,8 +516,13 @@ export default function ProductModal({
       if (product && removedImageIds.length > 0) {
         formDataToSend.append('removeImageIds', JSON.stringify(removedImageIds));
       }
+
+      // NEW: Append image order for existing images
+      if (product && imageOrder.length > 0) {
+        formDataToSend.append('imageOrder', JSON.stringify(imageOrder));
+      }
       
-      // Append new images
+      // Append new images in order
       selectedImages.forEach((image) => {
         formDataToSend.append('images', image);
       });
@@ -401,7 +530,6 @@ export default function ProductModal({
       let response;
       
       if (product) {
-        // Update existing product
         response = await axios.put(UPDATE_PRODUCT(product.id), formDataToSend, {
           headers: {
             Authorization: `Bearer ${auth.token}`,
@@ -409,7 +537,6 @@ export default function ProductModal({
           }
         });
       } else {
-        // Create new product
         response = await axios.post(CREATE_PRODUCT, formDataToSend, {
           headers: {
             Authorization: `Bearer ${auth.token}`,
@@ -417,7 +544,6 @@ export default function ProductModal({
           }
         });
       }
-      console.log("Response from API:", response.data);
       
       if (response.data.success) {
         onSaved();
@@ -426,7 +552,6 @@ export default function ProductModal({
         setApiError(response.data.message || 'Error saving product');
       }
     } catch (err) {
-      // Handle unauthorized error
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
@@ -495,39 +620,39 @@ export default function ProductModal({
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Color <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="color">Color <span className="text-red-500">*</span></Label>
                   <Input
                     id="color"
                     name="color"
                     placeholder="Enter product color"
                     value={formData.color}
                     onChange={handleChange}
-                    rows={4}
                   />
+                  {errors.color && <p className="text-red-500 text-sm">{errors.color}</p>}
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Fabric <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="fabric">Fabric <span className="text-red-500">*</span></Label>
                   <Input
                     id="fabric"
                     name="fabric"
                     placeholder="Enter product fabric"
                     value={formData.fabric}
                     onChange={handleChange}
-                    rows={4}
                   />
+                  {errors.fabric && <p className="text-red-500 text-sm">{errors.fabric}</p>}
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="description">Work Details <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="workDetails">Work Details <span className="text-red-500">*</span></Label>
                   <Input
                     id="workDetails"
                     name="workDetails"
                     placeholder="Enter work details (e.g. Embroidered And Embellished)"
                     value={formData.workDetails}
                     onChange={handleChange}
-                    rows={4}
                   />
+                  {errors.workDetails && <p className="text-red-500 text-sm">{errors.workDetails}</p>}
                 </div>
 
                 <div className="space-y-2">
@@ -622,21 +747,6 @@ export default function ProductModal({
                   {errors.discountedPrice && <p className="text-red-500 text-sm">{errors.discountedPrice}</p>}
                 </div>
                 
-                {/* <div className="space-y-2">
-                  <Label htmlFor="inventory">Base Inventory</Label>
-                  <Input
-                    id="inventory"
-                    name="inventory"
-                    type="number"
-                    min="0"
-                    placeholder="0"
-                    value={formData.inventory}
-                    onChange={handleChange}
-                  />
-                  {errors.inventory && <p className="text-red-500 text-sm">{errors.inventory}</p>}
-                  <p className="text-muted-foreground text-xs">Base inventory (for products without size variants)</p>
-                </div> */}
-                
                 <div className="space-y-2">
                   <Label htmlFor="weight">Weight (kg)</Label>
                   <Input
@@ -665,7 +775,7 @@ export default function ProductModal({
                 <div>
                   <h3 className="text-lg font-medium">Product Images</h3>
                   <p className="text-sm text-muted-foreground">
-                    Upload up to 5 images for your product. Click on an image to set it as the primary image.
+                    Upload up to 5 images. Drag to reorder. Click the star to set primary image.
                   </p>
                 </div>
                 
@@ -673,6 +783,7 @@ export default function ProductModal({
                   onImagesChange={handleImagesChange}
                   existingImages={existingImages}
                   onRemoveExistingImage={handleRemoveExistingImage}
+                  onReorderImages={handleReorderImages}
                   maxImages={5}
                 />
                 
