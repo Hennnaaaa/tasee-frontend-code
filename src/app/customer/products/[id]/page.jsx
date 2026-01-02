@@ -629,6 +629,31 @@ export default function ProductDetailsPage({ params }) {
               <p className="text-gray-700 leading-relaxed text-lg">{String(product.description || '')}</p>
             </div>
           )}
+          {/* ✅ NEW: Product Specifications */}
+{(product.color || product.fabric || product.workDetails) && (
+  <div className="space-y-3">
+    {product.color && (
+      <div>
+        <h3 className="text-base font-medium text-gray-900 mb-1">Color</h3>
+        <p className="text-gray-700">{String(product.color)}</p>
+      </div>
+    )}
+
+    {product.fabric && (
+      <div>
+        <h3 className="text-base font-medium text-gray-900 mb-1">Fabric</h3>
+        <p className="text-gray-700">{String(product.fabric)}</p>
+      </div>
+    )}
+
+    {product.workDetails && (
+      <div>
+        <h3 className="text-base font-medium text-gray-900 mb-1">Work Details</h3>
+        <p className="text-gray-700">{String(product.workDetails)}</p>
+      </div>
+    )}
+  </div>
+)}
 
           {/* Size Selection */}
           {product.productType === 'sized' && product.availableSizes?.length > 0 ? (
@@ -1254,6 +1279,40 @@ export default function ProductDetailsPage({ params }) {
               <p className="text-gray-700 leading-relaxed">{String(product.description || '')}</p>
             </div>
           )}
+          {/* ✅ NEW SECTION: Mobile Additional Product Information */}
+  {(product.color || product.fabric || product.workDetails) && (
+    <div className="border-t border-gray-200 pt-4">
+      <h2 className="text-lg font-medium mb-3">Specifications</h2>
+      <div className="space-y-3">
+        {/* Color */}
+        {product.color && (
+          <div>
+            <dt className="text-sm font-medium text-gray-600 mb-1">Color</dt>
+            <dd className="text-gray-900">{String(product.color)}</dd>
+          </div>
+        )}
+
+        {/* Fabric */}
+        {product.fabric && (
+          <div>
+            <dt className="text-sm font-medium text-gray-600 mb-1">Fabric</dt>
+            <dd className="text-gray-900">{String(product.fabric)}</dd>
+          </div>
+        )}
+
+        {/* Work Details */}
+        {product.workDetails && (
+          <div>
+            <dt className="text-sm font-medium text-gray-600 mb-1">Work Details</dt>
+            <dd className="text-gray-900 leading-relaxed">
+              {String(product.workDetails)}
+            </dd>
+          </div>
+        )}
+      </div>
+    </div>
+  )}
+
 
           {/* Mobile Size Selection */}
           {product.productType === 'sized' && product.availableSizes?.length > 0 ? (
