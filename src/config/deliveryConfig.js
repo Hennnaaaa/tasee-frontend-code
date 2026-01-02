@@ -4,16 +4,16 @@
 export const deliveryConfig = {
   // Standard shipping (default)
   standard: {
-    minDays: 43,        // ← Change this number anytime
-    maxDays: 53,       // ← Change this number anytime
+    minDays: 26,        // ← Change this number anytime
+    maxDays: 36,       // ← Change this number anytime
     label: 'Standard Delivery',
     description: 'Regular shipping to your location'
   },
   
   // Express/Fast shipping
   express: {
-    minDays: 43,
-    maxDays: 53,
+    minDays: 26,
+    maxDays: 36,
     label: 'Express Delivery',
     description: 'Faster delivery for an additional fee',
     cost: 15.00
@@ -21,8 +21,8 @@ export const deliveryConfig = {
   
   // International shipping
   international: {
-    minDays: 43,
-    maxDays: 53,
+    minDays: 26,
+    maxDays: 36,
     label: 'International Delivery',
     description: 'Delivery outside the country'
   },
