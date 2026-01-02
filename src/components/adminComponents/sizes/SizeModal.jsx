@@ -34,15 +34,24 @@ export default function SizeModal({
 }) {
   const router = useRouter();
   
-  // Form state
+  // Form state with ✅ NEW measurement fields
   const initialState = {
     name: '',
     code: '',
     numericSize: '',
     category: 'TOPS',
+    // Traditional measurements
     bust: '',
     waist: '',
     hips: '',
+    // ✅ NEW: Pakistani/Indian TOPS measurements
+    shoulder: '',
+    chest: '',
+    length: '',
+    sleeves: '',
+    // ✅ NEW: Pakistani/Indian BOTTOMS measurements
+    bottom: '',
+    thigh: '',
     sortOrder: 0,
     isActive: true,
   };
@@ -72,9 +81,17 @@ export default function SizeModal({
         code: size.code || '',
         numericSize: size.numericSize || '',
         category: size.category || 'TOPS',
+        // Traditional measurements
         bust: size.bust || '',
         waist: size.waist || '',
         hips: size.hips || '',
+        // ✅ NEW: Pakistani/Indian measurements
+        shoulder: size.shoulder || '',
+        chest: size.chest || '',
+        length: size.length || '',
+        sleeves: size.sleeves || '',
+        bottom: size.bottom || '',
+        thigh: size.thigh || '',
         sortOrder: size.sortOrder || 0,
         isActive: size.isActive !== undefined ? size.isActive : true,
       });
@@ -210,7 +227,7 @@ export default function SizeModal({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{size ? 'Edit Size' : 'Add New Size'}</DialogTitle>
           <DialogDescription>
@@ -225,6 +242,7 @@ export default function SizeModal({
         )}
         
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="name">
@@ -295,42 +313,152 @@ export default function SizeModal({
             </div>
           </div>
           
-          <div className="grid grid-cols-3 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="bust">Bust Measurement</Label>
-              <Input
-                id="bust"
-                name="bust"
-                placeholder="e.g. 32-34"
-                value={formData.bust}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="waist">Waist Measurement</Label>
-              <Input
-                id="waist"
-                name="waist"
-                placeholder="e.g. 24-26"
-                value={formData.waist}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="hips">Hips Measurement</Label>
-              <Input
-                id="hips"
-                name="hips"
-                placeholder="e.g. 34-36"
-                value={formData.hips}
-                onChange={handleChange}
-              />
+          {/* Traditional Measurements */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-semibold mb-3 text-gray-700">
+              Traditional Measurements (inches)
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bust">Bust</Label>
+                <Input
+                  id="bust"
+                  name="bust"
+                  placeholder="e.g. 32-34"
+                  value={formData.bust}
+                  onChange={handleChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="waist">Waist</Label>
+                <Input
+                  id="waist"
+                  name="waist"
+                  placeholder="e.g. 24-26"
+                  value={formData.waist}
+                  onChange={handleChange}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="hips">Hips</Label>
+                <Input
+                  id="hips"
+                  name="hips"
+                  placeholder="e.g. 34-36"
+                  value={formData.hips}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
+          {/* ✅ NEW: Pakistani/Indian Clothing Measurements for TOPS */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-semibold mb-1 text-gray-700">
+              Pakistani/Indian Clothing - TOPS (inches)
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              For shirts, kurtas, and other top wear
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="shoulder">Shoulder</Label>
+                <Input
+                  id="shoulder"
+                  name="shoulder"
+                  placeholder="e.g. 14"
+                  value={formData.shoulder}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Shoulder width</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="chest">Chest</Label>
+                <Input
+                  id="chest"
+                  name="chest"
+                  placeholder="e.g. 18"
+                  value={formData.chest}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Chest measurement</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="length">Length</Label>
+                <Input
+                  id="length"
+                  name="length"
+                  placeholder="e.g. 35"
+                  value={formData.length}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Garment length</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="sleeves">Sleeves</Label>
+                <Input
+                  id="sleeves"
+                  name="sleeves"
+                  placeholder="e.g. 22.5"
+                  value={formData.sleeves}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Sleeve length</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* ✅ NEW: Pakistani/Indian Clothing Measurements for BOTTOMS */}
+          <div className="border-t pt-4">
+            <h3 className="text-sm font-semibold mb-1 text-gray-700">
+              Pakistani/Indian Clothing - BOTTOMS (inches)
+            </h3>
+            <p className="text-xs text-gray-500 mb-3">
+              For pants, shalwar, and other bottom wear
+            </p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="bottom">Bottom</Label>
+                <Input
+                  id="bottom"
+                  name="bottom"
+                  placeholder="e.g. 11"
+                  value={formData.bottom}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Bottom circumference</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="thigh">Thigh</Label>
+                <Input
+                  id="thigh"
+                  name="thigh"
+                  placeholder="e.g. 13.5"
+                  value={formData.thigh}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Thigh circumference</p>
+              </div>
+            </div>
+          </div>
+          
+          {/* Info Alert */}
+          <Alert className="bg-blue-50 border-blue-200">
+            <AlertDescription className="text-sm text-blue-800">
+              <strong>💡 Tip:</strong> Fill in measurements relevant to the category. 
+              For TOPS, use shoulder/chest/length/sleeves. 
+              For BOTTOMS, use bottom/thigh/length/waist.
+            </AlertDescription>
+          </Alert>
+          
+          {/* Sort Order and Active Status */}
+          <div className="grid grid-cols-2 gap-4 border-t pt-4">
             <div className="space-y-2">
               <Label htmlFor="sortOrder">Sort Order</Label>
               <Input
@@ -343,7 +471,7 @@ export default function SizeModal({
                 onChange={handleChange}
               />
               {errors.sortOrder && <p className="text-red-500 text-sm">{errors.sortOrder}</p>}
-              <p className="text-muted-foreground text-xs">Used for ordering sizes (lower numbers first)</p>
+              <p className="text-muted-foreground text-xs">Lower numbers appear first</p>
             </div>
             
             <div className="space-y-2 flex items-center">

@@ -391,12 +391,32 @@ export default function SizesPage() {
                           <TableCell>{size.numericSize || 'N/A'}</TableCell>
                           <TableCell>{size.category}</TableCell>
                           <TableCell>
-                            <div className="text-xs space-y-1">
-                              {size.bust && <div>Bust: {size.bust}</div>}
-                              {size.waist && <div>Waist: {size.waist}</div>}
-                              {size.hips && <div>Hips: {size.hips}</div>}
-                            </div>
-                          </TableCell>
+  <div className="text-xs space-y-1">
+    {/* Traditional measurements */}
+    {size.bust && <div>Bust: {size.bust}"</div>}
+    {size.waist && <div>Waist: {size.waist}"</div>}
+    {size.hips && <div>Hips: {size.hips}"</div>}
+    
+    {/* ✅ NEW: Pakistani/Indian clothing measurements for TOPS */}
+    {size.shoulder && <div>Shoulder: {size.shoulder}"</div>}
+    {size.chest && <div>Chest: {size.chest}"</div>}
+    {size.length && <div>Length: {size.length}"</div>}
+    {size.sleeves && <div>Sleeves: {size.sleeves}"</div>}
+    
+    {/* ✅ NEW: Pakistani/Indian clothing measurements for BOTTOMS */}
+    {size.bottom && <div>Bottom: {size.bottom}"</div>}
+    {size.thigh && <div>Thigh: {size.thigh}"</div>}
+    
+    {/* Show message if no measurements */}
+    {!size.bust && !size.waist && !size.hips && 
+     !size.shoulder && !size.chest && !size.length && 
+     !size.sleeves && !size.bottom && !size.thigh && (
+      <div className="text-gray-400">No measurements</div>
+    )}
+  </div>
+</TableCell>
+
+
                           <TableCell>
                             {size.isActive ? (
                               <Badge variant="success">Active</Badge>
@@ -464,36 +484,80 @@ export default function SizesPage() {
                         <p className="text-sm">{size.name}</p>
                       </div>
                       <CardContent className="p-4">
-                        <div className="text-sm space-y-2">
-                          <div className="flex justify-between">
-                            <span>Category:</span>
-                            <span className="font-medium">{size.category}</span>
-                          </div>
-                          {size.numericSize && (
-                            <div className="flex justify-between">
-                              <span>Numeric:</span>
-                              <span className="font-medium">{size.numericSize}</span>
-                            </div>
-                          )}
-                          {size.bust && (
-                            <div className="flex justify-between">
-                              <span>Bust:</span>
-                              <span className="font-medium">{size.bust}</span>
-                            </div>
-                          )}
-                          {size.waist && (
-                            <div className="flex justify-between">
-                              <span>Waist:</span>
-                              <span className="font-medium">{size.waist}</span>
-                            </div>
-                          )}
-                          {size.hips && (
-                            <div className="flex justify-between">
-                              <span>Hips:</span>
-                              <span className="font-medium">{size.hips}</span>
-                            </div>
-                          )}
-                        </div>
+                        <div className="text-sm space-y-2 max-h-48 overflow-y-auto">
+  {/* Category */}
+  <div className="flex justify-between">
+    <span>Category:</span>
+    <span className="font-medium">{size.category}</span>
+  </div>
+  
+  {size.numericSize && (
+    <div className="flex justify-between">
+      <span>Numeric:</span>
+      <span className="font-medium">{size.numericSize}</span>
+    </div>
+  )}
+  
+  {/* Traditional measurements */}
+  {size.bust && (
+    <div className="flex justify-between">
+      <span>Bust:</span>
+      <span className="font-medium">{size.bust}"</span>
+    </div>
+  )}
+  {size.waist && (
+    <div className="flex justify-between">
+      <span>Waist:</span>
+      <span className="font-medium">{size.waist}"</span>
+    </div>
+  )}
+  {size.hips && (
+    <div className="flex justify-between">
+      <span>Hips:</span>
+      <span className="font-medium">{size.hips}"</span>
+    </div>
+  )}
+  
+  {/* ✅ NEW: TOPS measurements */}
+  {size.shoulder && (
+    <div className="flex justify-between">
+      <span>Shoulder:</span>
+      <span className="font-medium">{size.shoulder}"</span>
+    </div>
+  )}
+  {size.chest && (
+    <div className="flex justify-between">
+      <span>Chest:</span>
+      <span className="font-medium">{size.chest}"</span>
+    </div>
+  )}
+  {size.length && (
+    <div className="flex justify-between">
+      <span>Length:</span>
+      <span className="font-medium">{size.length}"</span>
+    </div>
+  )}
+  {size.sleeves && (
+    <div className="flex justify-between">
+      <span>Sleeves:</span>
+      <span className="font-medium">{size.sleeves}"</span>
+    </div>
+  )}
+  
+  {/* ✅ NEW: BOTTOMS measurements */}
+  {size.bottom && (
+    <div className="flex justify-between">
+      <span>Bottom:</span>
+      <span className="font-medium">{size.bottom}"</span>
+    </div>
+  )}
+  {size.thigh && (
+    <div className="flex justify-between">
+      <span>Thigh:</span>
+      <span className="font-medium">{size.thigh}"</span>
+    </div>
+  )}
+</div>
                         <div className="flex justify-between mt-4">
                           <Button
                             variant="outline"
