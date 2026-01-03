@@ -52,7 +52,7 @@ export default function SizeModal({
     // ✅ NEW: Pakistani/Indian BOTTOMS measurements
     bottom: '',
     thigh: '',
-    bottomLength: '',
+    bottomLength: '', // ✅ NEW FIELD
     sortOrder: 0,
     isActive: true,
   };
@@ -93,7 +93,7 @@ export default function SizeModal({
         sleeves: size.sleeves || '',
         bottom: size.bottom || '',
         thigh: size.thigh || '',
-        bottomLength: size.bottomLength || '',
+        bottomLength: size.bottomLength || '', // ✅ NEW FIELD
         sortOrder: size.sortOrder || 0,
         isActive: size.isActive !== undefined ? size.isActive : true,
       });
@@ -356,7 +356,7 @@ export default function SizeModal({
             </div>
           </div>
           
-          {/* ✅ NEW: Pakistani/Indian Clothing Measurements for TOPS */}
+          {/* ✅ Pakistani/Indian Clothing Measurements for TOPS */}
           <div className="border-t pt-4">
             <h3 className="text-sm font-semibold mb-1 text-gray-700">
               Pakistani/Indian Clothing - TOPS (inches)
@@ -389,36 +389,21 @@ export default function SizeModal({
                 <p className="text-xs text-gray-500">Chest measurement</p>
               </div>
               
-              {/* Existing Length field - rename label */}
-<div>
-  <label className="block text-sm font-medium text-gray-700">
-    Top Length (Shirt/Kameez) {/* ✅ Clarified */}
-  </label>
-  <input
-    type="text"
-    name="length"
-    value={formData.length || ''}
-    onChange={handleChange}
-    className="mt-1 block w-full rounded-md border-gray-300"
-    placeholder='e.g., "35"'
-  />
-</div>
+              {/* ✅ Top Length field - clarified label */}
+              <div className="space-y-2">
+                <Label htmlFor="length">
+                  Top Length (Shirt/Kameez)
+                </Label>
+                <Input
+                  id="length"
+                  name="length"
+                  placeholder="e.g. 35"
+                  value={formData.length}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Length from shoulder to hem</p>
+              </div>
 
-{/* ✅ NEW: Add Bottom Length field */}
-<div>
-  <label className="block text-sm font-medium text-gray-700">
-    Bottom Length (Shalwar/Pants)
-  </label>
-  <input
-    type="text"
-    name="bottomLength"
-    value={formData.bottomLength || ''}
-    onChange={handleChange}
-    className="mt-1 block w-full rounded-md border-gray-300"
-    placeholder='e.g., "38"'
-  />
-</div>
-              
               <div className="space-y-2">
                 <Label htmlFor="sleeves">Sleeves</Label>
                 <Input
@@ -433,7 +418,7 @@ export default function SizeModal({
             </div>
           </div>
           
-          {/* ✅ NEW: Pakistani/Indian Clothing Measurements for BOTTOMS */}
+          {/* ✅ Pakistani/Indian Clothing Measurements for BOTTOMS */}
           <div className="border-t pt-4">
             <h3 className="text-sm font-semibold mb-1 text-gray-700">
               Pakistani/Indian Clothing - BOTTOMS (inches)
@@ -442,16 +427,31 @@ export default function SizeModal({
               For pants, shalwar, and other bottom wear
             </p>
             <div className="grid grid-cols-2 gap-4">
+              {/* ✅ NEW: Bottom Length field - properly styled */}
               <div className="space-y-2">
-                <Label htmlFor="bottom">Bottom</Label>
+                <Label htmlFor="bottomLength">
+                  Bottom Length (Shalwar/Pants)
+                </Label>
+                <Input
+                  id="bottomLength"
+                  name="bottomLength"
+                  placeholder="e.g. 38"
+                  value={formData.bottomLength}
+                  onChange={handleChange}
+                />
+                <p className="text-xs text-gray-500">Length from waist to ankle</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="bottom">Bottom Width</Label>
                 <Input
                   id="bottom"
                   name="bottom"
-                  placeholder="e.g. 11"
+                  placeholder="e.g. 14"
                   value={formData.bottom}
                   onChange={handleChange}
                 />
-                <p className="text-xs text-gray-500">Bottom circumference</p>
+                <p className="text-xs text-gray-500">Bottom hem circumference</p>
               </div>
               
               <div className="space-y-2">
@@ -459,7 +459,7 @@ export default function SizeModal({
                 <Input
                   id="thigh"
                   name="thigh"
-                  placeholder="e.g. 13.5"
+                  placeholder="e.g. 22"
                   value={formData.thigh}
                   onChange={handleChange}
                 />
@@ -473,7 +473,8 @@ export default function SizeModal({
             <AlertDescription className="text-sm text-blue-800">
               <strong>💡 Tip:</strong> Fill in measurements relevant to the category. 
               For TOPS, use shoulder/chest/length/sleeves. 
-              For BOTTOMS, use bottom/thigh/length/waist.
+              For BOTTOMS, use bottomLength/bottom/thigh/waist.
+              For complete suits (Shalwar Kameez), fill in ALL measurements.
             </AlertDescription>
           </Alert>
           
