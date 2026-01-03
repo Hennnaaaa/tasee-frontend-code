@@ -1050,7 +1050,6 @@ export default function ProductDetailsPage({ params }) {
                               {size.hips || '-'}
                             </td>
                           )}
-                          // ADD THESE CELLS AFTER THE EXISTING MEASUREMENTS:
 {/* ✅ NEW: TOPS measurements */}
 {availableSizes.some(s => s.shoulder) && (
   <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
