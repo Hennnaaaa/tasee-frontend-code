@@ -76,7 +76,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
   const [loading, setLoading] = useState(false);
   const [savingInventory, setSavingInventory] = useState(false);
   const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState(''); // Added success message state
+  const [successMessage, setSuccessMessage] = useState('');
   const [selectedSizes, setSelectedSizes] = useState([]);
   const [totalInventory, setTotalInventory] = useState(0);
   const [productData, setProductData] = useState(null);
@@ -122,6 +122,21 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
     }
   }, [successMessage]);
 
+  // Debug logging
+  useEffect(() => {
+    if (isOpen && product) {
+      console.log('=== ProductSizesModal Debug ===');
+      console.log('Product:', {
+        id: product.id,
+        name: product.name,
+        categoryId: product.categoryId,
+        category: product.category
+      });
+      console.log('Product Sizes:', productSizes.length);
+      console.log('Available Sizes:', availableSizes.length);
+    }
+  }, [isOpen, product, productSizes, availableSizes]);
+
   // Fetch product sizes with authentication
   const fetchProductSizes = async () => {
     if (!product) return;
@@ -137,6 +152,8 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         return;
       }
 
+      console.log('🔍 Fetching product sizes for:', product.name);
+
       // Make authenticated request
       const response = await axios.get(GET_PRODUCT_SIZES(product.id), {
         headers: {
@@ -144,16 +161,19 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         }
       });
 
+      console.log('📦 Product sizes response:', response.data);
+
       if (response.data.success) {
         // Store original inventory values for comparison
         const sizesWithOriginal = (response.data.data.productSizes || []).map(size => ({
           ...size,
-          originalInventory: size.inventory, // Store original inventory
-          isEditedSize: false // Reset edit flag
+          originalInventory: size.inventory,
+          isEditedSize: false
         }));
 
         setProductSizes(sizesWithOriginal);
         setProductData(response.data.data.product);
+        
         // If there are recommended sizes, add them to available sizes
         if (response.data.data.recommendedSizes) {
           setAvailableSizes(response.data.data.recommendedSizes);
@@ -171,13 +191,13 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       }
 
       setError(err.response?.data?.message || 'Error fetching product sizes');
-      console.error(err);
+      console.error('❌ Error fetching product sizes:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch available sizes with authentication
+  // ✅ FIXED: Fetch available sizes with authentication (NO CATEGORY FILTER)
   const fetchAvailableSizes = async () => {
     if (!product) return;
 
@@ -189,25 +209,50 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         return;
       }
 
-      // Make authenticated request
-      const categoryResponse = await axios.get(GET_ALL_SIZES, {
+      console.log('🔍 Fetching available sizes for product:', product.name);
+
+      // ✅ FIX: Fetch ALL active sizes (no category filter)
+      const response = await axios.get(GET_ALL_SIZES, {
         params: {
-          category: product.category?.clothingType || 'TOPS',
-          includeInactive: false,
+          includeInactive: false,  // ✅ Only get active sizes
+          // ✅ REMOVED: category filter to show all sizes
         },
         headers: {
           Authorization: `Bearer ${auth.token}`
         }
       });
 
-      if (categoryResponse.data.success) {
-        // Filter out sizes that are already assigned to the product
+      console.log('📦 Available sizes response:', {
+        success: response.data.success,
+        totalSizes: response.data.data?.length || 0
+      });
+
+      if (response.data.success) {
+        // Filter out sizes already assigned to this product
         const currentSizeIds = new Set(productSizes.map((ps) => ps.sizeId));
-        const filteredSizes = categoryResponse.data.data.filter(
+        
+        const filteredSizes = response.data.data.filter(
           (size) => !currentSizeIds.has(size.id)
         );
 
-        setAvailableSizes(filteredSizes);
+        console.log('✅ Available sizes after filtering:', {
+          total: filteredSizes.length,
+          categories: [...new Set(filteredSizes.map(s => s.category))],
+          sizeNames: filteredSizes.map(s => `${s.name} (${s.code})`)
+        });
+
+        // Sort by category, then by sortOrder
+        const sortedSizes = filteredSizes.sort((a, b) => {
+          if (a.category !== b.category) {
+            return a.category.localeCompare(b.category);
+          }
+          return (a.sortOrder || 0) - (b.sortOrder || 0);
+        });
+
+        setAvailableSizes(sortedSizes);
+      } else {
+        console.error('❌ Failed to fetch sizes:', response.data.message);
+        setError(response.data.message || 'Failed to fetch available sizes');
       }
     } catch (err) {
       // Handle unauthorized error
@@ -218,7 +263,14 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         return;
       }
 
-      console.error('Error fetching available sizes:', err);
+      console.error('❌ Error fetching available sizes:', err);
+      console.error('Error details:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
+      
+      setError(err.response?.data?.message || 'Error fetching available sizes');
     }
   };
 
@@ -231,6 +283,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
           id: size.id,
           name: size.name,
           code: size.code,
+          category: size.category,
           inventory: 0,
           isActive: true,
         },
@@ -248,7 +301,12 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       setSelectedSizes(selectedSizes.filter((s) => s.id !== sizeId));
 
       // Add back to available sizes
-      setAvailableSizes([...availableSizes, removedSize]);
+      setAvailableSizes([...availableSizes, removedSize].sort((a, b) => {
+        if (a.category !== b.category) {
+          return a.category.localeCompare(b.category);
+        }
+        return (a.sortOrder || 0) - (b.sortOrder || 0);
+      }));
     }
   };
 
@@ -269,7 +327,6 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
     setProductSizes(
       productSizes.map((size) => {
         if (size.sizeId === sizeId) {
-          // Ensure inventory doesn't go below zero
           const newValue = Math.max(0, (size.inventory || 0) + amount);
           return { ...size, inventory: newValue, isEditedSize: true };
         }
@@ -296,7 +353,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
 
     setSavingInventory(true);
     setError('');
-    setSuccessMessage(''); // Clear previous success message
+    setSuccessMessage('');
 
     try {
       // Get authentication data
@@ -306,27 +363,30 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         return;
       }
 
-      // Prepare existing sizes data with ORIGINAL inventory for comparison
+      // Prepare existing sizes data
       const existingSizes = productSizes.map((ps) => ({
         sizeId: ps.sizeId,
         inventory: ps.inventory,
-        originalInventory: ps.originalInventory || ps.inventory, // Add original inventory
+        originalInventory: ps.originalInventory || ps.inventory,
         isActive: ps.isActive,
         isSizeNewlyAdded: false,
-        isEditedSize: ps.isEditedSize || false // Track if inventory was edited
+        isEditedSize: ps.isEditedSize || false
       }));
 
       // Prepare new sizes data
       const newSizes = selectedSizes.map((size) => ({
         sizeId: size.id,
         inventory: size.inventory,
-        originalInventory: 0, // New sizes start with 0 original inventory
+        originalInventory: 0,
         isActive: true,
         isSizeNewlyAdded: true,
         isEditedSize: false
       }));
+
       // Combine existing and new sizes
       const sizesPayload = [...existingSizes, ...newSizes];
+
+      console.log('💾 Saving sizes:', sizesPayload);
 
       // Send API request with authentication
       const response = await axios.post(
@@ -338,6 +398,8 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
           }
         }
       );
+
+      console.log('✅ Save response:', response.data);
 
       if (response.data.success) {
         // Refetch product sizes
@@ -363,8 +425,8 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         return;
       }
 
+      console.error('❌ Error saving sizes:', err);
       setError(err.response?.data?.message || 'Error saving sizes');
-      console.error(err);
     } finally {
       setSavingInventory(false);
     }
@@ -388,7 +450,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader className="px-6 pb-6 border-b">
           <DialogTitle className="text-xl font-semibold">Product Sizes & Inventory</DialogTitle>
           <DialogDescription>
@@ -403,7 +465,6 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
           </Alert>
         )}
 
-        {/* Success Message Alert */}
         {successMessage && (
           <Alert variant="success" className="mb-4 mt-4 mx-6 bg-green-50 text-green-800 border-green-200">
             <Check className="h-4 w-4" />
@@ -498,6 +559,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                         <TableRow>
                           <TableHead>Size</TableHead>
                           <TableHead>Code</TableHead>
+                          <TableHead>Category</TableHead>
                           <TableHead>SKU</TableHead>
                           <TableHead className="text-center">Inventory</TableHead>
                           <TableHead className="text-center">Status</TableHead>
@@ -522,6 +584,11 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                                 <TableCell>
                                   <Badge variant="outline" className="font-mono">
                                     {productSize.size.code}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {productSize.size.category}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="font-mono text-sm text-muted-foreground">
@@ -585,11 +652,10 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                             ))}
                         </AnimatePresence>
 
-                        {/* Empty state for filtered sizes */}
                         {productSizes.length > 0 &&
                           productSizes.filter(productSize => showEmptySizes || productSize.inventory > 0).length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
+                              <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
                                 No sizes with inventory. Toggle "Show zero inventory sizes" to view all.
                               </TableCell>
                             </TableRow>
@@ -600,33 +666,61 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                 )}
               </div>
 
-              {/* Add new sizes */}
+              {/* ✅ ENHANCED: Add new sizes with category grouping */}
               <div>
                 <h3 className="text-lg font-medium mb-3">Add New Sizes</h3>
                 {availableSizes.length === 0 ? (
                   <div className="bg-muted/30 border rounded-lg p-4 text-center">
-                    <div className="text-muted-foreground">All available sizes have been added to this product.</div>
+                    <div className="text-muted-foreground">
+                      {productSizes.length === 0 
+                        ? 'No sizes available. Create sizes in the Sizes page first.'
+                        : 'All available sizes have been added to this product.'}
+                    </div>
                   </div>
                 ) : (
                   <div>
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {availableSizes.map((size) => (
-                        <motion.div
-                          key={size.id}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Badge
-                            variant="outline"
-                            className="cursor-pointer hover:bg-accent px-3 py-1.5 text-sm"
-                            onClick={() => handleAddSize(size)}
-                          >
-                            {size.name} ({size.code})
-                            <PlusIcon className="ml-1 h-3 w-3" />
+                    {/* Group sizes by category for better UX */}
+                    {Object.entries(
+                      availableSizes.reduce((groups, size) => {
+                        const category = size.category || 'UNCATEGORIZED';
+                        if (!groups[category]) {
+                          groups[category] = [];
+                        }
+                        groups[category].push(size);
+                        return groups;
+                      }, {})
+                    ).map(([category, sizes]) => (
+                      <div key={category} className="mb-4">
+                        {/* Category header */}
+                        <div className="text-sm font-medium text-muted-foreground mb-2 flex items-center">
+                          <Tag className="h-3 w-3 mr-1" />
+                          {category}
+                          <Badge variant="outline" className="ml-2 text-xs">
+                            {sizes.length} available
                           </Badge>
-                        </motion.div>
-                      ))}
-                    </div>
+                        </div>
+                        
+                        {/* Size badges */}
+                        <div className="flex flex-wrap gap-2">
+                          {sizes.map((size) => (
+                            <motion.div
+                              key={size.id}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                            >
+                              <Badge
+                                variant="outline"
+                                className="cursor-pointer hover:bg-accent px-3 py-1.5 text-sm"
+                                onClick={() => handleAddSize(size)}
+                              >
+                                {size.name} ({size.code})
+                                <PlusIcon className="ml-1 h-3 w-3" />
+                              </Badge>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
 
@@ -645,6 +739,7 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                           <TableRow>
                             <TableHead>Size</TableHead>
                             <TableHead>Code</TableHead>
+                            <TableHead>Category</TableHead>
                             <TableHead className="text-center">Inventory</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                           </TableRow>
@@ -663,6 +758,11 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
                                 <TableCell>
                                   <Badge variant="outline" className="font-mono">
                                     {size.code}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant="secondary" className="text-xs">
+                                    {size.category}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-center">
