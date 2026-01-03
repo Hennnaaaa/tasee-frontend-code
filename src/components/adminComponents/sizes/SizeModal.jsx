@@ -52,6 +52,7 @@ export default function SizeModal({
     // ✅ NEW: Pakistani/Indian BOTTOMS measurements
     bottom: '',
     thigh: '',
+    bottomLength: '',
     sortOrder: 0,
     isActive: true,
   };
@@ -92,6 +93,7 @@ export default function SizeModal({
         sleeves: size.sleeves || '',
         bottom: size.bottom || '',
         thigh: size.thigh || '',
+        bottomLength: size.bottomLength || '',
         sortOrder: size.sortOrder || 0,
         isActive: size.isActive !== undefined ? size.isActive : true,
       });
@@ -387,17 +389,35 @@ export default function SizeModal({
                 <p className="text-xs text-gray-500">Chest measurement</p>
               </div>
               
-              <div className="space-y-2">
-                <Label htmlFor="length">Length</Label>
-                <Input
-                  id="length"
-                  name="length"
-                  placeholder="e.g. 35"
-                  value={formData.length}
-                  onChange={handleChange}
-                />
-                <p className="text-xs text-gray-500">Garment length</p>
-              </div>
+              {/* Existing Length field - rename label */}
+<div>
+  <label className="block text-sm font-medium text-gray-700">
+    Top Length (Shirt/Kameez) {/* ✅ Clarified */}
+  </label>
+  <input
+    type="text"
+    name="length"
+    value={formData.length || ''}
+    onChange={handleChange}
+    className="mt-1 block w-full rounded-md border-gray-300"
+    placeholder='e.g., "35"'
+  />
+</div>
+
+{/* ✅ NEW: Add Bottom Length field */}
+<div>
+  <label className="block text-sm font-medium text-gray-700">
+    Bottom Length (Shalwar/Pants)
+  </label>
+  <input
+    type="text"
+    name="bottomLength"
+    value={formData.bottomLength || ''}
+    onChange={handleChange}
+    className="mt-1 block w-full rounded-md border-gray-300"
+    placeholder='e.g., "38"'
+  />
+</div>
               
               <div className="space-y-2">
                 <Label htmlFor="sleeves">Sleeves</Label>

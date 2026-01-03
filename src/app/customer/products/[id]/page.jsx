@@ -992,6 +992,11 @@ export default function ProductDetailsPage({ params }) {
         Thigh
       </th>
     )}
+    {availableSizes.some(size => size.bottomLength) && (
+      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
+        Bottom Length
+      </th>
+    )}
     
     <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
       Stock Status
@@ -1081,6 +1086,11 @@ export default function ProductDetailsPage({ params }) {
 {availableSizes.some(s => s.thigh) && (
   <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
     {size.thigh || '-'}
+  </td>
+)}
+{availableSizes.some(s => s.bottomLength) && (
+  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
+    {size.bottomLength || '-'}
   </td>
 )}
                           <td className="border border-gray-300 px-4 py-3 text-sm">
@@ -1777,12 +1787,18 @@ export default function ProductDetailsPage({ params }) {
                             <span className="font-semibold text-purple-900">{size.thigh}"</span>
                           </div>
                         )}
+                        {size.bottomLength && (
+                          <div className="flex justify-between items-center py-1 px-2 bg-purple-50 rounded">
+                            <span className="text-purple-700 font-medium">Bottom Length:</span>
+                            <span className="font-semibold text-purple-900">{size.bottomLength}"</span>
+                          </div>
+                        )}
                       </div>
                       
                       {/* No measurements message */}
                       {!size.bust && !size.waist && !size.hips && 
                        !size.shoulder && !size.chest && !size.length && 
-                       !size.sleeves && !size.bottom && !size.thigh && (
+                       !size.sleeves && !size.bottom  && !size.bottomLength && !size.thigh &&  (
                         <p className="text-xs text-gray-400 italic text-center py-2">
                           No measurements available
                         </p>

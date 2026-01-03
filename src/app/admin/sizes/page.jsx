@@ -397,25 +397,25 @@ export default function SizesPage() {
     {size.waist && <div>Waist: {size.waist}"</div>}
     {size.hips && <div>Hips: {size.hips}"</div>}
     
-    {/* ✅ NEW: Pakistani/Indian clothing measurements for TOPS */}
+    {/* ✅ TOPS measurements */}
     {size.shoulder && <div>Shoulder: {size.shoulder}"</div>}
     {size.chest && <div>Chest: {size.chest}"</div>}
-    {size.length && <div>Length: {size.length}"</div>}
+    {size.length && <div>Length (Top): {size.length}"</div>}
     {size.sleeves && <div>Sleeves: {size.sleeves}"</div>}
     
-    {/* ✅ NEW: Pakistani/Indian clothing measurements for BOTTOMS */}
+    {/* ✅ BOTTOMS measurements */}
+    {size.bottomLength && <div>Length (Bottom): {size.bottomLength}"</div>}
     {size.bottom && <div>Bottom: {size.bottom}"</div>}
     {size.thigh && <div>Thigh: {size.thigh}"</div>}
     
     {/* Show message if no measurements */}
     {!size.bust && !size.waist && !size.hips && 
      !size.shoulder && !size.chest && !size.length && 
-     !size.sleeves && !size.bottom && !size.thigh && (
+     !size.sleeves && !size.bottomLength && !size.bottom && !size.thigh && (
       <div className="text-gray-400">No measurements</div>
     )}
   </div>
 </TableCell>
-
 
                           <TableCell>
                             {size.isActive ? (
@@ -518,7 +518,7 @@ export default function SizesPage() {
     </div>
   )}
   
-  {/* ✅ NEW: TOPS measurements */}
+  {/* ✅ TOPS measurements */}
   {size.shoulder && (
     <div className="flex justify-between">
       <span>Shoulder:</span>
@@ -533,7 +533,7 @@ export default function SizesPage() {
   )}
   {size.length && (
     <div className="flex justify-between">
-      <span>Length:</span>
+      <span>Length (Top):</span>
       <span className="font-medium">{size.length}"</span>
     </div>
   )}
@@ -544,7 +544,13 @@ export default function SizesPage() {
     </div>
   )}
   
-  {/* ✅ NEW: BOTTOMS measurements */}
+  {/* ✅ BOTTOMS measurements */}
+  {size.bottomLength && (
+    <div className="flex justify-between">
+      <span>Length (Bottom):</span>
+      <span className="font-medium">{size.bottomLength}"</span>
+    </div>
+  )}
   {size.bottom && (
     <div className="flex justify-between">
       <span>Bottom:</span>
