@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import axios from 'axios';
 import { GET_NAVIGATION_CATEGORIES } from '@/utils/routes/productManagementRoutes';
 
@@ -40,14 +41,30 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand & Description */}
           <div className="col-span-1 md:col-span-1">
-           <img 
-                  src="/tasee_30x_white.png" 
-                  alt="Tasee" 
-                  className="h-10 w-auto object-contain"
-                /><br></br>
-            <p className="text-gray-400 mb-4">
+            {/* ✅ ENHANCED: Using Next.js Image component for better quality */}
+            <div className="mb-4">
+              <Image 
+                src="/tasee_30x_white.png" 
+                alt="Tasee Logo" 
+                width={150}
+                height={40}
+                quality={100}
+                priority
+                className="h-10 w-auto object-contain"
+                style={{
+                  maxWidth: '100%',
+                  height: 'auto',
+                  imageRendering: '-webkit-optimize-contrast',
+                  WebkitFontSmoothing: 'antialiased',
+                  filter: 'contrast(1.1) brightness(1.05)',
+                }}
+              />
+            </div>
+            
+            <p className="text-gray-400 mb-4 leading-relaxed">
               Premium women's fashion for every occasion. Discover the latest trends and timeless classics.
             </p>
+            
             <div className="flex space-x-4">
               {/* Instagram */}
               <a 
@@ -55,6 +72,7 @@ const Footer = () => {
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-white transition-colors duration-200"
+                aria-label="Follow us on Instagram"
               >
                 <span className="sr-only">Instagram</span>
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -66,6 +84,7 @@ const Footer = () => {
               <a 
                 href="mailto:Hina@absinthesoftware.com" 
                 className="text-gray-400 hover:text-white transition-colors duration-200"
+                aria-label="Email us"
               >
                 <span className="sr-only">Email</span>
                 <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -128,25 +147,29 @@ const Footer = () => {
             </ul>
           </div>
           
-          {/* Legal & Policies
+          {/* Contact Info - Optional 4th column */}
           <div>
             <h3 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">
-              Legal
+              Contact
             </h3>
-            <ul className="space-y-2">
-              <li>
-                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/privacy-policy`} className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Privacy Policy
-                </Link>
+            <ul className="space-y-2 text-gray-400">
+              <li className="flex items-start">
+                <svg className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                </svg>
+                <a href="mailto:Hina@absinthesoftware.com" className="hover:text-white transition-colors duration-200">
+                  Hina@absinthesoftware.com
+                </a>
               </li>
-              <li>
-                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/terms-conditions`} className="text-gray-400 hover:text-white transition-colors duration-200">
-                  Terms & Conditions
-                </Link>
+              <li className="flex items-start">
+                <svg className="h-5 w-5 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Pakistan</span>
               </li>
-              
             </ul>
-          </div> */}
+          </div>
         </div>
         
         {/* Bottom Footer */}

@@ -584,6 +584,7 @@ export default function ProductDetailsPage({ params }) {
           </div>
         </div>
 
+        {/* Product Details - Right Side (Desktop) - CONTINUED IN PART 2 */}
         {/* Product Details - Right Side (Desktop) */}
         <div className="w-1/2 space-y-6 -ml-48">
           <div>
@@ -629,33 +630,34 @@ export default function ProductDetailsPage({ params }) {
               <p className="text-gray-700 leading-relaxed text-lg">{String(product.description || '')}</p>
             </div>
           )}
-          {/* ✅ NEW: Product Specifications */}
-{(product.color || product.fabric || product.workDetails) && (
-  <div className="space-y-3">
-    {product.color && (
-      <div>
-        <h3 className="text-base font-medium text-gray-900 mb-1">Color</h3>
-        <p className="text-gray-700">{String(product.color)}</p>
-      </div>
-    )}
+          
+          {/* Product Specifications */}
+          {(product.color || product.fabric || product.workDetails) && (
+            <div className="space-y-3">
+              {product.color && (
+                <div>
+                  <h3 className="text-base font-medium text-gray-900 mb-1">Color</h3>
+                  <p className="text-gray-700">{String(product.color)}</p>
+                </div>
+              )}
 
-    {product.fabric && (
-      <div>
-        <h3 className="text-base font-medium text-gray-900 mb-1">Fabric</h3>
-        <p className="text-gray-700">{String(product.fabric)}</p>
-      </div>
-    )}
+              {product.fabric && (
+                <div>
+                  <h3 className="text-base font-medium text-gray-900 mb-1">Fabric</h3>
+                  <p className="text-gray-700">{String(product.fabric)}</p>
+                </div>
+              )}
 
-    {product.workDetails && (
-      <div>
-        <h3 className="text-base font-medium text-gray-900 mb-1">Work Details</h3>
-        <p className="text-gray-700">{String(product.workDetails)}</p>
-      </div>
-    )}
-  </div>
-)}
+              {product.workDetails && (
+                <div>
+                  <h3 className="text-base font-medium text-gray-900 mb-1">Work Details</h3>
+                  <p className="text-gray-700">{String(product.workDetails)}</p>
+                </div>
+              )}
+            </div>
+          )}
 
-          {/* Size Selection */}
+          {/* Size Selection - ✅ UPDATED: Display size CODE instead of name */}
           {product.productType === 'sized' && product.availableSizes?.length > 0 ? (
             <div>
               <h2 className="text-xl font-medium mb-4">Select Size</h2>
@@ -676,7 +678,8 @@ export default function ProductDetailsPage({ params }) {
                       disabled={sizeVariant.inventory <= 0}
                     >
                       <div className="text-center">
-                        <div className="font-medium">{String(sizeVariant.sizeName || sizeVariant.size?.name || 'Unknown')}</div>
+                        {/* ✅ CHANGED: Show size CODE instead of full name */}
+                        <div className="font-medium">{String(sizeVariant.sizeCode || sizeVariant.size?.code || 'N/A')}</div>
                         {sizeVariant.inventory <= 0 ? (
                           <div className="text-xs text-red-500">Sold Out</div>
                         ) : sizeVariant.inventory <= 5 ? (
@@ -690,7 +693,7 @@ export default function ProductDetailsPage({ params }) {
               {selectedSize && (
                 <div className="mt-4 p-4 bg-gray-50 rounded-xl border">
                   <div className="text-sm text-gray-700">
-                    <strong className="text-black">{selectedSize.sizeName}</strong> -
+                    <strong className="text-black">{selectedSize.sizeCode || selectedSize.sizeName}</strong> - {selectedSize.sizeName} |
                     Price: <span className="font-semibold">{formatPrice(selectedSize.price)}</span> |
                     Stock: <span className="font-semibold">
                       {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
@@ -753,12 +756,12 @@ export default function ProductDetailsPage({ params }) {
               </button>
             </div>
           </div>
-           {/* ✅ ADD SIMPLE DELIVERY BANNER */}
-        <SimpleDeliveryBanner 
-          product={product}
-          className="mt-6"
-        />
-        
+          
+          {/* ADD SIMPLE DELIVERY BANNER */}
+          <SimpleDeliveryBanner 
+            product={product}
+            className="mt-6"
+          />
 
           {/* Add to Cart Button */}
           <div>
@@ -806,364 +809,400 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
 
-          {/* Product Information */}
           {/* Product Information - Updated with Toggle */}
-<div className="border-t pt-6">
-  {/* Tab Navigation */}
-  <div className="flex border-b border-gray-200 mb-6">
-    <button
-      onClick={() => setActiveTab('details')}
-      className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
-        activeTab === 'details'
-          ? 'border-black text-black'
-          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-      }`}
-    >
-      Product Details
-    </button>
-    {product.productType === 'sized' && product.availableSizes?.length > 0 && (
-      <button
-        onClick={() => setActiveTab('measurements')}
-        className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
-          activeTab === 'measurements'
-            ? 'border-black text-black'
-            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-        }`}
-      >
-        Size Chart
-      </button>
-    )}
-  </div>
+          <div className="border-t pt-6">
+            {/* Tab Navigation */}
+            <div className="flex border-b border-gray-200 mb-6">
+              <button
+                onClick={() => setActiveTab('details')}
+                className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
+                  activeTab === 'details'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Product Details
+              </button>
+              {product.productType === 'sized' && product.availableSizes?.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('measurements')}
+                  className={`px-6 py-3 text-sm font-medium border-b-2 transition-colors duration-200 ${
+                    activeTab === 'measurements'
+                      ? 'border-black text-black'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Size Chart
+                </button>
+              )}
+            </div>
 
-  {/* Tab Content */}
-  {activeTab === 'details' ? (
-    // Product Details Tab
-    <div>
-      <h2 className="text-xl font-medium mb-4">Product Information</h2>
-      <div className="space-y-3">
-        {product.category && (
-          <div className="flex justify-between py-2">
-            <dt className="text-gray-600">Category</dt>
-            <dd className="text-gray-900 font-medium">{String(product.category.name || '')}</dd>
-          </div>
-        )}
-        <div className="flex justify-between py-2">
-          <dt className="text-gray-600">Availability</dt>
-          <dd>
-            {hasStock ? (
-              totalAvailable < 5 ? (
-                <span className="text-amber-600 font-medium">
-                  Low Stock ({totalAvailable} available)
-                </span>
-              ) : (
-                <span className="text-green-600 font-medium">
-                  In Stock
-                </span>
-              )
+            {/* Tab Content */}
+            {activeTab === 'details' ? (
+              // Product Details Tab
+              <div>
+                <h2 className="text-xl font-medium mb-4">Product Information</h2>
+                <div className="space-y-3">
+                  {product.category && (
+                    <div className="flex justify-between py-2">
+                      <dt className="text-gray-600">Category</dt>
+                      <dd className="text-gray-900 font-medium">{String(product.category.name || '')}</dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2">
+                    <dt className="text-gray-600">Availability</dt>
+                    <dd>
+                      {hasStock ? (
+                        totalAvailable < 5 ? (
+                          <span className="text-amber-600 font-medium">
+                            Low Stock ({totalAvailable} available)
+                          </span>
+                        ) : (
+                          <span className="text-green-600 font-medium">
+                            In Stock
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-red-600 font-medium">Out of Stock</span>
+                      )}
+                    </dd>
+                  </div>
+                  {product.discountInfo?.hasDiscount && (
+                    <div className="flex justify-between py-2">
+                      <dt className="text-gray-600">You Save</dt>
+                      <dd className="text-green-600 font-semibold">
+                        {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
+                      </dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2">
+                    <dt className="text-gray-600">Currency</dt>
+                    <dd className="text-gray-900 font-medium">
+                      <span className="flex items-center">
+                        {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
+                      </span>
+                    </dd>
+                  </div>
+                  {product.productType === 'sized' && sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+                    <div className="flex justify-between py-2">
+                      <dt className="text-gray-600">Available Sizes</dt>
+                      <dd className="text-gray-900 font-medium">
+                        {sizeChart.statistics.availableSizes} sizes
+                        <span className="text-sm text-gray-500 ml-1">
+                          ({sizeChart.statistics.inStockSizes} in stock)
+                        </span>
+                      </dd>
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : (
-              <span className="text-red-600 font-medium">Out of Stock</span>
-            )}
-          </dd>
-        </div>
-        {product.discountInfo?.hasDiscount && (
-          <div className="flex justify-between py-2">
-            <dt className="text-gray-600">You Save</dt>
-            <dd className="text-green-600 font-semibold">
-              {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
-            </dd>
-          </div>
-        )}
-        <div className="flex justify-between py-2">
-          <dt className="text-gray-600">Currency</dt>
-          <dd className="text-gray-900 font-medium">
-            <span className="flex items-center">
-              {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
-            </span>
-          </dd>
-        </div>
-        {product.productType === 'sized' && sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
-          <div className="flex justify-between py-2">
-            <dt className="text-gray-600">Available Sizes</dt>
-            <dd className="text-gray-900 font-medium">
-              {sizeChart.statistics.availableSizes} sizes
-              <span className="text-sm text-gray-500 ml-1">
-                ({sizeChart.statistics.inStockSizes} in stock)
-              </span>
-            </dd>
-          </div>
-        )}
-      </div>
-    </div>
-  ) : (
-    // Size Chart Tab
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-medium">Size Chart</h2>
-        <div className="flex items-center space-x-2">
-          {sizeChart?.category && (
-            <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
-              {sizeChart.category.replace('_', ' ')}
-            </span>
-          )}
-          {sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
-            <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
-              {sizeChart.statistics.availableSizes} sizes available
-            </span>
-          )}
-        </div>
-      </div>
+              // ✅ TRANSPOSED Size Chart Tab - Measurements as ROWS, Sizes as COLUMNS
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-medium">Size Chart</h2>
+                  <div className="flex items-center space-x-2">
+                    {sizeChart?.category && (
+                      <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                        {sizeChart.category.replace('_', ' ')}
+                      </span>
+                    )}
+                    {sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+                      <span className="text-sm text-green-600 bg-green-50 px-3 py-1 rounded-full font-medium">
+                        {sizeChart.statistics.availableSizes} sizes available
+                      </span>
+                    )}
+                  </div>
+                </div>
 
-      {loadingSizeChart ? (
-        <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-500"></div>
-          <span className="ml-2 text-gray-600">Loading size chart...</span>
-        </div>
-      ) : sizeChart && !sizeChart.error ? (
-        <div className="space-y-6">
-          
+                {loadingSizeChart ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-gray-500"></div>
+                    <span className="ml-2 text-gray-600">Loading size chart...</span>
+                  </div>
+                ) : sizeChart && !sizeChart.error ? (
+                  <div className="space-y-6">
+                    {/* ✅ TRANSPOSED Size Chart Table - Measurements as ROWS */}
+                    {(() => {
+                      const availableSizes = sizeChart.sizes?.filter(size => size.isAvailableForProduct) || [];
+                      
+                      if (availableSizes.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-gray-500">
+                            <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p>No sizes available for this product</p>
+                          </div>
+                        );
+                      }
 
-          {/* Size Chart Table - Only Available Sizes */}
-          {(() => {
-            const availableSizes = sizeChart.sizes?.filter(size => size.isAvailableForProduct) || [];
-            return availableSizes.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
-                  <thead className="bg-gray-50">
-  <tr>
-    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-      Size
-    </th>
-    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-      Code
-    </th>
-    {availableSizes.some(size => size.numericSize) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Numeric
-      </th>
-    )}
-    
-    {/* Traditional measurements */}
-    {availableSizes.some(size => size.bust) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Bust
-      </th>
-    )}
-    {availableSizes.some(size => size.waist) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Waist
-      </th>
-    )}
-    {availableSizes.some(size => size.hips) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Hips
-      </th>
-    )}
-    
-    {/* ✅ NEW: TOPS measurements */}
-    {availableSizes.some(size => size.shoulder) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Shoulder
-      </th>
-    )}
-    {availableSizes.some(size => size.chest) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Chest
-      </th>
-    )}
-    {availableSizes.some(size => size.length) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Length
-      </th>
-    )}
-    {availableSizes.some(size => size.sleeves) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Sleeves
-      </th>
-    )}
-    
-    {/* ✅ NEW: BOTTOMS measurements */}
-    {availableSizes.some(size => size.bottom) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Bottom
-      </th>
-    )}
-    {availableSizes.some(size => size.thigh) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Thigh
-      </th>
-    )}
-    {availableSizes.some(size => size.bottomLength) && (
-      <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-        Bottom Length
-      </th>
-    )}
-    
-    <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900">
-      Stock Status
-    </th>
-  </tr>
-</thead>
-
-                  <tbody className="bg-white">
-                    {availableSizes.map((size, index) => {
-                      const isSelectedSize = selectedSize?.sizeName === size.name || selectedSize?.size?.name === size.name;
-                      const isInStock = size.inStock;
+                      // Determine which measurements exist
+                      const hasMeasurement = (field) => availableSizes.some(size => size[field]);
                       
                       return (
-                        <tr 
-                          key={size.id} 
-                          className={`transition-colors duration-150 ${
-                            isSelectedSize 
-                              ? 'bg-blue-50 border-blue-200' 
-                              : isInStock 
-                                ? 'hover:bg-green-50' 
-                                : 'hover:bg-orange-50'
-                          }`}
-                        >
-                          <td className={`border border-gray-300 px-4 py-3 text-sm ${
-                            isSelectedSize ? 'font-semibold text-blue-900' : 'text-gray-900'
-                          }`}>
-                            <div className="flex items-center">
-                              {size.name}
-                              {isSelectedSize && (
-                                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  Selected
-                                </span>
+                        <div className="overflow-x-auto">
+                          <table className="w-full border-collapse border border-gray-300 rounded-lg overflow-hidden">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="border border-gray-300 px-4 py-3 text-left text-sm font-semibold text-gray-900 sticky left-0 bg-gray-50 z-10">
+                                  Measurement
+                                </th>
+                                {/* ✅ Size CODES as column headers */}
+                                {availableSizes.map((size) => {
+                                  const isSelectedSize = selectedSize?.sizeName === size.name || selectedSize?.size?.name === size.name;
+                                  return (
+                                    <th 
+                                      key={size.id} 
+                                      className={`border border-gray-300 px-4 py-3 text-center text-sm font-semibold ${
+                                        isSelectedSize ? 'bg-blue-100 text-blue-900' : 'text-gray-900'
+                                      }`}
+                                    >
+                                      <div className="flex flex-col items-center gap-1">
+                                        <span className="font-bold">{size.code}</span>
+                                        {isSelectedSize && (
+                                          <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded-full">
+                                            Selected
+                                          </span>
+                                        )}
+                                      </div>
+                                    </th>
+                                  );
+                                })}
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white">
+                              {/* Size Name Row */}
+                              <tr className="bg-gray-50">
+                                <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-gray-50">
+                                  Size Name
+                                </td>
+                                {availableSizes.map((size) => (
+                                  <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                    {size.name}
+                                  </td>
+                                ))}
+                              </tr>
+
+                              {/* Numeric Size Row (if exists) */}
+                              {hasMeasurement('numericSize') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Numeric
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.numericSize || '-'}
+                                    </td>
+                                  ))}
+                                </tr>
                               )}
-                            </div>
-                          </td>
-                          <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600 font-mono">
-                            {size.code}
-                          </td>
-                          {availableSizes.some(s => s.numericSize) && (
-                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-                              {size.numericSize || '-'}
-                            </td>
-                          )}
-                          {availableSizes.some(s => s.bust) && (
-                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-                              {size.bust || '-'}
-                            </td>
-                          )}
-                          {availableSizes.some(s => s.waist) && (
-                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-                              {size.waist || '-'}
-                            </td>
-                          )}
-                          {availableSizes.some(s => s.hips) && (
-                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-                              {size.hips || '-'}
-                            </td>
-                          )}
-{/* ✅ NEW: TOPS measurements */}
-{availableSizes.some(s => s.shoulder) && (
-  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-    {size.shoulder || '-'}
-  </td>
-)}
-{availableSizes.some(s => s.chest) && (
-  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-    {size.chest || '-'}
-  </td>
-)}
-{availableSizes.some(s => s.length) && (
-  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-    {size.length || '-'}
-  </td>
-)}
-{availableSizes.some(s => s.sleeves) && (
-  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-    {size.sleeves || '-'}
-  </td>
-)}
 
-{/* ✅ NEW: BOTTOMS measurements */}
-{availableSizes.some(s => s.bottom) && (
-  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-    {size.bottom || '-'}
-  </td>
-)}
-{availableSizes.some(s => s.thigh) && (
-  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-    {size.thigh || '-'}
-  </td>
-)}
-{availableSizes.some(s => s.bottomLength) && (
-  <td className="border border-gray-300 px-4 py-3 text-sm text-gray-600">
-    {size.bottomLength || '-'}
-  </td>
-)}
-                          <td className="border border-gray-300 px-4 py-3 text-sm">
-                            {isInStock ? (
-                              <div className="flex items-center space-x-2">
-                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  In Stock
-                                </span>
-                                {size.inventory && size.inventory <= 5 && (
-                                  <span className="text-xs text-orange-600 font-medium">
-                                    ({size.inventory} left)
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                Out of Stock
-                              </span>
-                            )}
-                          </td>
-                        </tr>
+                              {/* Traditional Measurements */}
+                              {hasMeasurement('bust') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Bust
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.bust ? `${size.bust}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('waist') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Waist
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.waist ? `${size.waist}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('hips') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Hips
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.hips ? `${size.hips}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* TOPS Measurements */}
+                              {hasMeasurement('shoulder') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Shoulder
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.shoulder ? `${size.shoulder}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('chest') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Chest
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.chest ? `${size.chest}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* ✅ RENAMED: "Length" → "Shirt Length" */}
+                              {hasMeasurement('length') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Shirt Length
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.length ? `${size.length}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('sleeves') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Sleeves
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.sleeves ? `${size.sleeves}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* BOTTOMS Measurements */}
+                              {hasMeasurement('bottom') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Bottom
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.bottom ? `${size.bottom}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('thigh') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Thigh
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.thigh ? `${size.thigh}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('bottomLength') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-white">
+                                    Bottom Length
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-gray-600 text-center">
+                                      {size.bottomLength ? `${size.bottomLength}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* Stock Status Row */}
+                              <tr className="bg-gray-50">
+                                <td className="border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 sticky left-0 bg-gray-50">
+                                  Stock Status
+                                </td>
+                                {availableSizes.map((size) => (
+                                  <td key={size.id} className="border border-gray-300 px-4 py-2 text-sm text-center">
+                                    {size.inStock ? (
+                                      <div className="flex flex-col items-center gap-1">
+                                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                          In Stock
+                                        </span>
+                                        {size.inventory && size.inventory <= 5 && (
+                                          <span className="text-xs text-orange-600 font-medium">
+                                            ({size.inventory} left)
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Out of Stock
+                                      </span>
+                                    )}
+                                  </td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
                       );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p>No sizes available for this product</p>
-              </div>
-            );
-          })()}
+                    })()}
 
-          {/* Additional Notes */}
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-            <div className="flex items-start">
-              <svg className="w-5 h-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="text-sm text-gray-600">
-                <p className="font-medium mb-1">Size Guide Notes:</p>
-                <ul className="space-y-1 text-xs">
-                  <li>• All measurements are in inches unless otherwise specified</li>
-                  <li>• For the best fit, measure yourself and compare with the size chart</li>
-                  <li>• If you're between sizes, we recommend sizing up</li>
-                  <li>• Only sizes available for this product are shown above</li>
-                  <li>• Contact customer service if you need help choosing the right size</li>
-                </ul>
+                    {/* Additional Notes */}
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-start">
+                        <svg className="w-5 h-5 text-gray-400 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="text-sm text-gray-600">
+                          <p className="font-medium mb-1">Size Guide Notes:</p>
+                          <ul className="space-y-1 text-xs">
+                            <li>• All measurements are in inches unless otherwise specified</li>
+                            <li>• For the best fit, measure yourself and compare with the size chart</li>
+                            <li>• If you're between sizes, we recommend sizing up</li>
+                            <li>• Only sizes available for this product are shown above</li>
+                            <li>• Contact customer service if you need help choosing the right size</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p>Size chart not available</p>
+                    <p className="text-sm mt-1">
+                      {sizeChart?.error || "This product category doesn't have measurement data"}
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
-        </div>
-      ) : (
-        <div className="text-center py-8 text-gray-500">
-          <svg className="w-12 h-12 mx-auto mb-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p>Size chart not available</p>
-          <p className="text-sm mt-1">
-            {sizeChart?.error || "This product category doesn't have measurement data"}
-          </p>
-        </div>
-      )}
-    </div>
-  )}
-</div>
         </div>
       </div>
 
-      {/* Mobile Layout */}
+      {/* ============================================ */}
+      {/* MOBILE LAYOUT - with TABLE VIEW for Size Chart */}
+      {/* ============================================ */}
       <div className="lg:hidden">
         {/* Mobile Main Image */}
         <div className="mb-6">
@@ -1360,54 +1399,51 @@ export default function ProductDetailsPage({ params }) {
               <p className="text-gray-700 leading-relaxed">{String(product.description || '')}</p>
             </div>
           )}
-          {/* ✅ NEW SECTION: Mobile Additional Product Information */}
-  {(product.color || product.fabric || product.workDetails) && (
-    <div className="border-t border-gray-200 pt-4">
-      <h2 className="text-lg font-medium mb-3">Specifications</h2>
-      <div className="space-y-3">
-        {/* Color */}
-        {product.color && (
-          <div>
-            <dt className="text-sm font-medium text-gray-600 mb-1">Color</dt>
-            <dd className="text-gray-900">{String(product.color)}</dd>
-          </div>
-        )}
+          
+          {/* Mobile Additional Product Information */}
+          {(product.color || product.fabric || product.workDetails) && (
+            <div className="border-t border-gray-200 pt-4">
+              <h2 className="text-lg font-medium mb-3">Specifications</h2>
+              <div className="space-y-3">
+                {product.color && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-600 mb-1">Color</dt>
+                    <dd className="text-gray-900">{String(product.color)}</dd>
+                  </div>
+                )}
 
-        {/* Fabric */}
-        {product.fabric && (
-          <div>
-            <dt className="text-sm font-medium text-gray-600 mb-1">Fabric</dt>
-            <dd className="text-gray-900">{String(product.fabric)}</dd>
-          </div>
-        )}
+                {product.fabric && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-600 mb-1">Fabric</dt>
+                    <dd className="text-gray-900">{String(product.fabric)}</dd>
+                  </div>
+                )}
 
-        {/* Work Details */}
-        {product.workDetails && (
-          <div>
-            <dt className="text-sm font-medium text-gray-600 mb-1">Work Details</dt>
-            <dd className="text-gray-900 leading-relaxed">
-              {String(product.workDetails)}
-            </dd>
-          </div>
-        )}
-      </div>
-    </div>
-  )}
+                {product.workDetails && (
+                  <div>
+                    <dt className="text-sm font-medium text-gray-600 mb-1">Work Details</dt>
+                    <dd className="text-gray-900 leading-relaxed">
+                      {String(product.workDetails)}
+                    </dd>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
-
-          {/* Mobile Size Selection */}
+          {/* ✅ Mobile Size Selection - Display SIZE CODE */}
           {product.productType === 'sized' && product.availableSizes?.length > 0 ? (
             <div>
               <h2 className="text-lg font-medium mb-3">Select Size</h2>
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                 {[...product.availableSizes, ...product.outOfStockSizes]
                   .sort((a, b) => a.sortOrder - b.sortOrder)
                   .map(sizeVariant => (
                     <button
                       key={String(sizeVariant.id)}
                       onClick={() => sizeVariant.inventory > 0 ? handleSizeSelect(sizeVariant) : null}
-                      className={`h-12 px-3 border transition-all duration-200 text-sm ${selectedSize?.id === sizeVariant.id
-                        ? 'border-black bg-black text-white'
+                      className={`h-14 px-2 border transition-all duration-200 text-sm rounded-lg ${selectedSize?.id === sizeVariant.id
+                        ? 'border-black bg-black text-white shadow-md'
                         : 'border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50'
                         } ${sizeVariant.inventory <= 0
                           ? 'opacity-50 cursor-not-allowed border-gray-200 bg-gray-50 text-gray-400'
@@ -1416,11 +1452,12 @@ export default function ProductDetailsPage({ params }) {
                       disabled={sizeVariant.inventory <= 0}
                     >
                       <div className="text-center">
-                        <div className="font-medium">{String(sizeVariant.sizeName || sizeVariant.size?.name || 'Unknown')}</div>
+                        {/* ✅ CHANGED: Show size CODE instead of full name for mobile */}
+                        <div className="font-bold text-base">{String(sizeVariant.sizeCode || sizeVariant.size?.code || 'N/A')}</div>
                         {sizeVariant.inventory <= 0 ? (
-                          <div className="text-xs text-red-500">Out</div>
+                          <div className="text-xs text-red-500 mt-0.5">Out</div>
                         ) : sizeVariant.inventory <= 5 ? (
-                          <div className="text-xs text-orange-500">{sizeVariant.inventory}</div>
+                          <div className="text-xs text-orange-500 mt-0.5">{sizeVariant.inventory}</div>
                         ) : null}
                       </div>
                     </button>
@@ -1430,7 +1467,7 @@ export default function ProductDetailsPage({ params }) {
               {selectedSize && (
                 <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
                   <div className="text-sm text-gray-700">
-                    <strong className="text-black">{selectedSize.sizeName}</strong> -
+                    <strong className="text-black">{selectedSize.sizeCode || selectedSize.sizeName}</strong> - {selectedSize.sizeName} |
                     Price: <span className="font-semibold">{formatPrice(selectedSize.price)}</span> |
                     Stock: <span className="font-semibold">
                       {selectedSize.inventory <= 5 ? `${Number(selectedSize.inventory)} available` : 'Available'}
@@ -1540,315 +1577,405 @@ export default function ProductDetailsPage({ params }) {
             </div>
           )}
 
-          {/* Mobile Product Information */}
-        {/* Product Information - Mobile Responsive with Tabs */}
-<div className="border-t pt-4">
-  {/* Tab Navigation - Mobile Optimized */}
-  <div className="flex border-b border-gray-200 mb-4 overflow-x-auto">
-    <button
-      onClick={() => setActiveTab('details')}
-      className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap ${
-        activeTab === 'details'
-          ? 'border-black text-black'
-          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-      }`}
-    >
-      Details
-    </button>
-    {product.productType === 'sized' && product.availableSizes?.length > 0 && (
-      <button
-        onClick={() => setActiveTab('measurements')}
-        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap ${
-          activeTab === 'measurements'
-            ? 'border-black text-black'
-            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-        }`}
-      >
-        Size Chart
-      </button>
-    )}
-  </div>
-
-  {/* Tab Content */}
-  {activeTab === 'details' ? (
-    // Product Details Tab - Mobile Optimized
-    <div>
-      <h2 className="text-lg font-medium mb-3">Product Information</h2>
-      <div className="space-y-2">
-        {product.category && (
-          <div className="flex justify-between py-1">
-            <dt className="text-gray-600 text-sm">Category</dt>
-            <dd className="text-gray-900 font-medium text-sm text-right">
-              {String(product.category.name || '')}
-            </dd>
-          </div>
-        )}
-        <div className="flex justify-between py-1">
-          <dt className="text-gray-600 text-sm">Availability</dt>
-          <dd className="text-sm text-right">
-            {hasStock ? (
-              totalAvailable < 5 ? (
-                <span className="text-amber-600 font-medium">
-                  Low Stock ({totalAvailable})
-                </span>
-              ) : (
-                <span className="text-green-600 font-medium">
-                  In Stock
-                </span>
-              )
-            ) : (
-              <span className="text-red-600 font-medium">Out of Stock</span>
-            )}
-          </dd>
-        </div>
-        {product.discountInfo?.hasDiscount && (
-          <div className="flex justify-between py-1">
-            <dt className="text-gray-600 text-sm">You Save</dt>
-            <dd className="text-green-600 font-semibold text-sm text-right">
-              {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
-            </dd>
-          </div>
-        )}
-        <div className="flex justify-between py-1">
-          <dt className="text-gray-600 text-sm">Currency</dt>
-          <dd className="text-gray-900 font-medium text-sm">
-            <span className="flex items-center justify-end">
-              {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
-            </span>
-          </dd>
-        </div>
-        {product.productType === 'sized' && sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
-          <div className="flex justify-between py-1">
-            <dt className="text-gray-600 text-sm">Available Sizes</dt>
-            <dd className="text-gray-900 font-medium text-sm text-right">
-              {sizeChart.statistics.availableSizes} sizes
-              <span className="text-xs text-gray-500 block">
-                ({sizeChart.statistics.inStockSizes} in stock)
-              </span>
-            </dd>
-          </div>
-        )}
-      </div>
-    </div>
-  ) : (
-    // ✅ NEW: Size Chart Tab - Mobile Optimized Card View
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-medium">Size Chart</h2>
-        <div className="flex flex-col items-end space-y-1">
-          {sizeChart?.category && (
-            <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-              {sizeChart.category.replace('_', ' ')}
-            </span>
-          )}
-          {sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
-            <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
-              {sizeChart.statistics.availableSizes} available
-            </span>
-          )}
-        </div>
-      </div>
-
-      {loadingSizeChart ? (
-        <div className="flex items-center justify-center py-6">
-          <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-500"></div>
-          <span className="ml-2 text-gray-600 text-sm">Loading...</span>
-        </div>
-      ) : sizeChart && !sizeChart.error ? (
-        <div className="space-y-3">
-          {/* ✅ SIZE CARDS - Much better for mobile */}
-          {(() => {
-            const availableSizes = sizeChart.sizes?.filter(size => size.isAvailableForProduct) || [];
-            return availableSizes.length > 0 ? (
-              <div className="space-y-3">
-                {availableSizes.map((size) => {
-                  const isSelectedSize = selectedSize?.sizeName === size.name || selectedSize?.size?.name === size.name;
-                  const isInStock = size.inStock;
-                  
-                  return (
-                    <div 
-                      key={size.id} 
-                      className={`border rounded-lg p-3 transition-all duration-200 ${
-                        isSelectedSize 
-                          ? 'bg-blue-50 border-blue-300 shadow-md ring-2 ring-blue-200' 
-                          : isInStock 
-                            ? 'bg-white border-gray-200 hover:border-gray-300' 
-                            : 'bg-gray-50 border-gray-200'
-                      }`}
-                    >
-                      {/* Size Header */}
-                      <div className="flex items-start justify-between mb-2 pb-2 border-b border-gray-200">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <h4 className={`text-base font-semibold ${
-                              isSelectedSize ? 'text-blue-900' : 'text-gray-900'
-                            }`}>
-                              {size.name}
-                            </h4>
-                            {isSelectedSize && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-600 text-white">
-                                ✓ Selected
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 font-mono mt-0.5">Code: {size.code}</p>
-                          {size.numericSize && (
-                            <p className="text-xs text-gray-500 mt-0.5">Numeric: {size.numericSize}</p>
-                          )}
-                        </div>
-                        
-                        {/* Stock Status Badge */}
-                        <div className="flex-shrink-0 ml-2">
-                          {isInStock ? (
-                            <div className="text-right">
-                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
-                                ✓ In Stock
-                              </span>
-                              {size.inventory && size.inventory <= 5 && (
-                                <p className="text-xs text-orange-600 font-medium mt-1">
-                                  Only {size.inventory} left
-                                </p>
-                              )}
-                            </div>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 whitespace-nowrap">
-                              Sold Out
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Measurements Grid - 2 columns for mobile */}
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
-                        {/* Show all non-empty measurements */}
-                        
-                        {/* Traditional measurements */}
-                        {size.bust && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-gray-50 rounded">
-                            <span className="text-gray-600 font-medium">Bust:</span>
-                            <span className="font-semibold text-gray-900">{size.bust}"</span>
-                          </div>
-                        )}
-                        
-                        {size.waist && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-gray-50 rounded">
-                            <span className="text-gray-600 font-medium">Waist:</span>
-                            <span className="font-semibold text-gray-900">{size.waist}"</span>
-                          </div>
-                        )}
-                        
-                        {size.hips && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-gray-50 rounded">
-                            <span className="text-gray-600 font-medium">Hips:</span>
-                            <span className="font-semibold text-gray-900">{size.hips}"</span>
-                          </div>
-                        )}
-                        
-                        {/* TOPS measurements */}
-                        {size.shoulder && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-blue-50 rounded">
-                            <span className="text-blue-700 font-medium">Shoulder:</span>
-                            <span className="font-semibold text-blue-900">{size.shoulder}"</span>
-                          </div>
-                        )}
-                        
-                        {size.chest && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-blue-50 rounded">
-                            <span className="text-blue-700 font-medium">Chest:</span>
-                            <span className="font-semibold text-blue-900">{size.chest}"</span>
-                          </div>
-                        )}
-                        
-                        {size.length && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-blue-50 rounded">
-                            <span className="text-blue-700 font-medium">Length:</span>
-                            <span className="font-semibold text-blue-900">{size.length}"</span>
-                          </div>
-                        )}
-                        
-                        {size.sleeves && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-blue-50 rounded">
-                            <span className="text-blue-700 font-medium">Sleeves:</span>
-                            <span className="font-semibold text-blue-900">{size.sleeves}"</span>
-                          </div>
-                        )}
-                        
-                        {/* BOTTOMS measurements */}
-                        {size.bottom && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-purple-50 rounded">
-                            <span className="text-purple-700 font-medium">Bottom:</span>
-                            <span className="font-semibold text-purple-900">{size.bottom}"</span>
-                          </div>
-                        )}
-                        
-                        {size.thigh && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-purple-50 rounded">
-                            <span className="text-purple-700 font-medium">Thigh:</span>
-                            <span className="font-semibold text-purple-900">{size.thigh}"</span>
-                          </div>
-                        )}
-                        {size.bottomLength && (
-                          <div className="flex justify-between items-center py-1 px-2 bg-purple-50 rounded">
-                            <span className="text-purple-700 font-medium">Bottom Length:</span>
-                            <span className="font-semibold text-purple-900">{size.bottomLength}"</span>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* No measurements message */}
-                      {!size.bust && !size.waist && !size.hips && 
-                       !size.shoulder && !size.chest && !size.length && 
-                       !size.sleeves && !size.bottom  && !size.bottomLength && !size.thigh &&  (
-                        <p className="text-xs text-gray-400 italic text-center py-2">
-                          No measurements available
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-6 text-gray-500">
-                <svg className="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p className="text-sm">No sizes available</p>
-              </div>
-            );
-          })()}
-
-          {/* Additional Notes - Mobile Optimized */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-            <div className="flex items-start">
-              <svg className="w-4 h-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <div className="text-xs text-blue-800">
-                <p className="font-medium mb-1">📏 Size Guide Tips:</p>
-                <ul className="space-y-0.5 text-xs">
-                  <li>• All measurements in inches</li>
-                  <li>• Measure yourself for best fit</li>
-                  <li>• Between sizes? Size up</li>
-                  <li>• Need help? Contact us</li>
-                </ul>
-              </div>
+          {/* ✅ MOBILE Product Information - TRANSPOSED TABLE VIEW */}
+          <div className="border-t pt-4">
+            {/* Tab Navigation - Mobile Optimized */}
+            <div className="flex border-b border-gray-200 mb-4 overflow-x-auto">
+              <button
+                onClick={() => setActiveTab('details')}
+                className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap ${
+                  activeTab === 'details'
+                    ? 'border-black text-black'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                Details
+              </button>
+              {product.productType === 'sized' && product.availableSizes?.length > 0 && (
+                <button
+                  onClick={() => setActiveTab('measurements')}
+                  className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors duration-200 whitespace-nowrap ${
+                    activeTab === 'measurements'
+                      ? 'border-black text-black'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Size Chart
+                </button>
+              )}
             </div>
+
+            {/* Tab Content */}
+            {activeTab === 'details' ? (
+              // Product Details Tab - Mobile Optimized
+              <div>
+                <h2 className="text-lg font-medium mb-3">Product Information</h2>
+                <div className="space-y-2">
+                  {product.category && (
+                    <div className="flex justify-between py-1">
+                      <dt className="text-gray-600 text-sm">Category</dt>
+                      <dd className="text-gray-900 font-medium text-sm text-right">
+                        {String(product.category.name || '')}
+                      </dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-1">
+                    <dt className="text-gray-600 text-sm">Availability</dt>
+                    <dd className="text-sm text-right">
+                      {hasStock ? (
+                        totalAvailable < 5 ? (
+                          <span className="text-amber-600 font-medium">
+                            Low Stock ({totalAvailable})
+                          </span>
+                        ) : (
+                          <span className="text-green-600 font-medium">
+                            In Stock
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-red-600 font-medium">Out of Stock</span>
+                      )}
+                    </dd>
+                  </div>
+                  {product.discountInfo?.hasDiscount && (
+                    <div className="flex justify-between py-1">
+                      <dt className="text-gray-600 text-sm">You Save</dt>
+                      <dd className="text-green-600 font-semibold text-sm text-right">
+                        {formatPrice(product.discountInfo.savings)} ({product.discountInfo.discountPercentage}% off)
+                      </dd>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-1">
+                    <dt className="text-gray-600 text-sm">Currency</dt>
+                    <dd className="text-gray-900 font-medium text-sm">
+                      <span className="flex items-center justify-end">
+                        {currentCurrency.flag} {currentCurrency.name} ({currentCurrency.code})
+                      </span>
+                    </dd>
+                  </div>
+                  {product.productType === 'sized' && sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+                    <div className="flex justify-between py-1">
+                      <dt className="text-gray-600 text-sm">Available Sizes</dt>
+                      <dd className="text-gray-900 font-medium text-sm text-right">
+                        {sizeChart.statistics.availableSizes} sizes
+                        <span className="text-xs text-gray-500 block">
+                          ({sizeChart.statistics.inStockSizes} in stock)
+                        </span>
+                      </dd>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // ✅ SIZE CHART TAB - MOBILE TABLE VIEW (Horizontal Scroll)
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-base font-medium">Size Chart</h2>
+                  <div className="flex flex-col items-end space-y-1">
+                    {sizeChart?.category && (
+                      <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                        {sizeChart.category.replace('_', ' ')}
+                      </span>
+                    )}
+                    {sizeChart?.statistics && sizeChart.statistics.availableSizes > 0 && (
+                      <span className="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full font-medium">
+                        {sizeChart.statistics.availableSizes} available
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {loadingSizeChart ? (
+                  <div className="flex items-center justify-center py-6">
+                    <div className="animate-spin rounded-full h-5 w-5 border-t-2 border-b-2 border-gray-500"></div>
+                    <span className="ml-2 text-gray-600 text-sm">Loading...</span>
+                  </div>
+                ) : sizeChart && !sizeChart.error ? (
+                  <div className="space-y-4">
+                    {/* 📱 Scroll Hint */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-3">
+                      <p className="text-xs text-blue-800 flex items-center">
+                        <svg className="w-4 h-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                        </svg>
+                        Swipe left to see all sizes
+                      </p>
+                    </div>
+
+                    {/* ✅ TRANSPOSED TABLE - Horizontal Scroll for Mobile */}
+                    {(() => {
+                      const availableSizes = sizeChart.sizes?.filter(size => size.isAvailableForProduct) || [];
+                      
+                      if (availableSizes.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-gray-500">
+                            <svg className="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <p className="text-sm">No sizes available</p>
+                          </div>
+                        );
+                      }
+
+                      // Determine which measurements exist
+                      const hasMeasurement = (field) => availableSizes.some(size => size[field]);
+                      
+                      return (
+                        <div className="overflow-x-auto -mx-4 px-4">
+                          <table className="w-full border-collapse border border-gray-300 rounded-lg text-xs">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="border border-gray-300 px-2 py-2 text-left text-xs font-semibold text-gray-900 sticky left-0 bg-gray-50 z-10 min-w-[80px]">
+                                  Measurement
+                                </th>
+                                {/* ✅ Size CODES as column headers */}
+                                {availableSizes.map((size) => {
+                                  const isSelectedSize = selectedSize?.sizeName === size.name || selectedSize?.size?.name === size.name;
+                                  return (
+                                    <th 
+                                      key={size.id} 
+                                      className={`border border-gray-300 px-2 py-2 text-center text-xs font-semibold whitespace-nowrap min-w-[60px] ${
+                                        isSelectedSize ? 'bg-blue-100 text-blue-900' : 'text-gray-900 bg-gray-50'
+                                      }`}
+                                    >
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <span className="font-bold text-sm">{size.code}</span>
+                                        {isSelectedSize && (
+                                          <span className="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full">
+                                            ✓
+                                          </span>
+                                        )}
+                                      </div>
+                                    </th>
+                                  );
+                                })}
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white text-xs">
+                              {/* Size Name Row */}
+                              <tr className="bg-gray-50">
+                                <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-gray-50">
+                                  Size Name
+                                </td>
+                                {availableSizes.map((size) => (
+                                  <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center whitespace-nowrap">
+                                    {size.name}
+                                  </td>
+                                ))}
+                              </tr>
+
+                              {/* Numeric Size Row (if exists) */}
+                              {hasMeasurement('numericSize') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Numeric
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.numericSize || '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* Traditional Measurements */}
+                              {hasMeasurement('bust') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Bust
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.bust ? `${size.bust}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('waist') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Waist
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.waist ? `${size.waist}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('hips') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Hips
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.hips ? `${size.hips}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* TOPS Measurements */}
+                              {hasMeasurement('shoulder') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Shoulder
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.shoulder ? `${size.shoulder}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('chest') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Chest
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.chest ? `${size.chest}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* ✅ RENAMED: "Shirt Length" instead of "Length" */}
+                              {hasMeasurement('length') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Shirt Length
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.length ? `${size.length}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('sleeves') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Sleeves
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.sleeves ? `${size.sleeves}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* BOTTOMS Measurements */}
+                              {hasMeasurement('bottom') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Bottom
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.bottom ? `${size.bottom}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('thigh') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Thigh
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.thigh ? `${size.thigh}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {hasMeasurement('bottomLength') && (
+                                <tr>
+                                  <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-white">
+                                    Bottom Length
+                                  </td>
+                                  {availableSizes.map((size) => (
+                                    <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-gray-600 text-center">
+                                      {size.bottomLength ? `${size.bottomLength}"` : '-'}
+                                    </td>
+                                  ))}
+                                </tr>
+                              )}
+
+                              {/* Stock Status Row */}
+                              <tr className="bg-gray-50">
+                                <td className="border border-gray-300 px-2 py-1.5 text-xs font-medium text-gray-700 sticky left-0 bg-gray-50">
+                                  Stock
+                                </td>
+                                {availableSizes.map((size) => (
+                                  <td key={size.id} className="border border-gray-300 px-2 py-1.5 text-xs text-center">
+                                    {size.inStock ? (
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                          ✓
+                                        </span>
+                                        {size.inventory && size.inventory <= 5 && (
+                                          <span className="text-xs text-orange-600 font-medium">
+                                            {size.inventory}
+                                          </span>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        ✗
+                                      </span>
+                                    )}
+                                  </td>
+                                ))}
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      );
+                    })()}
+
+                    {/* Additional Notes - Mobile Optimized */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                      <div className="flex items-start">
+                        <svg className="w-4 h-4 text-blue-500 mt-0.5 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <div className="text-xs text-blue-800">
+                          <p className="font-medium mb-1">📏 Size Guide Tips:</p>
+                          <ul className="space-y-0.5 text-xs">
+                            <li>• All measurements in inches</li>
+                            <li>• Measure yourself for best fit</li>
+                            <li>• Between sizes? Size up</li>
+                            <li>• Scroll right to see all sizes</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-gray-500">
+                    <svg className="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <p className="text-sm">Size chart not available</p>
+                    <p className="text-xs mt-1">
+                      {sizeChart?.error || "No measurement data"}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
-      ) : (
-        <div className="text-center py-6 text-gray-500">
-          <svg className="w-8 h-8 mx-auto mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-sm">Size chart not available</p>
-          <p className="text-xs mt-1">
-            {sizeChart?.error || "No measurement data"}
-          </p>
-        </div>
-      )}
-    </div>
-  )}
-</div>
         </div>
       </div>
 
@@ -1933,5 +2060,5 @@ export default function ProductDetailsPage({ params }) {
       `}</style>
     </div>
   );
-
 }
+  

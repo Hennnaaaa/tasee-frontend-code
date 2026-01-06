@@ -33,7 +33,7 @@ export const CURRENCIES = {
   },
   PKR: {
     code: 'PKR',
-    symbol: '₨',
+    symbol: 'Rs',
     name: 'Pakistani Rupee',
     flag: '🇵🇰'
   }
@@ -67,10 +67,17 @@ export const CurrencyProvider = ({ children }) => {
     return (parseFloat(usdPrice) * exchangeRates[selectedCurrency]).toFixed(2);
   };
 
-  // Function to format price with currency symbol
+  // ✅ UPDATED: Function to format price with currency symbol and proper spacing for PKR
   const formatPrice = (usdPrice) => {
     const convertedPrice = convertPrice(usdPrice);
     const currency = CURRENCIES[selectedCurrency];
+    
+    // Add space between Rs and amount for PKR currency
+    if (selectedCurrency === 'PKR') {
+      return `${currency.symbol} ${convertedPrice}`;
+    }
+    
+    // No space for other currencies
     return `${currency.symbol}${convertedPrice}`;
   };
 

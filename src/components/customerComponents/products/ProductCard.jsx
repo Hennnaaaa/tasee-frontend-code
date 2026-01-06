@@ -274,12 +274,12 @@ const ProductCard = ({ product }) => {
           </h3>
         </Link>
         
-        {/* Available Sizes - Updated to show only available sizes */}
+        {/* ✅ UPDATED: Available Sizes - Show SIZE CODES instead of full names */}
         {product.productSizes && product.productSizes.length > 0 && (
           <div className="text-sm text-stone-500 mb-3 font-light tracking-wide">
             SIZES: {product.productSizes
               .filter(ps => ps.inventory > 0 && ps.isActive !== false)
-              .map(ps => ps.size?.name || ps.size?.code)
+              .map(ps => ps.size?.code || ps.size?.name) // ✅ Show CODE first, fallback to name
               .filter(Boolean)
               .join(' • ') || 'Out of stock'}
           </div>
