@@ -519,7 +519,7 @@ export default function ProductDetailsPage({ params }) {
                       </button>
                       <button
                         onClick={nextImage}
-                        className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-md hover:bg-white rounded-full p-4 shadow-xl transition-all duration-300 hover:scale-110 opacity-0 hover:opacity-100 z-10 mr-20"
+                        className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/95 backdrop-blur-md hover:bg-white rounded-full p-4 shadow-xl transition-all duration-300 hover:scale-110 opacity-0 hover:opacity-100 z-20"
                       >
                         <svg className="w-6 h-6 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
@@ -1265,7 +1265,7 @@ export default function ProductDetailsPage({ params }) {
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full p-3 shadow-lg transition-all duration-300 z-10 mr-16"
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white rounded-full p-3 shadow-lg transition-all duration-300 z-20"
                     >
                       <svg className="w-5 h-5 text-gray-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
