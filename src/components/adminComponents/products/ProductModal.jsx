@@ -20,7 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GripVertical, Star } from 'lucide-react';
+import { GripVertical, Star, Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 // Import API routes
 import { 
@@ -32,17 +33,16 @@ import {
 import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
 
-// ENHANCED Image Upload Component with Drag & Drop Reordering
+// Image Upload Component (same as before)
 const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage, onReorderImages }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
 
-  // Initialize with existing images
   useEffect(() => {
     if (existingImages && existingImages.length > 0) {
       const existingPreviews = existingImages
-        .sort((a, b) => a.sortOrder - b.sortOrder) // Sort by sortOrder
+        .sort((a, b) => a.sortOrder - b.sortOrder)
         .map(img => ({
           url: img.url,
           id: img.id,
@@ -69,7 +69,6 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     const newImages = [...selectedImages, ...files];
     setSelectedImages(newImages);
     
-    // Create previews for new files
     const newPreviews = [...previews];
     let loadedCount = 0;
     
@@ -99,20 +98,15 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     const imageToRemove = previews[index];
     
     if (imageToRemove.isExisting) {
-      // Handle removal of existing images
       onRemoveExistingImage(imageToRemove.id);
       const newPreviews = previews.filter((_, i) => i !== index);
-      
-      // Recalculate sortOrder for remaining images
       const reorderedPreviews = newPreviews.map((preview, i) => ({
         ...preview,
         sortOrder: i,
-        isPrimary: i === 0 // First image becomes primary if we removed the primary
+        isPrimary: i === 0
       }));
-      
       setPreviews(reorderedPreviews);
       
-      // Notify parent of order change
       if (onReorderImages) {
         const existingImagesOrder = reorderedPreviews
           .filter(p => p.isExisting)
@@ -120,12 +114,9 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
         onReorderImages(existingImagesOrder);
       }
     } else {
-      // Handle removal of newly selected images
       const newImageIndex = previews.slice(0, index).filter(p => !p.isExisting).length;
       const newImages = selectedImages.filter((_, i) => i !== newImageIndex);
       const newPreviews = previews.filter((_, i) => i !== index);
-      
-      // Recalculate sortOrder
       const reorderedPreviews = newPreviews.map((preview, i) => ({
         ...preview,
         sortOrder: i,
@@ -145,7 +136,6 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     }));
     setPreviews(newPreviews);
     
-    // Notify parent of primary change
     if (onReorderImages) {
       const existingImagesOrder = newPreviews
         .filter(p => p.isExisting)
@@ -154,7 +144,6 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     }
   };
 
-  // DRAG AND DROP HANDLERS
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -168,13 +157,9 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     
     const newPreviews = [...previews];
     const draggedItem = newPreviews[draggedIndex];
-    
-    // Remove from old position
     newPreviews.splice(draggedIndex, 1);
-    // Insert at new position
     newPreviews.splice(index, 0, draggedItem);
     
-    // Update sortOrder for all images
     const reorderedPreviews = newPreviews.map((preview, i) => ({
       ...preview,
       sortOrder: i
@@ -187,7 +172,6 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
   const handleDragEnd = () => {
     setDraggedIndex(null);
     
-    // Notify parent of order change
     if (onReorderImages) {
       const existingImagesOrder = previews
         .filter(p => p.isExisting)
@@ -195,7 +179,6 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
       onReorderImages(existingImagesOrder);
     }
     
-    // Update new images order
     const newImagesInOrder = previews
       .filter(p => !p.isExisting)
       .map(p => p.file);
@@ -243,7 +226,6 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
                   preview.isPrimary ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-200'
                 } ${draggedIndex === index ? 'opacity-50' : ''}`}
               >
-                {/* Drag Handle */}
                 <div className="absolute top-2 left-2 bg-white/80 rounded p-1 cursor-grab active:cursor-grabbing">
                   <GripVertical className="w-4 h-4 text-gray-600" />
                 </div>
@@ -254,7 +236,6 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
                   className="w-full h-32 object-cover rounded-lg"
                 />
                 
-                {/* Primary Star Button */}
                 <button
                   type="button"
                   onClick={() => setPrimaryImage(index)}
@@ -268,20 +249,17 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
                   <Star className="w-4 h-4" fill={preview.isPrimary ? 'currentColor' : 'none'} />
                 </button>
                 
-                {/* Existing Badge */}
                 {preview.isExisting && (
                   <span className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
                     Existing
                   </span>
                 )}
 
-                {/* Sort Order Badge */}
                 <span className="absolute bottom-2 right-2 bg-gray-800/70 text-white px-2 py-1 text-xs rounded">
                   #{index + 1}
                 </span>
               </div>
               
-              {/* Delete Button */}
               <button 
                 type="button"
                 onClick={(e) => {
@@ -296,13 +274,167 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
           ))}
         </div>
       )}
+    </div>
+  );
+};
 
-      {previews.length > 0 && (
-        <p className="text-xs text-gray-500 mt-2">
-          💡 Images will be displayed in this exact order on the customer side. 
-          The first image (marked with ⭐) will be shown on product listings.
-        </p>
+// ✅ NEW: Price Variants Manager Component
+const PriceVariantsManager = ({ variants, onChange }) => {
+  const [localVariants, setLocalVariants] = useState(variants || []);
+
+  useEffect(() => {
+    setLocalVariants(variants || []);
+  }, [variants]);
+
+  const addVariant = () => {
+    const newVariant = {
+      id: `temp_${Date.now()}`,
+      name: '',
+      description: '',
+      price: '',
+      isDefault: localVariants.length === 0,
+      isActive: true,
+      isNew: true
+    };
+    const updated = [...localVariants, newVariant];
+    setLocalVariants(updated);
+    onChange(updated);
+  };
+
+  const updateVariant = (index, field, value) => {
+    const updated = localVariants.map((variant, i) => {
+      if (i === index) {
+        if (field === 'isDefault' && value === true) {
+          // Only one can be default
+          return { ...variant, [field]: value };
+        }
+        return { ...variant, [field]: value };
+      }
+      // If setting this as default, unset others
+      if (field === 'isDefault' && value === true) {
+        return { ...variant, isDefault: false };
+      }
+      return variant;
+    });
+    setLocalVariants(updated);
+    onChange(updated);
+  };
+
+  const removeVariant = (index) => {
+    const updated = localVariants.filter((_, i) => i !== index);
+    // If we removed the default, make the first one default
+    if (updated.length > 0 && !updated.some(v => v.isDefault)) {
+      updated[0].isDefault = true;
+    }
+    setLocalVariants(updated);
+    onChange(updated);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Price Variants</h3>
+          <p className="text-sm text-muted-foreground">
+            Create different pricing options (e.g., Standard, Premium, Deluxe)
+          </p>
+        </div>
+        <Button type="button" onClick={addVariant} size="sm">
+          <Plus className="w-4 h-4 mr-2" />
+          Add Variant
+        </Button>
+      </div>
+
+      {localVariants.length === 0 ? (
+        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+          <p className="text-gray-500">No price variants</p>
+          <p className="text-sm text-gray-400 mt-1">Add variants to offer different pricing tiers</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {localVariants.map((variant, index) => (
+            <div key={variant.id || index} className="border rounded-lg p-4 space-y-3">
+              <div className="flex items-start justify-between">
+                <div className="flex-1 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label>Variant Name *</Label>
+                      <Input
+                        placeholder="e.g., Premium Stitching"
+                        value={variant.name}
+                        onChange={(e) => updateVariant(index, 'name', e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Price *</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          placeholder="0.00"
+                          value={variant.price}
+                          onChange={(e) => updateVariant(index, 'price', e.target.value)}
+                          className="pl-7"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Description</Label>
+                    <Textarea
+                      placeholder="Describe what makes this variant unique"
+                      value={variant.description}
+                      onChange={(e) => updateVariant(index, 'description', e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={variant.isDefault}
+                        onCheckedChange={(checked) => updateVariant(index, 'isDefault', checked)}
+                      />
+                      <Label>Default/Popular</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        checked={variant.isActive}
+                        onCheckedChange={(checked) => updateVariant(index, 'isActive', checked)}
+                      />
+                      <Label>Active</Label>
+                    </div>
+                    {variant.isDefault && (
+                      <Badge className="bg-blue-500">Popular</Badge>
+                    )}
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeVariant(index)}
+                  className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
       )}
+
+      <Alert className="bg-blue-50 border-blue-200">
+        <AlertTriangle className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800 text-sm">
+          Price variants let customers choose between different quality levels or service options.
+          Mark one as "Default/Popular" to auto-select it.
+        </AlertDescription>
+      </Alert>
     </div>
   );
 };
@@ -316,7 +448,6 @@ export default function ProductModal({
 }) {
   const router = useRouter();
   
-  // Form state
   const initialState = {
     name: '',
     color: '',
@@ -338,9 +469,9 @@ export default function ProductModal({
   const [selectedImages, setSelectedImages] = useState([]);
   const [existingImages, setExistingImages] = useState([]);
   const [removedImageIds, setRemovedImageIds] = useState([]);
-  const [imageOrder, setImageOrder] = useState([]); // NEW: Track image order changes
+  const [imageOrder, setImageOrder] = useState([]);
+  const [priceVariants, setPriceVariants] = useState([]); // ✅ NEW
   
-  // Check authentication when modal opens
   useEffect(() => {
     const auth = getUserData();
     if (!auth || !auth.token || !auth.userData || auth.userData.role !== 'admin') {
@@ -350,7 +481,6 @@ export default function ProductModal({
     }
   }, [isOpen, router, onClose]);
   
-  // Initialize form data when product changes
   useEffect(() => {
     if (product) {
       setFormData({
@@ -367,11 +497,17 @@ export default function ProductModal({
         isActive: product.isActive !== undefined ? product.isActive : true,
       });
       
-      // Set existing images - FIXED to use 'images' alias
       if (product.images && product.images.length > 0) {
         setExistingImages(product.images);
       } else {
         setExistingImages([]);
+      }
+
+      // ✅ NEW: Load existing price variants
+      if (product.priceVariants?.variants && product.priceVariants.variants.length > 0) {
+        setPriceVariants(product.priceVariants.variants);
+      } else {
+        setPriceVariants([]);
       }
       
       setErrors({});
@@ -385,10 +521,10 @@ export default function ProductModal({
       setSelectedImages([]);
       setRemovedImageIds([]);
       setImageOrder([]);
+      setPriceVariants([]);
     }
   }, [product, isOpen]);
   
-  // Handle input change
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData({
@@ -404,7 +540,6 @@ export default function ProductModal({
     }
   };
   
-  // Handle select change
   const handleSelectChange = (name, value) => {
     setFormData({
       ...formData,
@@ -419,22 +554,23 @@ export default function ProductModal({
     }
   };
 
-  // Handle image selection
   const handleImagesChange = (images) => {
     setSelectedImages(images);
   };
 
-  // Handle existing image removal
   const handleRemoveExistingImage = (imageId) => {
     setRemovedImageIds(prev => [...prev, imageId]);
   };
 
-  // NEW: Handle image reordering
   const handleReorderImages = (newOrder) => {
     setImageOrder(newOrder);
   };
+
+  // ✅ NEW: Handle price variants changes
+  const handlePriceVariantsChange = (variants) => {
+    setPriceVariants(variants);
+  };
   
-  // Validate form
   const validateForm = () => {
     const newErrors = {};
     
@@ -467,12 +603,19 @@ export default function ProductModal({
     if (formData.weight && (isNaN(parseFloat(formData.weight)) || parseFloat(formData.weight) < 0)) {
       newErrors.weight = 'Weight must be a valid positive number';
     }
+
+    // ✅ NEW: Validate price variants
+    if (priceVariants.length > 0) {
+      const hasInvalidVariant = priceVariants.some(v => !v.name.trim() || !v.price || parseFloat(v.price) < 0);
+      if (hasInvalidVariant) {
+        newErrors.priceVariants = 'All price variants must have a name and valid price';
+      }
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
   
-  // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -493,7 +636,6 @@ export default function ProductModal({
     try {
       const formDataToSend = new FormData();
       
-      // Append form fields
       formDataToSend.append('name', formData.name);
       formDataToSend.append('color', formData.color);
       formDataToSend.append('fabric', formData.fabric);
@@ -512,17 +654,19 @@ export default function ProductModal({
       }
       formDataToSend.append('isActive', formData.isActive);
       
-      // Append removed image IDs for updates
       if (product && removedImageIds.length > 0) {
         formDataToSend.append('removeImageIds', JSON.stringify(removedImageIds));
       }
 
-      // NEW: Append image order for existing images
       if (product && imageOrder.length > 0) {
         formDataToSend.append('imageOrder', JSON.stringify(imageOrder));
       }
+
+      // ✅ NEW: Append price variants
+      if (priceVariants.length > 0) {
+        formDataToSend.append('priceVariants', JSON.stringify(priceVariants));
+      }
       
-      // Append new images in order
       selectedImages.forEach((image) => {
         formDataToSend.append('images', image);
       });
@@ -568,7 +712,7 @@ export default function ProductModal({
   
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{product ? 'Edit Product' : 'Add New Product'}</DialogTitle>
           <DialogDescription>
@@ -584,9 +728,10 @@ export default function ProductModal({
         
         <form onSubmit={handleSubmit}>
           <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="pricing">Pricing & Inventory</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+              <TabsTrigger value="variants">Price Variants</TabsTrigger>
               <TabsTrigger value="images">Images</TabsTrigger>
             </TabsList>
             
@@ -648,7 +793,7 @@ export default function ProductModal({
                   <Input
                     id="workDetails"
                     name="workDetails"
-                    placeholder="Enter work details (e.g. Embroidered And Embellished)"
+                    placeholder="Enter work details"
                     value={formData.workDetails}
                     onChange={handleChange}
                   />
@@ -700,7 +845,6 @@ export default function ProductModal({
                     />
                     <Label htmlFor="isActive">Active</Label>
                   </div>
-                  <p className="text-muted-foreground text-xs">Inactive products won't be visible to customers</p>
                 </div>
               </div>
             </TabsContent>
@@ -709,7 +853,7 @@ export default function ProductModal({
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">
-                    Price <span className="text-red-500">*</span>
+                    Base Price <span className="text-red-500">*</span>
                   </Label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5">$</span>
@@ -726,6 +870,7 @@ export default function ProductModal({
                     />
                   </div>
                   {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
+                  <p className="text-xs text-muted-foreground">This is the base price (used if no price variants)</p>
                 </div>
                 
                 <div className="space-y-2">
@@ -762,12 +907,17 @@ export default function ProductModal({
                   {errors.weight && <p className="text-red-500 text-sm">{errors.weight}</p>}
                 </div>
               </div>
-              
-              <div className="pt-4">
-                <p className="text-sm text-muted-foreground mb-2">
-                  Note: If you need to manage size-specific inventory, save the product first, then use the "Manage Sizes" option.
-                </p>
-              </div>
+            </TabsContent>
+
+            {/* ✅ NEW: Price Variants Tab */}
+            <TabsContent value="variants" className="space-y-4 pt-4">
+              <PriceVariantsManager
+                variants={priceVariants}
+                onChange={handlePriceVariantsChange}
+              />
+              {errors.priceVariants && (
+                <p className="text-red-500 text-sm">{errors.priceVariants}</p>
+              )}
             </TabsContent>
 
             <TabsContent value="images" className="space-y-4 pt-4">
@@ -775,7 +925,7 @@ export default function ProductModal({
                 <div>
                   <h3 className="text-lg font-medium">Product Images</h3>
                   <p className="text-sm text-muted-foreground">
-                    Upload up to 5 images. Drag to reorder. Click the star to set primary image.
+                    Upload up to 5 images. Drag to reorder. Click star to set primary.
                   </p>
                 </div>
                 
@@ -786,13 +936,6 @@ export default function ProductModal({
                   onReorderImages={handleReorderImages}
                   maxImages={5}
                 />
-                
-                {existingImages.length === 0 && selectedImages.length === 0 && (
-                  <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                    <p className="text-gray-500">No images uploaded yet</p>
-                    <p className="text-sm text-gray-400 mt-1">Upload some images to showcase your product</p>
-                  </div>
-                )}
               </div>
             </TabsContent>
           </Tabs>

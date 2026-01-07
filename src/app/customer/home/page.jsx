@@ -22,9 +22,7 @@ const useScreenSize = () => {
         setScreenSize('desktop');
       }
     };
-    // Check on mount
     checkScreenSize();
-    // Add event listener with throttling for better performance
     let timeoutId;
     const handleResize = () => {
       clearTimeout(timeoutId);
@@ -57,7 +55,6 @@ export default function HomePage() {
     totalPages: 0,
   });
 
-  // Helper function for API calls
   const apiCall = async (url, options = {}) => {
     const defaultOptions = {
       headers: {
@@ -88,10 +85,8 @@ export default function HomePage() {
     return response.json();
   };
 
-  // Simplified API functions
   const getAllProducts = async (queryParams = {}) => {
     try {
-      // Convert query params to URL string
       const queryString = Object.keys(queryParams)
         .map((key) => `${key}=${encodeURIComponent(queryParams[key])}`)
         .join("&");
@@ -116,11 +111,10 @@ export default function HomePage() {
     }
   };
 
-  // Enhanced hero images - optimized for PNG files with proper compression
   const heroImages = [
     {
       desktop: "/HeroSectionImages/HS6.png",
-      tablet: "/HeroSectionImages/HS6.png", // Same image, CSS will handle responsiveness
+      tablet: "/HeroSectionImages/HS6.png",
       mobile: "/HeroSectionImages/HS6.png",
       alt: "Summer Collection 2024",
       title: "SUMMER ELEGANCE",
@@ -152,12 +146,10 @@ export default function HomePage() {
     }
   ];
 
-  // Get current image source based on screen size
   const getCurrentImageSrc = (imageSet) => {
     return imageSet[screenSize] || imageSet.desktop;
   };
 
-  // Preload images for current screen size (only for desktop)
   useEffect(() => {
     if (screenSize === 'desktop') {
       const preloadImages = async () => {
@@ -184,7 +176,6 @@ export default function HomePage() {
     }
   }, [screenSize]);
 
-  // Auto-rotate images every 6 seconds with smooth transitions (only for desktop)
   useEffect(() => {
     if (screenSize === 'desktop') {
       const interval = setInterval(() => {
@@ -197,7 +188,6 @@ export default function HomePage() {
     }
   }, [currentImageIndex, isTransitioning, screenSize]);
 
-  // Enhanced image navigation with transition control
   const nextImage = () => {
     if (isTransitioning) return;
     setIsTransitioning(true);
@@ -223,19 +213,16 @@ export default function HomePage() {
     setTimeout(() => setIsTransitioning(false), 1000);
   };
 
-  // Fetch data effect
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // Fetch categories
         const categoriesResponse = await getAllCategories();
         if (categoriesResponse.success) {
           setCategories(categoriesResponse.data);
         }
         
-        // Fetch products with optional category filter
         const queryParams = {
           page: pagination.page,
           limit: pagination.limit,
@@ -283,7 +270,6 @@ export default function HomePage() {
     }
   };
 
-  // Keyboard navigation for accessibility (only for desktop)
   useEffect(() => {
     if (screenSize === 'desktop') {
       const handleKeyDown = (event) => {
@@ -321,17 +307,19 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Fully Responsive Hero Section - ALL SCREEN SIZES */}
+      {/* ============================================ */}
+      {/* HERO SECTION - COMMENTED OUT */}
+      {/* ============================================ */}
+      {/* 
       <section className={`relative overflow-hidden ${
         screenSize === 'desktop' ? 'flex items-center' : 'flex items-center'
       } ${
         screenSize === 'mobile' 
-          ? 'h-[25vh] min-h-[200px]' // Much smaller on mobile - no text overlay
+          ? 'h-[25vh] min-h-[200px]'
           : screenSize === 'tablet'
-          ? 'h-[30vh] min-h-[250px]' // Compact on tablet - no text overlay
-          : 'h-[60vh] lg:h-[65vh] xl:h-[70vh] min-h-[500px]' // Full size on desktop with text
+          ? 'h-[30vh] min-h-[250px]'
+          : 'h-[60vh] lg:h-[65vh] xl:h-[70vh] min-h-[500px]'
       }`}>
-        {/* Background Image Carousel - Responsive Scaling */}
         {heroImages.map((imageSet, index) => (
           <div
             key={`${index}_${screenSize}`}
@@ -341,12 +329,11 @@ export default function HomePage() {
                 : 'opacity-0 scale-105'
             }`}
           >
-            {/* Responsive background - scales down proportionally */}
             <div 
               className="absolute inset-0 transition-all duration-1000"
               style={{
                 backgroundImage: `url(${getCurrentImageSrc(imageSet)})`,
-                backgroundSize: screenSize === 'desktop' ? 'cover' : 'contain', // Cover for desktop, contain for mobile/tablet
+                backgroundSize: screenSize === 'desktop' ? 'cover' : 'contain',
                 backgroundPosition: 'center center',
                 backgroundRepeat: 'no-repeat',
                 backgroundAttachment: 'scroll',
@@ -354,15 +341,13 @@ export default function HomePage() {
                 filter: 'contrast(1.05) saturate(1.05)',
               }}
             >
-            {/* Responsive overlay - removed for mobile/tablet */}
-            <div className={`absolute inset-0 transition-all duration-1000 ${
-              screenSize === 'desktop' 
-                ? 'bg-gradient-to-t from-black/10 via-transparent to-transparent'
-                : 'bg-transparent' // No overlay on mobile/tablet for cleaner image display
-            }`}></div>
+              <div className={`absolute inset-0 transition-all duration-1000 ${
+                screenSize === 'desktop' 
+                  ? 'bg-gradient-to-t from-black/10 via-transparent to-transparent'
+                  : 'bg-transparent'
+              }`}></div>
             </div>
 
-            {/* Fallback image element */}
             <picture className="absolute inset-0 w-full h-full opacity-0 pointer-events-none">
               <source 
                 media="(max-width: 767px)" 
@@ -375,17 +360,15 @@ export default function HomePage() {
               <img 
                 src={imageSet.desktop}
                 alt={imageSet.alt}
-                className={`w-full h-full ${screenSize === 'desktop' ? 'object-cover' : 'object-contain'}`} // Cover for desktop, contain for mobile/tablet
+                className={`w-full h-full ${screenSize === 'desktop' ? 'object-cover' : 'object-contain'}`}
                 loading={index === 0 ? "eager" : "lazy"}
               />
             </picture>
           </div>
         ))}
         
-        {/* Fallback gradient background */}
         <div className="absolute inset-0 bg-gradient-to-br from-stone-800 via-amber-900 to-rose-900 -z-10"></div>
 
-        {/* Progress bar for auto-rotation */}
         <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20 z-30">
           <div 
             className="h-full bg-white/60 transition-all ease-linear"
@@ -396,6 +379,7 @@ export default function HomePage() {
           />
         </div>
       </section>
+      */}
 
       {/* Enhanced Products Section */}
       <section 
@@ -428,7 +412,6 @@ export default function HomePage() {
             </p>
           </div>
           
-          {/* Category Filter */}
           <div className="mb-12 sm:mb-14 md:mb-16 lg:mb-20">
             <CategoryFilter 
               categories={categories} 
@@ -446,14 +429,13 @@ export default function HomePage() {
             </div>
           ) : (
             <>
-              {/* Products Grid - Enlarged Cards with Better Space Utilization */}
               {products.length > 0 ? (
                 <div className={`grid w-full mx-auto ${
                   screenSize === 'mobile' 
-                    ? 'grid-cols-1 gap-4 px-3 max-w-sm' // Single column on mobile for larger cards
+                    ? 'grid-cols-1 gap-4 px-3 max-w-sm'
                     : screenSize === 'tablet'
-                    ? 'grid-cols-2 gap-6 px-2 max-w-6xl' // Increased gap and max-width
-                    : 'grid-cols-4 gap-8 px-4 max-w-full' // 4 columns for desktop, increased gap, full width
+                    ? 'grid-cols-2 gap-6 px-2 max-w-6xl'
+                    : 'grid-cols-4 gap-8 px-4 max-w-full'
                 }`}>
                   {products.map((product, index) => (
                     <div 
@@ -491,7 +473,6 @@ export default function HomePage() {
                 </div>
               )}
               
-              {/* Enhanced Pagination */}
               {pagination.totalPages > 1 && (
                 <div className="flex justify-center mt-12 sm:mt-14 md:mt-16 lg:mt-20">
                   <div className="flex items-center space-x-4 sm:space-x-6 md:space-x-8 bg-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl shadow-lg">

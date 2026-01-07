@@ -489,44 +489,72 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
             >
               {/* Product info card */}
               <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center">
-                    <Info className="mr-2 h-4 w-4 text-muted-foreground" />
-                    Product Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Name</p>
-                      <p className="font-medium">{productData?.name}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">SKU</p>
-                      <p className="font-medium">{productData?.sku}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Category</p>
-                      <p className="font-medium">{productData?.category?.name || 'N/A'}</p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">Total Inventory</p>
-                      <div className="font-semibold text-lg">
-                        <Badge className={`
-                          ${totalInventory <= 0
-                            ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                            : totalInventory < 5
-                              ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
-                              : 'bg-green-100 text-green-700 hover:bg-green-200'}
-                            rounded-md px-3 py-0.5 text-sm
-                        `}>
-                          {totalInventory} units
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+  <CardHeader className="pb-3">
+    <CardTitle className="text-base flex items-center">
+      <Info className="mr-2 h-4 w-4 text-muted-foreground" />
+      Product Information
+    </CardTitle>
+  </CardHeader>
+  <CardContent>
+    <div className="grid grid-cols-2 gap-4">
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Name</p>
+        <p className="font-medium">{productData?.name}</p>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">SKU</p>
+        <p className="font-medium">{productData?.sku}</p>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Category</p>
+        <p className="font-medium">{productData?.category?.name || 'N/A'}</p>
+      </div>
+      <div>
+        <p className="text-sm font-medium text-muted-foreground">Total Inventory</p>
+        <div className="font-semibold text-lg">
+          <Badge className={`
+            ${totalInventory <= 0
+              ? 'bg-red-100 text-red-700 hover:bg-red-200'
+              : totalInventory < 5
+                ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                : 'bg-green-100 text-green-700 hover:bg-green-200'}
+            rounded-md px-3 py-0.5 text-sm
+          `}>
+            {totalInventory} units
+          </Badge>
+        </div>
+      </div>
+      
+      {/* ✅ NEW: Price Variants Info */}
+      {productData?.priceVariants?.hasVariants && (
+        <>
+          <div className="col-span-2 border-t pt-3 mt-2">
+            <p className="text-sm font-medium text-muted-foreground mb-2 flex items-center">
+              <Tag className="mr-1 h-3 w-3" />
+              Price Variants
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {productData.priceVariants.variants.map((variant) => (
+                <Badge
+                  key={variant.id}
+                  variant={variant.isDefault ? "default" : "secondary"}
+                  className="text-xs"
+                >
+                  {variant.name}: ${parseFloat(variant.price).toFixed(2)}
+                  {variant.isDefault && " (Popular)"}
+                  {!variant.isActive && " (Inactive)"}
+                </Badge>
+              ))}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              💡 Customers can choose between these pricing options at checkout
+            </p>
+          </div>
+        </>
+      )}
+    </div>
+  </CardContent>
+</Card>
 
               {/* Current sizes */}
               <div>
