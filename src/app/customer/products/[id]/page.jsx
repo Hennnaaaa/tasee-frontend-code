@@ -1,5 +1,3 @@
-// COMPLETE ProductDetailsPage - Part 1 of 5
-// File: src/app/customer/products/[id]/page.jsx
 
 'use client';
 
@@ -1393,9 +1391,6 @@ export default function ProductDetailsPage({ params }) {
           </div>
         </div>
       </div>
-
-// COMPLETE ProductDetailsPage - Part 5 of 5 (FINAL)
-// MOBILE LAYOUT + REVIEWS + FOOTER + NOTIFICATIONS
 
       {/* ============================================ */}
       {/* MOBILE LAYOUT */}
