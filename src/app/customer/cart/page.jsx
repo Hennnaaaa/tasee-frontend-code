@@ -1,7 +1,7 @@
 // src/app/cart/page.js - COMPLETE with Mobile UI Fixes + Price Variant Support
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/contexts/cartContext';
 import { useCurrency } from '@/contexts/currencyContext';
@@ -189,36 +189,23 @@ export default function CartPage() {
                   </p>
                 )}
                 
-                {/* ✅ Price Variant Badge - Mobile Optimized */}
-                {item.priceVariant && (
-                  <div className="mt-2 inline-flex items-center px-2 sm:px-3 py-1 bg-purple-50 border border-purple-200 rounded-full max-w-full">
-                    <svg className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 mr-1 sm:mr-1.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                    </svg>
-                    <span className="text-xs sm:text-sm font-medium text-purple-900 truncate">
-                      {item.priceVariant.name}
-                    </span>
-                    {item.priceVariant.isDefault && (
-                      <span className="ml-1 sm:ml-2 text-xs text-purple-600 whitespace-nowrap">
-                        (Default)
+                {/* Size + Style selections */}
+                <div className="mt-2 space-y-0.5">
+                  {item.sizeVariant?.size && (
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      <span className="text-gray-400">Size: </span>
+                      <span className="font-medium text-gray-800">
+                        {[item.sizeVariant.size.code, item.sizeVariant.size.name].filter(Boolean).join(' / ')}
                       </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Price Variant Description */}
-                {item.priceVariant?.description && (
-                  <p className="text-xs text-gray-600 mt-1 truncate">
-                    {item.priceVariant.description}
-                  </p>
-                )}
-                
-                {/* Size Information */}
-                {item.sizeVariant?.size && (
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1 sm:mt-2">
-                    <span className="font-medium">Size:</span> {item.sizeVariant.size.name || item.sizeVariant.size.code}
-                  </p>
-                )}
+                    </p>
+                  )}
+                  {item.priceVariant && (
+                    <p className="text-xs sm:text-sm text-gray-600">
+                      <span className="text-gray-400">Style: </span>
+                      <span className="font-medium text-gray-800">{item.priceVariant.name}</span>
+                    </p>
+                  )}
+                </div>
 
                 {/* SKU */}
                 {item.product?.sku && (
@@ -246,12 +233,6 @@ export default function CartPage() {
                     </>
                   )}
 
-                  {/* Variant Price Badge */}
-                  {item.priceVariant && (
-                    <span className="text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full whitespace-nowrap">
-                      Style Price
-                    </span>
-                  )}
                 </div>
               </div>
 
