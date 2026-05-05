@@ -137,18 +137,19 @@ const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRe
   };
 
   const setPrimaryImage = (index) => {
-    const newPreviews = previews.map((preview, i) => ({
-      ...preview,
-      isPrimary: i === index
-    }));
-    setPreviews(newPreviews);
-    
-    if (onReorderImages) {
-      const existingImagesOrder = newPreviews
-        .filter(p => p.isExisting)
-        .map((p) => ({ id: p.id, sortOrder: p.sortOrder, isPrimary: p.isPrimary }));
-      onReorderImages(existingImagesOrder);
-    }
+    setPreviews(prev => {
+      const newPreviews = prev.map((preview, i) => ({
+        ...preview,
+        isPrimary: i === index
+      }));
+      if (onReorderImages) {
+        const existingImagesOrder = newPreviews
+          .filter(p => p.isExisting)
+          .map((p) => ({ id: p.id, sortOrder: p.sortOrder, isPrimary: p.isPrimary }));
+        onReorderImages(existingImagesOrder);
+      }
+      return newPreviews;
+    });
   };
 
   const handleDragStart = (e, index) => {
@@ -220,8 +221,8 @@ const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRe
       {previews.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {previews.map((preview, index) => (
-            <div 
-              key={preview.id || index} 
+            <div
+              key={preview.isExisting ? `existing-${preview.id}` : preview.url}
               className="relative group cursor-move"
               draggable
               onDragStart={(e) => handleDragStart(e, index)}
@@ -256,6 +257,12 @@ const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRe
                   <Star className="w-4 h-4" fill={preview.isPrimary ? 'currentColor' : 'none'} />
                 </button>
                 
+                {preview.isPrimary && (
+                  <span className="absolute top-2 left-8 bg-blue-500 text-white px-2 py-1 text-xs rounded font-semibold">
+                    Primary
+                  </span>
+                )}
+
                 {preview.isExisting && (
                   <span className="absolute bottom-2 left-2 bg-green-500 text-white px-2 py-1 text-xs rounded">
                     Existing
