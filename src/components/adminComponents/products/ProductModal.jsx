@@ -60,9 +60,9 @@ const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRe
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
 
-    const oversized = files.filter(f => f.size > 6 * 1024 * 1024);
+    const oversized = files.filter(f => f.size > 25 * 1024 * 1024);
     if (oversized.length > 0) {
-      alert(`${oversized.map(f => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 6MB limit.`);
+      alert(`${oversized.map(f => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 25MB limit.`);
       return;
     }
 
@@ -931,7 +931,7 @@ export default function ProductModal({
                 <div>
                   <h3 className="text-lg font-medium">Product Images</h3>
                   <p className="text-sm text-muted-foreground">
-                    Upload up to 15 images (max 6MB each). Drag to reorder. Click star to set primary.
+                    Upload up to 15 images (max 25MB each). Drag to reorder. Click star to set primary.
                   </p>
                 </div>
                 
