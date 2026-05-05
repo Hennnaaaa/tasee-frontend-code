@@ -10,7 +10,8 @@ import { getUserData } from '@/utils/auth';
 const ProductCard = ({ product }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const primaryIndex = productImages.findIndex(img => img.isPrimary);
+  const [currentImageIndex, setCurrentImageIndex] = useState(primaryIndex > -1 ? primaryIndex : 0);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
   
