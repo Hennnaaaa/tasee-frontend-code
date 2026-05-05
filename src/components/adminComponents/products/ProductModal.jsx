@@ -34,7 +34,7 @@ import { getUserData } from '@/utils/auth';
 import { useRouter } from 'next/navigation';
 
 // Image Upload Component (same as before)
-const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRemoveExistingImage, onReorderImages }) => {
+const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRemoveExistingImage, onReorderImages }) => {
   const [selectedImages, setSelectedImages] = useState([]);
   const [previews, setPreviews] = useState([]);
   const [draggedIndex, setDraggedIndex] = useState(null);
@@ -59,7 +59,13 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
 
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
-    
+
+    const oversized = files.filter(f => f.size > 6 * 1024 * 1024);
+    if (oversized.length > 0) {
+      alert(`${oversized.map(f => f.name).join(", ")} exceed${oversized.length === 1 ? "s" : ""} the 6MB limit.`);
+      return;
+    }
+
     const totalImages = selectedImages.length + existingImages.length;
     if (files.length + totalImages > maxImages) {
       alert(`Maximum ${maxImages} images allowed`);
@@ -139,7 +145,7 @@ const ImageUpload = ({ onImagesChange, maxImages = 5, existingImages = [], onRem
     if (onReorderImages) {
       const existingImagesOrder = newPreviews
         .filter(p => p.isExisting)
-        .map((p, i) => ({ id: p.id, sortOrder: p.sortOrder, isPrimary: p.isPrimary }));
+        .map((p) => ({ id: p.id, sortOrder: p.sortOrder, isPrimary: p.isPrimary }));
       onReorderImages(existingImagesOrder);
     }
   };
@@ -925,7 +931,7 @@ export default function ProductModal({
                 <div>
                   <h3 className="text-lg font-medium">Product Images</h3>
                   <p className="text-sm text-muted-foreground">
-                    Upload up to 5 images. Drag to reorder. Click star to set primary.
+                    Upload up to 15 images (max 6MB each). Drag to reorder. Click star to set primary.
                   </p>
                 </div>
                 
@@ -934,7 +940,7 @@ export default function ProductModal({
                   existingImages={existingImages}
                   onRemoveExistingImage={handleRemoveExistingImage}
                   onReorderImages={handleReorderImages}
-                  maxImages={5}
+                  maxImages={15}
                 />
               </div>
             </TabsContent>
