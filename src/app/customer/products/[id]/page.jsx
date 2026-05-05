@@ -36,6 +36,13 @@ export default function ProductDetailsPage({ params }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [imageError, setImageError] = useState(false);
 
+  useEffect(() => {
+    if (product?.images?.length > 0) {
+      const primaryIndex = product.images.findIndex(img => img.isPrimary);
+      setCurrentImageIndex(primaryIndex > -1 ? primaryIndex : 0);
+    }
+  }, [product]);
+
   // Zoom state
   const [isZooming, setIsZooming] = useState(false);
   const [zoomStyle, setZoomStyle] = useState({});
