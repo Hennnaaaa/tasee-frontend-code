@@ -8,24 +8,31 @@ import { useWishlist } from '@/contexts/wishlistContext';
 import { getUserData } from '@/utils/auth';
 
 const ProductCard = ({ product }) => {
+  // Get product images first so they can be used in useState initialization
+  const productImages = product.images || [];
+  const primaryImage = productImages.find(img => img.isPrimary) || productImages[0];
+  const hasMultipleImages = productImages.length > 1;
+
   const [isHovered, setIsHovered] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const primaryIndex = productImages.findIndex(img => img.isPrimary);
-  const [currentImageIndex, setCurrentImageIndex] = useState(primaryIndex > -1 ? primaryIndex : 0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(() => {
+    const idx = productImages.findIndex(img => img.isPrimary);
+    return idx > -1 ? idx : 0;
+  });
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
-  
+
   // Currency context
   const { formatPrice, currentCurrency } = useCurrency();
-  
+
   // Wishlist and Currency contexts
   const { toggleWishlist, checkWishlistStatus } = useWishlist();
-  
+
   // Check authentication using localStorage token
   const authData = getUserData();
   const isAuthenticated = !!(authData?.token);
   const userData = authData?.userData;
-  
+
   // Check wishlist status when product changes
   useEffect(() => {
     if (product?.id) {
@@ -33,11 +40,6 @@ const ProductCard = ({ product }) => {
       setIsInWishlist(wishlistStatus);
     }
   }, [product?.id, checkWishlistStatus]);
-  
-  // Get product images
-  const productImages = product.images || [];
-  const primaryImage = productImages.find(img => img.isPrimary) || productImages[0];
-  const hasMultipleImages = productImages.length > 1;
   
   // Calculate discount percentage if there's a discounted price
   const discountPercentage = product.discountedPrice && product.price
