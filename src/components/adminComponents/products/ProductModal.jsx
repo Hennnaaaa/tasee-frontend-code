@@ -40,6 +40,14 @@ const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRe
   const [draggedIndex, setDraggedIndex] = useState(null);
 
   useEffect(() => {
+    return () => {
+      previews.forEach(p => {
+        if (p.url && p.url.startsWith('blob:')) URL.revokeObjectURL(p.url);
+      });
+    };
+  }, []);
+
+  useEffect(() => {
     if (existingImages && existingImages.length > 0) {
       const existingPreviews = existingImages
         .sort((a, b) => a.sortOrder - b.sortOrder)
@@ -74,28 +82,18 @@ const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRe
 
     const newImages = [...selectedImages, ...files];
     setSelectedImages(newImages);
-    
-    const newPreviews = [...previews];
-    let loadedCount = 0;
-    
-    files.forEach((file, index) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        newPreviews.push({
-          url: e.target.result,
-          file: file,
-          sortOrder: previews.length + index,
-          isPrimary: previews.length === 0 && index === 0,
-          isExisting: false
-        });
-        
-        loadedCount++;
-        if (loadedCount === files.length) {
-          setPreviews(newPreviews);
-        }
-      };
-      reader.readAsDataURL(file);
-    });
+
+    const newPreviews = [
+      ...previews,
+      ...files.map((file, index) => ({
+        url: URL.createObjectURL(file),
+        file: file,
+        sortOrder: previews.length + index,
+        isPrimary: previews.length === 0 && index === 0,
+        isExisting: false
+      }))
+    ];
+    setPreviews(newPreviews);
 
     onImagesChange(newImages);
   };
@@ -120,6 +118,9 @@ const ImageUpload = ({ onImagesChange, maxImages = 15, existingImages = [], onRe
         onReorderImages(existingImagesOrder);
       }
     } else {
+      if (imageToRemove.url && imageToRemove.url.startsWith('blob:')) {
+        URL.revokeObjectURL(imageToRemove.url);
+      }
       const newImageIndex = previews.slice(0, index).filter(p => !p.isExisting).length;
       const newImages = selectedImages.filter((_, i) => i !== newImageIndex);
       const newPreviews = previews.filter((_, i) => i !== index);
