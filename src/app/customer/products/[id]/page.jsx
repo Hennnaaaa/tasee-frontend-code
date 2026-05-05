@@ -514,7 +514,8 @@ export default function ProductDetailsPage({ params }) {
                     src={image.url}
                     alt={image.alt || `${product.name} - Image ${index + 1}`}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    style={{ imageRendering: 'high-quality' }}
+                    loading="lazy"
+                    decoding="async"
                   />
                   <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                   {image.isPrimary && (
@@ -1488,7 +1489,7 @@ export default function ProductDetailsPage({ params }) {
                   }`}
                   style={{ height: '80px', width: '80px' }}
                 >
-                  <img src={image.url} alt={image.alt || `${product.name} - Image ${index + 1}`} className="w-full h-full object-cover" style={{ imageRendering: 'high-quality' }} />
+                  <img src={image.url} alt={image.alt || `${product.name} - Image ${index + 1}`} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                   {image.isPrimary && (
                     <div className="absolute top-1 left-1 bg-black text-white text-xs px-1 py-0.5 rounded font-medium">
                       Main
