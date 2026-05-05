@@ -578,6 +578,10 @@ export default function ProductModal({
 
   const handleReorderImages = (newOrder) => {
     setImageOrder(newOrder);
+    setExistingImages(prev => prev.map(img => {
+      const updated = newOrder.find(o => o.id === img.id);
+      return updated ? { ...img, isPrimary: updated.isPrimary } : img;
+    }));
   };
 
   // ✅ NEW: Handle price variants changes
