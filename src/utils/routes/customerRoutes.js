@@ -7,6 +7,9 @@ export const LOGIN = `${BASE_URL}/api/customer/login`;
 export const SIGNUP = `${BASE_URL}/api/customer/create`;
 export const VERIFY_OTP = `${BASE_URL}/api/customer/verify-OTP`;
 export const RESEND_OTP = `${BASE_URL}/api/customer/resend-otp`;
+export const FORGOT_PASSWORD = `${BASE_URL}/api/customer/forgot-password`;
+export const VERIFY_RESET_OTP = `${BASE_URL}/api/customer/verify-reset-otp`;
+export const RESET_PASSWORD = `${BASE_URL}/api/customer/reset-password`;
 
 // Customer management routes
 export const SUBSCRIBE_NEWSLETTER = `${BASE_URL}/api/customer/subscribeNewsletter`;
