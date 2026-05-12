@@ -115,7 +115,7 @@ export default function CatalogPage() {
         </div>
       </div>
 
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
+      <div className="max-w-screen-xl mx-auto px-0 sm:px-6">
         <div className="flex gap-8 py-8">
 
           {/* Sidebar Filters — Desktop */}

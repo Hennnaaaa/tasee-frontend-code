@@ -130,23 +130,22 @@ const ProductCard = ({ product }) => {
       <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
         <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 w-full">
           {/* Wishlist Button - Top Left */}
-          <div className="absolute top-6 left-6 z-20">
+          <div className="absolute top-2 left-2 z-20">
             <button
               onClick={handleWishlistToggle}
               disabled={isWishlistLoading}
               className={`
-                p-3 rounded-full transition-all duration-300 shadow-lg backdrop-blur-sm
-                ${isInWishlist 
-                  ? 'bg-red-500/90 text-white hover:bg-red-600' 
-                  : 'bg-white/90 text-gray-600 hover:bg-white hover:text-red-500'
+                p-1.5 sm:p-2 rounded-full transition-all duration-300 shadow backdrop-blur-sm
+                ${isInWishlist
+                  ? 'bg-red-500/90 text-white hover:bg-red-600'
+                  : 'bg-white/80 text-gray-500 hover:bg-white hover:text-red-500'
                 }
                 ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-                transform hover:scale-110
               `}
               aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
             >
-              <Heart 
-                className={`w-5 h-5 transition-all duration-200 ${
+              <Heart
+                className={`w-3 h-3 sm:w-4 sm:h-4 transition-all duration-200 ${
                   isInWishlist ? 'fill-current' : ''
                 } ${isWishlistLoading ? 'animate-pulse' : ''}`}
               />
@@ -230,7 +229,7 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {/* Low stock warning - UPDATED: Only show for products with less than 10 items */}
+          {/* Low stock warning */}
           {isLowStock && (
             <div className="absolute top-20 left-6 bg-yellow-500 text-white text-xs font-light px-3 py-1 tracking-wider z-10">
               ONLY {totalInventory} LEFT
@@ -255,88 +254,47 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {/* Hover overlay with quick actions */}
-          <div className={`absolute inset-0 bg-black/30 flex items-center justify-center transition-opacity duration-300 z-10 ${
+          {/* Hover overlay */}
+          <div className={`absolute inset-0 bg-black/25 flex items-center justify-center transition-opacity duration-300 z-10 ${
             isHovered ? 'opacity-100' : 'opacity-0'
           }`}>
-            <div className="text-center">
-              <button className="bg-white text-stone-800 px-12 py-4 font-light tracking-widest hover:bg-stone-100 transition-colors duration-300 text-lg">
-                VIEW DETAILS
-              </button>
-            </div>
+            <button className="bg-white text-stone-800 px-5 py-2.5 sm:px-10 sm:py-3.5 font-light tracking-widest hover:bg-stone-100 transition-colors duration-300 text-xs sm:text-sm">
+              VIEW DETAILS
+            </button>
           </div>
         </div>
       </Link>
       
       {/* Product Information */}
-      <div className="p-8 bg-white text-center">
-        {/* Product Name */}
+      <div className="px-3 py-3 sm:px-4 sm:py-4 bg-white text-center">
         <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
-          <h3 className="text-lg font-normal text-stone-800 mb-2 hover:text-stone-600 transition-colors tracking-wide uppercase">
+          <h3 className="text-xs sm:text-sm font-medium text-stone-800 mb-1.5 hover:text-stone-500 transition-colors tracking-widest uppercase truncate">
             {product.name}
           </h3>
         </Link>
-        
-        {/* ✅ UPDATED: Available Sizes - Show SIZE CODES instead of full names */}
-        {product.productSizes && product.productSizes.length > 0 && (
-          <div className="text-sm text-stone-500 mb-3 font-light tracking-wide">
-            SIZES: {product.productSizes
-              .filter(ps => ps.inventory > 0 && ps.isActive !== false)
-              .map(ps => ps.size?.code || ps.size?.name) // ✅ Show CODE first, fallback to name
-              .filter(Boolean)
-              .join(' • ') || 'Out of stock'}
-          </div>
-        )}
-        
-        {/* Price - Updated to use currency context */}
-        <div className="flex items-center justify-center space-x-3 mb-4">
+
+        <div className="flex items-center justify-center gap-2">
           {product.discountedPrice ? (
             <>
-              <span className="text-lg font-normal text-stone-800 tracking-wide">
+              <span className="text-sm sm:text-base font-semibold text-stone-900">
                 {formatPrice(product.discountedPrice)}
               </span>
-              <span className="text-sm text-stone-500 line-through font-light">
+              <span className="text-xs text-stone-400 line-through">
                 {formatPrice(product.price)}
               </span>
             </>
           ) : (
-            <span className="text-lg font-normal text-stone-800 tracking-wide">
+            <span className="text-sm sm:text-base font-semibold text-stone-900">
               {formatPrice(product.price)}
             </span>
           )}
         </div>
 
-        {/* Currency indicator - Shows current currency for clarity */}
-        <div className="text-xs text-stone-400 mb-2 font-light tracking-wider">
-          PRICE IN {currentCurrency.name.toUpperCase()}
-        </div>
-
-        {/* Wishlist Status Indicator (Optional) */}
-        {isInWishlist && (
-          <div className="text-xs text-red-500 mb-2 font-light tracking-wider flex items-center justify-center gap-1">
-            <Heart className="w-3 h-3 fill-current" />
-            IN WISHLIST
-          </div>
+        {isLowStock && (
+          <p className="text-[10px] text-amber-600 tracking-wider mt-1.5 font-light">
+            ONLY {totalInventory} LEFT
+          </p>
         )}
-
-        {/* Stock Status - UPDATED: Only show count for low stock items */}
-        <div className="text-xs font-light tracking-wide">
-          {hasInventory ? (
-            isLowStock ? (
-              <span className="text-yellow-600">
-                LOW STOCK ({totalInventory} available)
-              </span>
-            ) : (
-              <span className="text-green-600">
-                IN STOCK
-              </span>
-            )
-          ) : (
-            <span className="text-red-600">
-              OUT OF STOCK
-            </span>
-          )}
-        </div>
       </div>
     </div>
   );

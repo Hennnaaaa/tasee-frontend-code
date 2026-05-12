@@ -115,7 +115,7 @@ const SubcategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-stone-50">
-      <div className="px-8 py-16">
+      <div className="px-0 sm:px-8 py-16">
         {/* Page Header */}
         <div className="text-center mb-16">
           <h1 className="text-4xl lg:text-5xl font-light text-stone-800 mb-4 tracking-widest uppercase">
