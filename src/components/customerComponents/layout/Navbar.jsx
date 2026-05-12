@@ -6,7 +6,7 @@ import { useCart } from '@/contexts/cartContext';
 import { useAuth } from '@/contexts/authcontext';
 import { useWishlist } from '@/contexts/wishlistContext';
 import { useCurrency, CURRENCIES } from '@/contexts/currencyContext';
-import { GET_NAVIGATION_CATEGORIES } from '@/utils/routes/productManagementRoutes';
+import { GET_NAVIGATION_CATEGORIES, GET_ALL_PRODUCTS } from '@/utils/routes/productManagementRoutes';
 
 // Clickable only when API provides a count AND it is zero; safe-default is clickable.
 const hasProducts = (cat) =>
@@ -127,7 +127,20 @@ const Navbar = () => {
   const fetchCategories = async () => {
     try {
       const response = await axios.get(GET_NAVIGATION_CATEGORIES);
-      if (response.data.success) setCategories(response.data.data);
+      if (response.data.success) {
+        const cats = response.data.data;
+        // Parallel product-count check for each parent category (limit=1, only reads total)
+        const counts = await Promise.all(
+          cats.map(cat =>
+            fetch(`${GET_ALL_PRODUCTS}?categoryId=${cat.id}&limit=1`)
+              .then(r => r.json())
+              .then(d => ({ id: cat.id, count: d.data?.pagination?.total ?? 0 }))
+              .catch(() => ({ id: cat.id, count: 1 }))
+          )
+        );
+        const countMap = Object.fromEntries(counts.map(c => [c.id, c.count]));
+        setCategories(cats.map(cat => ({ ...cat, productCount: countMap[cat.id] ?? 1 })));
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
     } finally {
