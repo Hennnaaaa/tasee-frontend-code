@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Newsletter from '@/components/Newsletter';
 import { GET_ALL_CATEGORIES } from '@/utils/routes/customerRoutes';
+import ReelCard from '@/components/customerComponents/lookbook/ReelCard';
 
 // ── Screen size hook ──────────────────────────────────────────
 const useScreenSize = () => {
@@ -94,103 +95,6 @@ function HeroSlideshow({ onReady }) {
   );
 }
 
-// ── Lookbook reel card ────────────────────────────────────────
-function ReelCard({ src }) {
-  const containerRef = useRef(null);
-  const videoRef = useRef(null);
-  const mountTimerRef = useRef(null);
-  const [inView, setInView] = useState(false);
-  const [playing, setPlaying] = useState(false);
-  const [ready, setReady] = useState(false);
-  const [buffering, setBuffering] = useState(false);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          mountTimerRef.current = setTimeout(() => { setInView(true); observer.disconnect(); }, 350);
-        } else {
-          clearTimeout(mountTimerRef.current);
-        }
-      },
-      { rootMargin: '40px', threshold: 0.1 }
-    );
-    observer.observe(el);
-    return () => { observer.disconnect(); clearTimeout(mountTimerRef.current); };
-  }, []);
-
-  useEffect(() => {
-    if (!inView) return;
-    const el = containerRef.current;
-    if (!el) return;
-    const obs = new IntersectionObserver(
-      ([entry]) => { if (!entry.isIntersecting && videoRef.current) { videoRef.current.pause(); setPlaying(false); } },
-      { threshold: 0 }
-    );
-    obs.observe(el);
-    return () => obs.disconnect();
-  }, [inView]);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (e.detail.src !== src && videoRef.current) { videoRef.current.pause(); setPlaying(false); }
-    };
-    window.addEventListener('reel-play', handler);
-    return () => window.removeEventListener('reel-play', handler);
-  }, [src]);
-
-  const toggle = () => {
-    if (!videoRef.current) return;
-    if (playing) {
-      videoRef.current.pause(); setPlaying(false);
-    } else {
-      window.dispatchEvent(new CustomEvent('reel-play', { detail: { src } }));
-      setBuffering(true);
-      videoRef.current.play().catch(() => setBuffering(false));
-      setPlaying(true);
-    }
-  };
-
-  return (
-    <div
-      ref={containerRef}
-      className="relative overflow-hidden cursor-pointer select-none group bg-stone-900 aspect-[9/16] md:aspect-[3/4]"
-      onClick={toggle}
-    >
-      {!ready && <div className="absolute inset-0 bg-stone-800 animate-pulse" />}
-
-      {inView && (
-        <video
-          ref={videoRef}
-          src={src}
-          playsInline loop muted
-          preload="metadata"
-          onCanPlay={() => setReady(true)}
-          onWaiting={() => setBuffering(true)}
-          onPlaying={() => setBuffering(false)}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
-        />
-      )}
-
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300 group-hover:from-black/30" />
-
-      {buffering && (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        </div>
-      )}
-
-      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${buffering ? 'opacity-0' : playing ? 'opacity-0 group-hover:opacity-60' : 'opacity-70 group-hover:opacity-100'}`}>
-        {playing
-          ? <svg className="w-10 h-10 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-          : <svg className="w-10 h-10 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-        }
-      </div>
-    </div>
-  );
-}
 
 // ── Scroll-reveal section wrapper ─────────────────────────────
 function RevealSection({ children, zIndex, bg = 'bg-white', rounded = true }) {
@@ -362,32 +266,41 @@ export default function HomePage() {
       </RevealSection>
 
       {/* ═══════════════════════════════════════════════════════
-          SECTION 3 — LOOKBOOK / REELS
+          SECTION 3 — LOOKBOOK / REELS (horizontal scroll carousel)
       ═══════════════════════════════════════════════════════ */}
       <RevealSection zIndex={20} bg="bg-stone-950" rounded>
-        <section id="lookbook" className="py-20 sm:py-28">
-          <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
-            <div className="text-center mb-12 sm:mb-16">
-              <p className="text-[10px] tracking-[0.45em] uppercase text-stone-500 mb-4">Behind the Collection</p>
-              <h2
-                className="text-white font-black uppercase"
-                style={{
-                  fontSize: screenSize === 'mobile' ? 'clamp(1.6rem,8vw,2.4rem)' : 'clamp(2rem,3.5vw,3.5rem)',
-                  fontFamily: "'Georgia','Times New Roman',serif",
-                  letterSpacing: '0.08em',
-                }}
-              >
-                Lookbook
-              </h2>
-              <div className="w-10 h-px bg-stone-700 mx-auto mt-5" />
-            </div>
-            <div className="grid gap-2 sm:gap-3 grid-cols-2 md:grid-cols-3">
-              {REELS.map((src) => <ReelCard key={src} src={src} />)}
-            </div>
-            <p className="text-center text-stone-600 text-[10px] tracking-[0.35em] mt-8 uppercase">
-              Tap to play · Tap again to pause
-            </p>
+        <section id="lookbook" className="py-20 sm:py-28 overflow-hidden">
+          {/* Header */}
+          <div className="text-center mb-10 sm:mb-14 px-4 sm:px-10">
+            <p className="text-[10px] tracking-[0.45em] uppercase text-stone-500 mb-4">Behind the Collection</p>
+            <h2
+              className="text-white font-black uppercase"
+              style={{
+                fontSize: screenSize === 'mobile' ? 'clamp(1.6rem,8vw,2.4rem)' : 'clamp(2rem,3.5vw,3rem)',
+                fontFamily: "'Georgia','Times New Roman',serif",
+                letterSpacing: '0.08em',
+              }}
+            >
+              Lookbook
+            </h2>
+            <div className="w-10 h-px bg-stone-700 mx-auto mt-5" />
           </div>
+
+          {/* Horizontal scroll strip */}
+          <div className="flex gap-2 sm:gap-3 overflow-x-scroll no-scrollbar snap-x snap-mandatory px-4 sm:px-10 pb-4">
+            {REELS.map((src) => (
+              <div
+                key={src}
+                className="flex-shrink-0 snap-start w-[72vw] sm:w-[44vw] md:w-[30vw] lg:w-[24vw]"
+              >
+                <ReelCard src={src} />
+              </div>
+            ))}
+          </div>
+
+          <p className="text-center text-stone-700 text-[10px] tracking-[0.35em] mt-6 uppercase px-4">
+            Tap to play · Scroll to discover
+          </p>
         </section>
       </RevealSection>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { useCurrency } from '@/contexts/currencyContext';
@@ -8,294 +8,213 @@ import { useWishlist } from '@/contexts/wishlistContext';
 import { getUserData } from '@/utils/auth';
 
 const ProductCard = ({ product }) => {
-  // Get product images first so they can be used in useState initialization
   const productImages = product.images || [];
-  const primaryImage = productImages.find(img => img.isPrimary) || productImages[0];
   const hasMultipleImages = productImages.length > 1;
 
-  const [isHovered, setIsHovered] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(() => {
+  const initialIndex = (() => {
     const idx = productImages.findIndex(img => img.isPrimary);
     return idx > -1 ? idx : 0;
-  });
+  })();
+
+  const [imageError, setImageError] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
+  const scrollRef = useRef(null);
 
-  // Currency context
-  const { formatPrice, currentCurrency } = useCurrency();
-
-  // Wishlist and Currency contexts
+  const { formatPrice } = useCurrency();
   const { toggleWishlist, checkWishlistStatus } = useWishlist();
 
-  // Check authentication using localStorage token
-  const authData = getUserData();
-  const isAuthenticated = !!(authData?.token);
-  const userData = authData?.userData;
-
-  // Check wishlist status when product changes
   useEffect(() => {
     if (product?.id) {
-      const wishlistStatus = checkWishlistStatus(product.id);
-      setIsInWishlist(wishlistStatus);
+      setIsInWishlist(checkWishlistStatus(product.id));
     }
   }, [product?.id, checkWishlistStatus]);
-  
-  // Calculate discount percentage if there's a discounted price
+
+  // Scroll to primary image on first render
+  useEffect(() => {
+    if (scrollRef.current && initialIndex > 0) {
+      scrollRef.current.scrollLeft = initialIndex * scrollRef.current.clientWidth;
+      setCurrentImageIndex(initialIndex);
+    }
+  }, []);
+
   const discountPercentage = product.discountedPrice && product.price
     ? Math.round(((product.price - product.discountedPrice) / product.price) * 100)
     : 0;
-  
-  // Enhanced inventory check - properly handles both regular and sized products
+
   const hasInventory = (() => {
-    // If product has sizes, check if any size has inventory
-    if (product.productSizes && product.productSizes.length > 0) {
-      return product.productSizes.some(size => 
-        size.inventory > 0 && size.isActive !== false
-      );
+    if (product.productSizes?.length > 0) {
+      return product.productSizes.some(s => s.inventory > 0 && s.isActive !== false);
     }
-    // For regular products, check base inventory
-    return product.inventory && product.inventory > 0;
+    return (product.inventory || 0) > 0;
   })();
 
-  // Calculate total available inventory
   const totalInventory = (() => {
-    if (product.productSizes && product.productSizes.length > 0) {
+    if (product.productSizes?.length > 0) {
       return product.productSizes
-        .filter(size => size.isActive !== false)
-        .reduce((sum, size) => sum + (size.inventory || 0), 0);
+        .filter(s => s.isActive !== false)
+        .reduce((sum, s) => sum + (s.inventory || 0), 0);
     }
     return product.inventory || 0;
   })();
 
-  // Check if it's low stock (less than 10 items)
   const isLowStock = hasInventory && totalInventory < 10;
 
-  // Handle wishlist toggle
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Check authentication using token from localStorage
     const authData = getUserData();
     if (!authData?.token) {
-      // Show authentication required message
-      alert('Authentication required. Please log in to manage your wishlist.');
-      // Optional: redirect to login
-      // window.location.href = '/login';
+      alert('Please log in to manage your wishlist.');
       return;
     }
-
     setIsWishlistLoading(true);
     try {
       await toggleWishlist(product.id, null, product);
-      // Update local state after successful toggle
       setIsInWishlist(!isInWishlist);
-    } catch (error) {
-      console.error('Failed to toggle wishlist:', error);
-      // Show error message
+    } catch {
       alert('Failed to update wishlist. Please try again.');
     } finally {
       setIsWishlistLoading(false);
     }
   };
 
-  // Handle image navigation
-  const nextImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (hasMultipleImages) {
-      setCurrentImageIndex((prev) => (prev + 1) % productImages.length);
-    }
+  const scrollToIndex = (index) => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollTo({ left: index * scrollRef.current.clientWidth, behavior: 'smooth' });
   };
 
-  const prevImage = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (hasMultipleImages) {
-      setCurrentImageIndex((prev) => (prev - 1 + productImages.length) % productImages.length);
-    }
+  const handleScroll = () => {
+    if (!scrollRef.current) return;
+    const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.clientWidth);
+    setCurrentImageIndex(Math.min(Math.max(idx, 0), productImages.length - 1));
   };
 
-  const handleImageError = () => {
-    setImageError(true);
-  };
-  
   return (
-    <div 
-      className="group relative bg-white overflow-hidden transition-all duration-500 w-full"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
-        <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 w-full">
-          {/* Wishlist Button - Top Left */}
-          <div className="absolute top-2 left-2 z-20">
-            <button
-              onClick={handleWishlistToggle}
-              disabled={isWishlistLoading}
-              className={`
-                p-1.5 sm:p-2 rounded-full transition-all duration-300 shadow backdrop-blur-sm
-                ${isInWishlist
-                  ? 'bg-red-500/90 text-white hover:bg-red-600'
-                  : 'bg-white/80 text-gray-500 hover:bg-white hover:text-red-500'
-                }
-                ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-              `}
-              aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
-            >
-              <Heart
-                className={`w-3 h-3 sm:w-4 sm:h-4 transition-all duration-200 ${
-                  isInWishlist ? 'fill-current' : ''
-                } ${isWishlistLoading ? 'animate-pulse' : ''}`}
-              />
-            </button>
-          </div>
+    <div className="group relative bg-white overflow-hidden w-full">
 
-          {/* Product Images */}
+      {/* Wishlist button — positioned outside Link to prevent nav conflict */}
+      <button
+        onClick={handleWishlistToggle}
+        disabled={isWishlistLoading}
+        className={`absolute top-2 left-2 z-30 p-1.5 sm:p-2 rounded-full shadow backdrop-blur-sm transition-all duration-300
+          ${isInWishlist ? 'bg-red-500/90 text-white hover:bg-red-600' : 'bg-white/80 text-gray-500 hover:bg-white hover:text-red-500'}
+          ${isWishlistLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+        aria-label={isInWishlist ? 'Remove from wishlist' : 'Add to wishlist'}
+      >
+        <Heart className={`w-3 h-3 sm:w-4 sm:h-4 transition-all duration-200 ${isInWishlist ? 'fill-current' : ''} ${isWishlistLoading ? 'animate-pulse' : ''}`} />
+      </button>
+
+      <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
+
+        {/* Image area */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 w-full">
+
           {productImages.length > 0 && !imageError ? (
             <>
-              <img
-                src={productImages[currentImageIndex]?.url || primaryImage?.url}
-                alt={productImages[currentImageIndex]?.alt || product.name}
-                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                onError={handleImageError}
-              />
-              
-              {/* Image Navigation for Multiple Images */}
-              {hasMultipleImages && isHovered && (
-                <>
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 transition-all duration-200 shadow-lg z-10"
-                  >
-                    <svg className="w-5 h-5 text-stone-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 hover:bg-white p-3 transition-all duration-200 shadow-lg z-10"
-                  >
-                    <svg className="w-5 h-5 text-stone-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                  
-                  {/* Image Indicators */}
-                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2 z-10">
-                    {productImages.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setCurrentImageIndex(index);
-                        }}
-                        className={`w-2 h-2 transition-colors ${
-                          index === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                        }`}
-                      />
-                    ))}
+              {/* Horizontal scroll image strip */}
+              <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="absolute inset-0 flex overflow-x-scroll no-scrollbar snap-x snap-mandatory"
+              >
+                {productImages.map((img, idx) => (
+                  <div key={idx} className="flex-shrink-0 w-full h-full snap-start">
+                    <img
+                      src={img.url}
+                      alt={img.alt || product.name}
+                      className="w-full h-full object-cover"
+                      onError={idx === 0 ? () => setImageError(true) : undefined}
+                    />
                   </div>
-                </>
+                ))}
+              </div>
+
+              {/* Scroll position dots */}
+              {hasMultipleImages && (
+                <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1 z-20">
+                  {productImages.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); scrollToIndex(i); }}
+                      className={`rounded-full transition-all duration-200 ${
+                        i === currentImageIndex ? 'bg-white w-3.5 h-1.5' : 'bg-white/55 w-1.5 h-1.5'
+                      }`}
+                    />
+                  ))}
+                </div>
               )}
             </>
           ) : (
-            /* Placeholder for no image */
             <div className="absolute inset-0 flex items-center justify-center text-stone-400 bg-stone-100">
-              <svg 
-                className="w-20 h-20" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-              >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth="1" 
-                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
+              <svg className="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
           )}
 
           {/* Discount badge */}
           {discountPercentage > 0 && (
-            <div className="absolute top-6 right-6 z-10">
-              <span className="bg-red-600 text-white text-sm font-light px-4 py-2 tracking-wider">
+            <div className="absolute top-2 right-2 z-10">
+              <span className="bg-red-600 text-white text-[10px] font-light px-2 py-1 tracking-wider">
                 {discountPercentage}% OFF
               </span>
             </div>
           )}
 
-          {/* Low stock warning */}
+          {/* Low stock badge */}
           {isLowStock && (
-            <div className="absolute top-20 left-6 bg-yellow-500 text-white text-xs font-light px-3 py-1 tracking-wider z-10">
+            <div className="absolute top-10 left-2 bg-amber-500 text-white text-[9px] px-2 py-0.5 tracking-wider z-10">
               ONLY {totalInventory} LEFT
             </div>
           )}
 
-          {/* Lock icon for secured products */}
-          <div className="absolute bottom-6 right-6 z-10">
-            <div className="bg-black/80 text-white p-2 rounded-full">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-          </div>
-          
           {/* Out of stock overlay */}
           {!hasInventory && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">
-              <div className="bg-white px-8 py-4 font-light text-stone-800 tracking-widest text-lg">
+              <div className="bg-white px-6 py-3 font-light text-stone-800 tracking-widest text-sm">
                 OUT OF STOCK
               </div>
             </div>
           )}
 
           {/* Hover overlay */}
-          <div className={`absolute inset-0 bg-black/25 flex items-center justify-center transition-opacity duration-300 z-10 ${
-            isHovered ? 'opacity-100' : 'opacity-0'
-          }`}>
-            <button className="bg-white text-stone-800 px-5 py-2.5 sm:px-10 sm:py-3.5 font-light tracking-widest hover:bg-stone-100 transition-colors duration-300 text-xs sm:text-sm">
+          <div className="absolute inset-0 bg-black/25 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+            <span className="bg-white text-stone-800 px-6 py-2.5 font-light tracking-widest text-xs">
               VIEW DETAILS
-            </button>
+            </span>
           </div>
         </div>
-      </Link>
-      
-      {/* Product Information */}
-      <div className="px-3 py-3 sm:px-4 sm:py-4 bg-white text-center">
-        <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
-          <h3 className="text-xs sm:text-sm font-medium text-stone-800 mb-1.5 hover:text-stone-500 transition-colors tracking-widest uppercase truncate">
+
+        {/* Product info */}
+        <div className="px-3 py-3 sm:px-4 sm:py-4 bg-white text-center">
+          <h3 className="text-xs sm:text-sm font-medium text-stone-800 mb-1.5 tracking-widest uppercase truncate hover:text-stone-500 transition-colors">
             {product.name}
           </h3>
-        </Link>
-
-        <div className="flex items-center justify-center gap-2">
-          {product.discountedPrice ? (
-            <>
+          <div className="flex items-center justify-center gap-2">
+            {product.discountedPrice ? (
+              <>
+                <span className="text-sm sm:text-base font-semibold text-stone-900">
+                  {formatPrice(product.discountedPrice)}
+                </span>
+                <span className="text-xs text-stone-400 line-through">
+                  {formatPrice(product.price)}
+                </span>
+              </>
+            ) : (
               <span className="text-sm sm:text-base font-semibold text-stone-900">
-                {formatPrice(product.discountedPrice)}
-              </span>
-              <span className="text-xs text-stone-400 line-through">
                 {formatPrice(product.price)}
               </span>
-            </>
-          ) : (
-            <span className="text-sm sm:text-base font-semibold text-stone-900">
-              {formatPrice(product.price)}
-            </span>
+            )}
+          </div>
+          {isLowStock && (
+            <p className="text-[10px] text-amber-600 tracking-wider mt-1 font-light">
+              ONLY {totalInventory} LEFT
+            </p>
           )}
         </div>
-
-        {isLowStock && (
-          <p className="text-[10px] text-amber-600 tracking-wider mt-1.5 font-light">
-            ONLY {totalInventory} LEFT
-          </p>
-        )}
-      </div>
+      </Link>
     </div>
   );
 };
