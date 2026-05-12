@@ -63,7 +63,38 @@
   * {
     @apply border-border;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* Hide scrollbar for category strips and reel rows */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* Ensure images render at highest quality */
+img {
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* Ken Burns variants — each image in the 3-up hero slides in a different direction */
+@keyframes kb0 {
+  0%   { transform: scale(1.0) translate(0,    0); }
+  100% { transform: scale(1.08) translate(1.5%, -1.5%); }
+}
+@keyframes kb1 {
+  0%   { transform: scale(1.0) translate(0,    0); }
+  100% { transform: scale(1.07) translate(0,   -2%); }
+}
+@keyframes kb2 {
+  0%   { transform: scale(1.0) translate(0,    0); }
+  100% { transform: scale(1.08) translate(-1.5%, -1.5%); }
+}
+.kb-0 { animation: kb0 4.5s ease-out forwards; }
+.kb-1 { animation: kb1 4.5s ease-out forwards; }
+.kb-2 { animation: kb2 4.5s ease-out forwards; }

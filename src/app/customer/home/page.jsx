@@ -1,530 +1,407 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import Newsletter from '@/components/Newsletter';
-import { GET_ALL_PRODUCTS, GET_ALL_CATEGORIES } from '@/utils/routes/customerRoutes';
-import ProductCard from '@/components/customerComponents/products/ProductCard';
-import CategoryFilter from '@/components/customerComponents/products/CategoryFilter';
-import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { GET_ALL_CATEGORIES } from '@/utils/routes/customerRoutes';
 
-// Custom hook for responsive screen detection
+// ── Screen size hook ──────────────────────────────────────────
 const useScreenSize = () => {
-  const [screenSize, setScreenSize] = useState('desktop');
+  const [s, setS] = useState('desktop');
   useEffect(() => {
-    const checkScreenSize = () => {
-      if (window.innerWidth < 768) {
-        setScreenSize('mobile');
-      } else if (window.innerWidth < 1024) {
-        setScreenSize('tablet');
-      } else {
-        setScreenSize('desktop');
-      }
-    };
-    checkScreenSize();
-    let timeoutId;
-    const handleResize = () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(checkScreenSize, 150);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timeoutId);
-    };
+    const check = () => setS(window.innerWidth < 768 ? 'mobile' : window.innerWidth < 1024 ? 'tablet' : 'desktop');
+    check();
+    let t;
+    const h = () => { clearTimeout(t); t = setTimeout(check, 150); };
+    window.addEventListener('resize', h);
+    return () => { window.removeEventListener('resize', h); clearTimeout(t); };
   }, []);
-  return screenSize;
+  return s;
 };
 
-export default function HomePage() {
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [imagesLoaded, setImagesLoaded] = useState({});
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const screenSize = useScreenSize();
-  
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 12,
-    total: 0,
-    totalPages: 0,
-  });
+// ── Hero slideshow data ───────────────────────────────────────
+// Round-robin: D1[0]→D2[0]→D3[0]→D4[0]→D5[0]→D1[1]→D2[1]→…
+const DRESS_IMAGES = [
+  ['IMG_5015.jpg','IMG_5016.jpg','IMG_5017.jpg','IMG_5018.jpg','IMG_5019.jpg','IMG_5020.jpg','IMG_5021.jpg','IMG_5022.jpg','IMG_5023.jpg','IMG_5234.JPG'],
+  ['IMG_5036.jpg','IMG_5037.jpg','IMG_5038.jpg','IMG_5039.jpg','IMG_5040.jpg','IMG_5041.jpg','IMG_5042.jpg','IMG_5043.jpg','IMG_5044.jpg','IMG_5045.jpg','IMG_5046.jpg','IMG_5047.jpg','IMG_5048.jpg','IMG_5049.jpg','IMG_5305.JPG'],
+  ['IMG_5050.jpg','IMG_5051.jpg','IMG_5052.jpg','IMG_5053.jpg','IMG_5054.jpg','IMG_5055.jpg','IMG_5056.jpg','IMG_5057.jpg','IMG_5058.jpg','IMG_5059.jpg','IMG_5060.jpg'],
+  ['IMG_5024.jpg','IMG_5025.jpg','IMG_5026.jpg','IMG_5027.jpg','IMG_5028.jpg','IMG_5029.jpg','IMG_5030.jpg','IMG_5031.jpg','IMG_5032.jpg','IMG_5033.jpg','IMG_5034.jpg'],
+  ['IMG_5061.jpg','IMG_5062.JPG','IMG_5063.JPG','IMG_5064.JPG','IMG_5065.JPG','IMG_5066.JPG','IMG_5067.JPG','IMG_5068.JPG','IMG_5069.JPG','IMG_5342.JPG'],
+];
 
-  const apiCall = async (url, options = {}) => {
-    const defaultOptions = {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    };
-
-    const mergedOptions = {
-      ...defaultOptions,
-      ...options,
-      headers: {
-        ...defaultOptions.headers,
-        ...options.headers,
-      },
-    };
-
-    const response = await fetch(url, mergedOptions);
-
-    if (!response.ok) {
-      const errorData = await response
-        .json()
-        .catch(() => ({ message: "Network error" }));
-      throw new Error(
-        errorData.message || `HTTP error! status: ${response.status}`
-      );
-    }
-
-    return response.json();
-  };
-
-  const getAllProducts = async (queryParams = {}) => {
-    try {
-      const queryString = Object.keys(queryParams)
-        .map((key) => `${key}=${encodeURIComponent(queryParams[key])}`)
-        .join("&");
-
-      const url = queryString ? `${GET_ALL_PRODUCTS}?${queryString}` : GET_ALL_PRODUCTS;
-      
-      return await apiCall(url);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      throw error;
-    }
-  };
-
-  const getAllCategories = async (includeInactive = false) => {
-    try {
-      const url = `${GET_ALL_CATEGORIES}?includeInactive=${includeInactive}`;
-      
-      return await apiCall(url);
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-      throw error;
-    }
-  };
-
-  const heroImages = [
-    {
-      desktop: "/HeroSectionImages/HS6.png",
-      tablet: "/HeroSectionImages/HS6.png",
-      mobile: "/HeroSectionImages/HS6.png",
-      alt: "Summer Collection 2024",
-      title: "SUMMER ELEGANCE",
-      subtitle: "Discover our latest summer collection featuring breathable fabrics and vibrant colors"
-    },
-    {
-      desktop: "/HeroSectionImages/HS2.png",
-      tablet: "/HeroSectionImages/HS2.png",
-      mobile: "/HeroSectionImages/HS2.png",
-      alt: "Elegant Evening Wear",
-      title: "EVENING SOPHISTICATION",
-      subtitle: "Exquisite evening wear designed for unforgettable moments"
-    },
-    {
-      desktop: "/HeroSectionImages/HS3.png",
-      tablet: "/HeroSectionImages/HS3.png",
-      mobile: "/HeroSectionImages/HS3.png",
-      alt: "Casual Chic Styles",
-      title: "CASUAL LUXURY",
-      subtitle: "Effortlessly chic pieces for your everyday wardrobe"
-    },
-    {
-      desktop: "/HeroSectionImages/HS4.png",
-      tablet: "/HeroSectionImages/HS4.png",
-      mobile: "/HeroSectionImages/HS4.png",
-      alt: "Professional Wardrobe",
-      title: "PROFESSIONAL POWER",
-      subtitle: "Sophisticated styles for the modern professional"
-    }
-  ];
-
-  const getCurrentImageSrc = (imageSet) => {
-    return imageSet[screenSize] || imageSet.desktop;
-  };
-
-  useEffect(() => {
-    if (screenSize === 'desktop') {
-      const preloadImages = async () => {
-        const loadPromises = heroImages.map((imageSet, index) => {
-          return new Promise((resolve) => {
-            const img = new Image();
-            img.src = getCurrentImageSrc(imageSet);
-            img.onload = () => {
-              setImagesLoaded(prev => ({
-                ...prev,
-                [`${index}_${screenSize}`]: true
-              }));
-              resolve();
-            };
-            img.onerror = () => {
-              console.warn(`Failed to load image: ${getCurrentImageSrc(imageSet)}`);
-              resolve();
-            };
-          });
-        });
-        await Promise.all(loadPromises);
-      };
-      preloadImages();
-    }
-  }, [screenSize]);
-
-  useEffect(() => {
-    if (screenSize === 'desktop') {
-      const interval = setInterval(() => {
-        if (!isTransitioning) {
-          nextImage();
-        }
-      }, 6000);
-
-      return () => clearInterval(interval);
-    }
-  }, [currentImageIndex, isTransitioning, screenSize]);
-
-  const nextImage = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentImageIndex((prevIndex) => 
-      (prevIndex + 1) % heroImages.length
-    );
-    setTimeout(() => setIsTransitioning(false), 1000);
-  };
-
-  const prevImage = () => {
-    if (isTransitioning) return;
-    setIsTransitioning(true);
-    setCurrentImageIndex((prevIndex) => 
-      prevIndex === 0 ? heroImages.length - 1 : prevIndex - 1
-    );
-    setTimeout(() => setIsTransitioning(false), 1000);
-  };
-
-  const goToImage = (index) => {
-    if (isTransitioning || index === currentImageIndex) return;
-    setIsTransitioning(true);
-    setCurrentImageIndex(index);
-    setTimeout(() => setIsTransitioning(false), 1000);
-  };
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        const categoriesResponse = await getAllCategories();
-        if (categoriesResponse.success) {
-          setCategories(categoriesResponse.data);
-        }
-        
-        const queryParams = {
-          page: pagination.page,
-          limit: pagination.limit,
-          includeSizes: true,
-        };
-        
-        if (selectedCategory) {
-          queryParams.categoryId = selectedCategory;
-        }
-        
-        const productsResponse = await getAllProducts(queryParams);
-        
-        if (productsResponse.success) {
-          setProducts(productsResponse.data.products);
-          setPagination(productsResponse.data.pagination);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load products. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, [selectedCategory, pagination.page, pagination.limit]);
-
-  const handleCategoryChange = (categoryId) => {
-    setSelectedCategory(categoryId);
-    setPagination(prev => ({ ...prev, page: 1 }));
-  };
-
-  const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-    window.scrollTo(0, 0);
-  };
-
-  const scrollToProducts = () => {
-    const element = document.getElementById('products-section');
-    if (element) {
-      element.scrollIntoView({ 
-        behavior: 'smooth',
-        block: 'start'
-      });
-    }
-  };
-
-  useEffect(() => {
-    if (screenSize === 'desktop') {
-      const handleKeyDown = (event) => {
-        if (event.key === 'ArrowLeft') {
-          prevImage();
-        } else if (event.key === 'ArrowRight') {
-          nextImage();
-        }
-      };
-
-      window.addEventListener('keydown', handleKeyDown);
-      return () => window.removeEventListener('keydown', handleKeyDown);
-    }
-  }, [screenSize]);
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center px-4 sm:px-6 lg:px-8">
-        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-xl max-w-md w-full text-center">
-          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-red-500 rounded-full"></div>
-          </div>
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Oops! Something went wrong</h3>
-          <p className="text-sm sm:text-base text-gray-600 mb-6">{error}</p>
-          <Button 
-            onClick={() => window.location.reload()}
-            className="w-full bg-gradient-to-r from-rose-400 to-pink-500 hover:from-rose-500 hover:to-pink-600 text-white font-medium py-2.5 sm:py-3 rounded-xl transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
-          >
-            Try Again
-          </Button>
-        </div>
-      </div>
-    );
+const HERO_SLIDES = (() => {
+  const maxLen = Math.max(...DRESS_IMAGES.map(d => d.length));
+  const out = [];
+  for (let r = 0; r < maxLen; r++) {
+    DRESS_IMAGES.forEach((dress, di) => {
+      if (r < dress.length) out.push(`/hero-slides/dress-${di + 1}/${dress[r]}`);
+    });
   }
+  return out;
+})();
+
+// ── Desktop hero: 3-up crossfade slideshow ───────────────────
+// Shows 3 portrait images side by side so the full image height is
+// visible — no top/bottom cropping. Groups of 3 advance together.
+const GROUP_SIZE = 3;
+const TOTAL_GROUPS = Math.floor(HERO_SLIDES.length / GROUP_SIZE);
+
+function HeroSlideshow({ onReady }) {
+  const [currGroup, setCurrGroup] = useState(0);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setFading(true);
+      setTimeout(() => {
+        setCurrGroup(g => (g + 1) % TOTAL_GROUPS);
+        setFading(false);
+      }, 700);
+    }, 3800);
+    return () => clearInterval(t);
+  }, []);
+
+  const slice = (g) => HERO_SLIDES.slice(g * GROUP_SIZE, g * GROUP_SIZE + GROUP_SIZE);
+  const currImages = slice(currGroup);
+  const nextImages = slice((currGroup + 1) % TOTAL_GROUPS);
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* ============================================ */}
-      {/* HERO SECTION - COMMENTED OUT */}
-      {/* ============================================ */}
-      {/* 
-      <section className={`relative overflow-hidden ${
-        screenSize === 'desktop' ? 'flex items-center' : 'flex items-center'
-      } ${
-        screenSize === 'mobile' 
-          ? 'h-[25vh] min-h-[200px]'
-          : screenSize === 'tablet'
-          ? 'h-[30vh] min-h-[250px]'
-          : 'h-[60vh] lg:h-[65vh] xl:h-[70vh] min-h-[500px]'
-      }`}>
-        {heroImages.map((imageSet, index) => (
-          <div
-            key={`${index}_${screenSize}`}
-            className={`absolute inset-0 transition-all duration-1000 ease-in-out ${
-              index === currentImageIndex 
-                ? 'opacity-100 scale-100' 
-                : 'opacity-0 scale-105'
-            }`}
-          >
-            <div 
-              className="absolute inset-0 transition-all duration-1000"
-              style={{
-                backgroundImage: `url(${getCurrentImageSrc(imageSet)})`,
-                backgroundSize: screenSize === 'desktop' ? 'cover' : 'contain',
-                backgroundPosition: 'center center',
-                backgroundRepeat: 'no-repeat',
-                backgroundAttachment: 'scroll',
-                imageRendering: 'high-quality',
-                filter: 'contrast(1.05) saturate(1.05)',
-              }}
-            >
-              <div className={`absolute inset-0 transition-all duration-1000 ${
-                screenSize === 'desktop' 
-                  ? 'bg-gradient-to-t from-black/10 via-transparent to-transparent'
-                  : 'bg-transparent'
-              }`}></div>
-            </div>
-
-            <picture className="absolute inset-0 w-full h-full opacity-0 pointer-events-none">
-              <source 
-                media="(max-width: 767px)" 
-                srcSet={imageSet.mobile} 
-              />
-              <source 
-                media="(min-width: 768px) and (max-width: 1023px)" 
-                srcSet={imageSet.tablet} 
-              />
-              <img 
-                src={imageSet.desktop}
-                alt={imageSet.alt}
-                className={`w-full h-full ${screenSize === 'desktop' ? 'object-cover' : 'object-contain'}`}
-                loading={index === 0 ? "eager" : "lazy"}
-              />
-            </picture>
+    <div className="absolute inset-0 overflow-hidden">
+      {/* Next group underneath — always fully visible, preloaded */}
+      <div className="absolute inset-0 flex gap-px bg-black">
+        {nextImages.map((src, i) => (
+          <div key={`n${i}`} className="flex-1 overflow-hidden">
+            <img src={src} alt="" aria-hidden="true"
+              className="w-full h-full object-cover object-center" />
           </div>
         ))}
-        
-        <div className="absolute inset-0 bg-gradient-to-br from-stone-800 via-amber-900 to-rose-900 -z-10"></div>
+      </div>
 
-        <div className="absolute bottom-0 left-0 w-full h-1 bg-white/20 z-30">
-          <div 
-            className="h-full bg-white/60 transition-all ease-linear"
-            style={{
-              width: `${((currentImageIndex + 1) / heroImages.length) * 100}%`,
-              transitionDuration: '6000ms'
-            }}
-          />
-        </div>
-      </section>
-      */}
-
-      {/* Enhanced Products Section */}
-      <section 
-        id="products-section" 
-        className="py-8 sm:py-12 md:py-16 lg:py-20 bg-stone-50"
-      >
-        <div className={`${
-          screenSize === 'mobile' 
-            ? 'px-0' 
-            : 'px-4 sm:px-6 lg:px-8'
-        }`}>
-          <div className="text-center mb-12 sm:mb-14 md:mb-16 lg:mb-20">
-            <h2 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black text-stone-800 mb-4 sm:mb-6 tracking-[0.2em]"
-            style={{
-              fontFamily: "'Oswald', 'Bebas Neue', 'Anton', sans-serif",
-              background: 'linear-gradient(135deg, #1c1917 0%, #44403c 50%, #78716c 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent'
-            }}>
-              COLLECTIONS
-            </h2>
-            <div className="w-16 sm:w-20 md:w-24 lg:w-32 h-0.5 bg-gradient-to-r from-transparent via-stone-400 to-transparent mx-auto mb-6 sm:mb-8"></div>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-stone-600 font-medium max-w-3xl mx-auto tracking-wide px-4 leading-relaxed"
-            style={{
-              fontFamily: "'Inter', 'Roboto', sans-serif",
-              fontWeight: '500'
-            }}>
-              Discover our carefully curated selection of premium fashion pieces, crafted with attention to detail and timeless elegance
-            </p>
-          </div>
-          
-          <div className="mb-12 sm:mb-14 md:mb-16 lg:mb-20">
-            <CategoryFilter 
-              categories={categories} 
-              selectedCategory={selectedCategory} 
-              onCategoryChange={handleCategoryChange} 
+      {/* Current group on top — only applies transition when fading OUT.
+          No transition on restore, so the swap is instant with no flash. */}
+      <div className={`absolute inset-0 flex gap-px bg-black ${fading ? 'opacity-0 transition-opacity duration-700' : 'opacity-100'}`}>
+        {currImages.map((src, i) => (
+          <div key={`c${currGroup}-${i}`} className="flex-1 overflow-hidden">
+            <img
+              src={src} alt=""
+              onLoad={i === 0 ? onReady : undefined}
+              className={`kb-${i} w-full h-full object-cover object-center`}
             />
           </div>
-          
-          {loading && products.length === 0 ? (
-            <div className="flex flex-col justify-center items-center h-48 sm:h-56 md:h-64 lg:h-72">
-              <div className="relative mb-4">
-                <div className="w-12 h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 border-2 border-stone-200 border-t-stone-600 rounded-full animate-spin"></div>
-              </div>
-              <p className="text-stone-500 font-light tracking-wide">Loading collections...</p>
-            </div>
-          ) : (
-            <>
-              {products.length > 0 ? (
-                <div className={`grid w-full mx-auto ${
-                  screenSize === 'mobile' 
-                    ? 'grid-cols-1 gap-4 px-3 max-w-sm'
-                    : screenSize === 'tablet'
-                    ? 'grid-cols-2 gap-6 px-2 max-w-6xl'
-                    : 'grid-cols-4 gap-8 px-4 max-w-full'
-                }`}>
-                  {products.map((product, index) => (
-                    <div 
-                      key={product.id} 
-                      className="w-full"
-                      style={{
-                        animationDelay: `${index * 100}ms`
-                      }}
-                    >
-                      <ProductCard product={product} />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-16 sm:py-20 lg:py-24 px-4">
-                  <div className="max-w-md mx-auto">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 bg-stone-200 rounded-full flex items-center justify-center mx-auto mb-6 sm:mb-8">
-                      <div className="w-8 h-8 sm:w-10 sm:h-10 bg-stone-400 rounded-full"></div>
-                    </div>
-                    <h3 className="text-xl sm:text-2xl lg:text-3xl font-light text-stone-800 mb-4 tracking-wide">No products found</h3>
-                    <p className="text-sm sm:text-base lg:text-lg text-stone-600 mb-8 sm:mb-10 leading-relaxed">
-                      {selectedCategory 
-                        ? "We couldn't find any products in this category. Try browsing other categories or check back soon for new arrivals." 
-                        : "Our collection is being updated with exciting new pieces. Please check back soon for the latest fashion trends."}
-                    </p>
-                    {selectedCategory && (
-                      <Button 
-                        onClick={() => setSelectedCategory(null)} 
-                        className="bg-stone-800 hover:bg-stone-900 text-white px-8 sm:px-10 py-3 sm:py-4 font-light tracking-wide transition-all duration-300 transform hover:scale-105 text-sm sm:text-base"
-                      >
-                        VIEW ALL PRODUCTS
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              )}
-              
-              {pagination.totalPages > 1 && (
-                <div className="flex justify-center mt-12 sm:mt-14 md:mt-16 lg:mt-20">
-                  <div className="flex items-center space-x-4 sm:space-x-6 md:space-x-8 bg-white px-6 sm:px-8 py-4 sm:py-5 rounded-2xl shadow-lg">
-                    <Button
-                      onClick={() => handlePageChange(Math.max(1, pagination.page - 1))}
-                      disabled={pagination.page === 1}
-                      variant="ghost"
-                      className={`font-light tracking-wide text-sm sm:text-base transition-all duration-300 ${
-                        pagination.page === 1
-                          ? 'text-stone-400 cursor-not-allowed'
-                          : 'text-stone-700 hover:text-stone-900 hover:bg-stone-100'
-                      }`}
-                    >
-                      <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
-                      <span className="hidden sm:inline">PREVIOUS</span>
-                      <span className="sm:hidden">PREV</span>
-                    </Button>
-                    
-                    <div className="flex items-center text-stone-700 font-light text-sm sm:text-base">
-                      <span className="text-stone-900 font-normal text-base sm:text-lg">{pagination.page}</span>
-                      <span className="mx-3 sm:mx-4 text-stone-500">of</span>
-                      <span className="text-base sm:text-lg">{pagination.totalPages}</span>
-                    </div>
-                    
-                    <Button
-                      onClick={() => handlePageChange(Math.min(pagination.totalPages, pagination.page + 1))}
-                      disabled={pagination.page === pagination.totalPages}
-                      variant="ghost"
-                      className={`font-light tracking-wide text-sm sm:text-base transition-all duration-300 ${
-                        pagination.page === pagination.totalPages
-                          ? 'text-stone-400 cursor-not-allowed'
-                          : 'text-stone-700 hover:text-stone-900 hover:bg-stone-100'
-                      }`}
-                    >
-                      <span className="hidden sm:inline">NEXT</span>
-                      <span className="sm:hidden">NEXT</span>
-                      <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5 ml-1 sm:ml-2" />
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── Lookbook reel card ────────────────────────────────────────
+function ReelCard({ src }) {
+  const containerRef = useRef(null);
+  const videoRef = useRef(null);
+  const mountTimerRef = useRef(null);
+  const [inView, setInView] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [buffering, setBuffering] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          mountTimerRef.current = setTimeout(() => { setInView(true); observer.disconnect(); }, 350);
+        } else {
+          clearTimeout(mountTimerRef.current);
+        }
+      },
+      { rootMargin: '40px', threshold: 0.1 }
+    );
+    observer.observe(el);
+    return () => { observer.disconnect(); clearTimeout(mountTimerRef.current); };
+  }, []);
+
+  useEffect(() => {
+    if (!inView) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => { if (!entry.isIntersecting && videoRef.current) { videoRef.current.pause(); setPlaying(false); } },
+      { threshold: 0 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [inView]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.detail.src !== src && videoRef.current) { videoRef.current.pause(); setPlaying(false); }
+    };
+    window.addEventListener('reel-play', handler);
+    return () => window.removeEventListener('reel-play', handler);
+  }, [src]);
+
+  const toggle = () => {
+    if (!videoRef.current) return;
+    if (playing) {
+      videoRef.current.pause(); setPlaying(false);
+    } else {
+      window.dispatchEvent(new CustomEvent('reel-play', { detail: { src } }));
+      setBuffering(true);
+      videoRef.current.play().catch(() => setBuffering(false));
+      setPlaying(true);
+    }
+  };
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative overflow-hidden cursor-pointer select-none group bg-stone-900 aspect-[9/16] md:aspect-[3/4]"
+      onClick={toggle}
+    >
+      {!ready && <div className="absolute inset-0 bg-stone-800 animate-pulse" />}
+
+      {inView && (
+        <video
+          ref={videoRef}
+          src={src}
+          playsInline loop muted
+          preload="metadata"
+          onCanPlay={() => setReady(true)}
+          onWaiting={() => setBuffering(true)}
+          onPlaying={() => setBuffering(false)}
+          className={`w-full h-full object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
+        />
+      )}
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300 group-hover:from-black/30" />
+
+      {buffering && (
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        </div>
+      )}
+
+      <div className={`absolute inset-0 flex items-center justify-center transition-opacity duration-200 ${buffering ? 'opacity-0' : playing ? 'opacity-0 group-hover:opacity-60' : 'opacity-70 group-hover:opacity-100'}`}>
+        {playing
+          ? <svg className="w-10 h-10 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          : <svg className="w-10 h-10 text-white drop-shadow-lg" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+        }
+      </div>
+    </div>
+  );
+}
+
+// ── Scroll-reveal section wrapper ─────────────────────────────
+function RevealSection({ children, zIndex, bg = 'bg-white', rounded = true }) {
+  return (
+    <div
+      className={`relative ${bg} ${rounded ? 'rounded-t-[32px]' : ''}`}
+      style={{ zIndex, marginTop: rounded ? '-28px' : 0, boxShadow: rounded ? '0 -8px 40px rgba(0,0,0,0.10)' : 'none' }}
+    >
+      {children}
+    </div>
+  );
+}
+
+const REELS = [
+  '/videos/reel-1.mp4','/videos/reel-2.mp4','/videos/reel-3.mp4',
+  '/videos/reel-4.mp4','/videos/reel-5.mp4','/videos/reel-6.mp4',
+];
+
+export default function HomePage() {
+  const [categories, setCategories] = useState([]);
+  const [mounted, setMounted] = useState(false);
+  const [heroReady, setHeroReady] = useState(false);
+  const screenSize = useScreenSize();
+  const isMobile = mounted && screenSize === 'mobile';
+
+  const parentCategories = categories.filter(c => !c.parentId && c.isActive);
+
+  useEffect(() => { setMounted(true); }, []);
+
+  useEffect(() => {
+    fetch(`${GET_ALL_CATEGORIES}?includeInactive=false`)
+      .then(r => r.json())
+      .then(d => { if (d.success) setCategories(d.data); })
+      .catch(() => {});
+  }, []);
+
+  return (
+    <div className="bg-stone-900">
+
+      {/* ═══════════════════════════════════════════════════════
+          SECTION 1 — HERO
+          Mobile  → looping video
+          Desktop → crossfade image slideshow (instant, no download wait)
+      ═══════════════════════════════════════════════════════ */}
+      <section className="relative overflow-hidden" style={{ height: '100svh', minHeight: 600 }}>
+
+        {/* Dark overlay — hides until hero content is ready */}
+        <div
+          className="absolute inset-0 bg-stone-900 transition-opacity duration-1000"
+          style={{ opacity: heroReady ? 0 : 1, zIndex: 1 }}
+        />
+
+        {/* Mobile: video */}
+        {isMobile && (
+          <video
+            autoPlay muted loop playsInline
+            preload="auto"
+            src="/videos/hero.mp4"
+            onCanPlay={() => setHeroReady(true)}
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ zIndex: 0 }}
+          />
+        )}
+
+        {/* Desktop / Tablet: image slideshow */}
+        {mounted && !isMobile && (
+          <div className="absolute inset-0" style={{ zIndex: 0 }}>
+            <HeroSlideshow onReady={() => setHeroReady(true)} />
+          </div>
+        )}
+
+        {/* Cinematic gradient */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 35%, transparent 55%, rgba(0,0,0,0.65) 100%)',
+            zIndex: 2,
+          }}
+        />
+
+        {/* Hero text */}
+        <div className="absolute inset-0 flex flex-col items-center justify-end text-center px-6 pb-20 sm:pb-28" style={{ zIndex: 3 }}>
+          <p className="text-white/55 text-[10px] tracking-[0.55em] uppercase mb-4 font-light">
+            Premium Women's Fashion
+          </p>
+          <h1
+            className="text-white font-black uppercase leading-none mb-3"
+            style={{
+              fontSize: screenSize === 'mobile' ? 'clamp(3rem,14vw,4.5rem)' : 'clamp(4.5rem,8vw,8rem)',
+              fontFamily: "'Georgia','Times New Roman',serif",
+              letterSpacing: '0.06em',
+            }}
+          >
+            Tasee
+          </h1>
+          <p className="text-white/60 text-xs sm:text-sm tracking-[0.35em] uppercase mb-10 font-light" style={{ fontFamily: "'Georgia',serif" }}>
+            New Collection
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 items-center">
+            <Link
+              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`}
+              className="bg-white text-stone-900 px-10 py-4 text-[11px] tracking-[0.3em] uppercase font-semibold hover:bg-stone-100 transition-colors duration-300 min-w-[180px] text-center"
+            >
+              Shop Now
+            </Link>
+            <a
+              href="#lookbook"
+              className="border border-white/60 text-white px-10 py-4 text-[11px] tracking-[0.3em] uppercase font-medium hover:bg-white/10 transition-colors duration-300 min-w-[180px] text-center"
+            >
+              Lookbook
+            </a>
+          </div>
+        </div>
+
+        {/* Scroll hint */}
+        <div className="absolute bottom-7 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
+          <span className="text-white/30 text-[9px] tracking-[0.4em] uppercase">Scroll</span>
+          <div className="w-px h-10 bg-gradient-to-b from-white/40 to-transparent animate-pulse" />
         </div>
       </section>
 
-      {/* Newsletter Section */}
-      <section className="py-12 sm:py-16 md:py-20 lg:py-24 bg-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <Newsletter/>
+      {/* ═══════════════════════════════════════════════════════
+          SECTION 2 — CATEGORY LINKS
+      ═══════════════════════════════════════════════════════ */}
+      <RevealSection zIndex={10} bg="bg-white" rounded>
+        {parentCategories.length > 0 && (
+          <nav className="max-w-screen-xl mx-auto px-4 sm:px-6">
+            <div className="flex items-center justify-center overflow-x-auto no-scrollbar">
+              {parentCategories.slice(0, 6).map(cat => (
+                <Link
+                  key={cat.id}
+                  href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${cat.slug}`}
+                  className="flex-shrink-0 px-5 sm:px-7 py-5 text-[10px] sm:text-xs tracking-[0.28em] uppercase text-stone-500 hover:text-stone-900 border-r border-stone-100 last:border-r-0 transition-colors whitespace-nowrap font-medium"
+                >
+                  {cat.name}
+                </Link>
+              ))}
+              <Link
+                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`}
+                className="flex-shrink-0 px-5 sm:px-7 py-5 text-[10px] sm:text-xs tracking-[0.28em] uppercase text-stone-900 font-bold transition-colors whitespace-nowrap hover:text-stone-500"
+              >
+                All →
+              </Link>
+            </div>
+          </nav>
+        )}
+        <div className="max-w-screen-xl mx-auto px-6 sm:px-10 py-20 sm:py-28 text-center">
+          <p className="text-[10px] tracking-[0.45em] uppercase text-stone-400 mb-5">Est. 2024 — Pakistan</p>
+          <h2
+            className="text-stone-900 font-black uppercase leading-tight mb-7"
+            style={{
+              fontSize: screenSize === 'mobile' ? 'clamp(1.8rem,9vw,2.8rem)' : 'clamp(2.5rem,4.5vw,4.5rem)',
+              fontFamily: "'Georgia','Times New Roman',serif",
+              letterSpacing: '0.06em',
+            }}
+          >
+            Crafted with<br />Intention
+          </h2>
+          <p className="text-stone-500 text-sm sm:text-base max-w-xl mx-auto leading-relaxed mb-10 tracking-wide">
+            Every piece is designed for the woman who values quality, elegance, and timeless style above all else.
+          </p>
+          <Link
+            href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`}
+            className="inline-block border border-stone-900 text-stone-900 px-12 py-4 text-[11px] tracking-[0.3em] uppercase font-medium hover:bg-stone-900 hover:text-white transition-all duration-300"
+          >
+            Explore Collections
+          </Link>
         </div>
-      </section>
+      </RevealSection>
+
+      {/* ═══════════════════════════════════════════════════════
+          SECTION 3 — LOOKBOOK / REELS
+      ═══════════════════════════════════════════════════════ */}
+      <RevealSection zIndex={20} bg="bg-stone-950" rounded>
+        <section id="lookbook" className="py-20 sm:py-28">
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
+            <div className="text-center mb-12 sm:mb-16">
+              <p className="text-[10px] tracking-[0.45em] uppercase text-stone-500 mb-4">Behind the Collection</p>
+              <h2
+                className="text-white font-black uppercase"
+                style={{
+                  fontSize: screenSize === 'mobile' ? 'clamp(1.6rem,8vw,2.4rem)' : 'clamp(2rem,3.5vw,3.5rem)',
+                  fontFamily: "'Georgia','Times New Roman',serif",
+                  letterSpacing: '0.08em',
+                }}
+              >
+                Lookbook
+              </h2>
+              <div className="w-10 h-px bg-stone-700 mx-auto mt-5" />
+            </div>
+            <div className="grid gap-2 sm:gap-3 grid-cols-2 md:grid-cols-3">
+              {REELS.map((src) => <ReelCard key={src} src={src} />)}
+            </div>
+            <p className="text-center text-stone-600 text-[10px] tracking-[0.35em] mt-8 uppercase">
+              Tap to play · Tap again to pause
+            </p>
+          </div>
+        </section>
+      </RevealSection>
+
+      {/* ═══════════════════════════════════════════════════════
+          SECTION 4 — NEWSLETTER
+      ═══════════════════════════════════════════════════════ */}
+      <RevealSection zIndex={30} bg="bg-stone-50" rounded>
+        <section className="py-16 sm:py-24">
+          <div className="max-w-screen-xl mx-auto px-4 sm:px-6">
+            <Newsletter />
+          </div>
+        </section>
+      </RevealSection>
+
     </div>
   );
 }
