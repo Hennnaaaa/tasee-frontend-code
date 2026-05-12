@@ -170,7 +170,7 @@ const CategoryPage = () => {
         {/* Products Grid - Exact match to your image layout */}
         {products.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-1 mb-16">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-1 mb-16">
               {products.map((product) => (
                 <div key={product.id} className="w-full">
                   <ProductCard product={product} />
@@ -253,7 +253,7 @@ const CategoryPage = () => {
               </h2>
               <div className="w-16 h-px bg-stone-400 mx-auto"></div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
               {subcategories.map((subcategory) => (
                 <Link
                   key={subcategory.id}
