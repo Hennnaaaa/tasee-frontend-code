@@ -81,7 +81,8 @@ export default function CatalogPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const selectedCategoryName = parentCategories.find(c => c.id === selectedCategory)?.name;
+  // Search both parents and subcategories for the selected name
+  const selectedCategoryName = categories.find(c => c.id === selectedCategory)?.name;
 
   return (
     <div className="min-h-screen bg-white">
@@ -122,46 +123,52 @@ export default function CatalogPage() {
           <aside className="hidden sm:block w-52 flex-shrink-0">
             <div className="sticky top-24">
               <h3 className="text-xs tracking-[0.25em] uppercase text-stone-500 font-semibold mb-4">Categories</h3>
-              <ul className="space-y-1">
-                <li>
+              <ul className="space-y-0">
+                {/* All Products reset */}
+                <li className="mb-3">
                   <button
                     onClick={() => handleCategoryChange(null)}
-                    className={`w-full text-left py-2 text-xs tracking-wide transition-colors ${
+                    className={`w-full text-left py-1.5 text-xs tracking-wide transition-colors ${
                       selectedCategory === null
                         ? 'text-stone-900 font-semibold'
-                        : 'text-stone-500 hover:text-stone-900'
+                        : 'text-stone-400 hover:text-stone-700'
                     }`}
                   >
                     All Products
-                    {selectedCategory === null && <span className="ml-2 text-stone-300">—</span>}
                   </button>
                 </li>
+
+                {/* Parent category groups */}
                 {parentCategories.map((cat) => (
-                  <li key={cat.id}>
-                    <button
-                      onClick={() => handleCategoryChange(cat.id)}
-                      className={`w-full text-left py-2 text-xs tracking-wide transition-colors ${
-                        selectedCategory === cat.id
-                          ? 'text-stone-900 font-semibold'
-                          : 'text-stone-500 hover:text-stone-900'
-                      }`}
-                    >
+                  <li key={cat.id} className="mb-4">
+                    {/* Parent — non-clickable label */}
+                    <p className="text-[10px] tracking-[0.4em] uppercase text-stone-400 font-semibold mb-2 pb-1 border-b border-stone-100 cursor-default select-none">
                       {cat.name}
-                    </button>
-                    {/* Subcategories */}
-                    {selectedCategory === cat.id && cat.subcategories && cat.subcategories.length > 0 && (
-                      <ul className="ml-3 mt-1 space-y-0.5 border-l border-stone-100 pl-3">
+                    </p>
+
+                    {/* Subcategories — always shown, each is a filter button */}
+                    {cat.subcategories && cat.subcategories.length > 0 ? (
+                      <ul className="space-y-0.5 pl-1">
                         {cat.subcategories.map((sub) => (
                           <li key={sub.id}>
-                            <Link
-                              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${cat.slug}/${sub.slug}`}
-                              className="block py-1 text-xs text-stone-400 hover:text-stone-700 tracking-wide transition-colors"
+                            <button
+                              onClick={() => handleCategoryChange(sub.id)}
+                              className={`w-full text-left py-1.5 text-xs tracking-wide transition-colors flex items-center gap-2 group ${
+                                selectedCategory === sub.id
+                                  ? 'text-stone-900 font-semibold'
+                                  : 'text-stone-500 hover:text-stone-900'
+                              }`}
                             >
+                              <span className={`w-1 h-1 rounded-full flex-shrink-0 transition-colors ${
+                                selectedCategory === sub.id ? 'bg-stone-800' : 'bg-stone-300 group-hover:bg-stone-500'
+                              }`} />
                               {sub.name}
-                            </Link>
+                            </button>
                           </li>
                         ))}
                       </ul>
+                    ) : (
+                      <p className="text-xs text-stone-300 pl-1 py-1 tracking-wide">No subcategories</p>
                     )}
                   </li>
                 ))}
@@ -180,27 +187,48 @@ export default function CatalogPage() {
                     <X className="w-4 h-4 text-stone-500" />
                   </button>
                 </div>
-                <p className="text-xs tracking-[0.2em] uppercase text-stone-400 mb-3">Categories</p>
-                <ul className="space-y-1">
-                  <li>
-                    <button
-                      onClick={() => handleCategoryChange(null)}
-                      className={`w-full text-left py-2.5 text-xs tracking-wide ${selectedCategory === null ? 'text-stone-900 font-semibold' : 'text-stone-500'}`}
-                    >
-                      All Products
-                    </button>
-                  </li>
-                  {parentCategories.map((cat) => (
-                    <li key={cat.id}>
-                      <button
-                        onClick={() => handleCategoryChange(cat.id)}
-                        className={`w-full text-left py-2.5 text-xs tracking-wide ${selectedCategory === cat.id ? 'text-stone-900 font-semibold' : 'text-stone-500'}`}
-                      >
-                        {cat.name}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+
+                <p className="text-xs tracking-[0.2em] uppercase text-stone-400 mb-4">Categories</p>
+
+                {/* All Products reset */}
+                <button
+                  onClick={() => handleCategoryChange(null)}
+                  className={`w-full text-left py-2.5 text-xs tracking-wide border-b border-stone-100 mb-3 ${
+                    selectedCategory === null ? 'text-stone-900 font-semibold' : 'text-stone-500'
+                  }`}
+                >
+                  All Products
+                </button>
+
+                {/* Parent groups */}
+                {parentCategories.map((cat) => (
+                  <div key={cat.id} className="mb-5">
+                    {/* Parent — non-clickable label */}
+                    <p className="text-[10px] tracking-[0.4em] uppercase text-stone-400 font-semibold mb-2 cursor-default select-none">
+                      {cat.name}
+                    </p>
+
+                    {/* Subcategories */}
+                    {cat.subcategories && cat.subcategories.length > 0 ? (
+                      <ul className="space-y-0.5 pl-2 border-l-2 border-stone-100">
+                        {cat.subcategories.map((sub) => (
+                          <li key={sub.id}>
+                            <button
+                              onClick={() => handleCategoryChange(sub.id)}
+                              className={`w-full text-left py-2 text-xs tracking-wide transition-colors ${
+                                selectedCategory === sub.id
+                                  ? 'text-stone-900 font-semibold'
+                                  : 'text-stone-500'
+                              }`}
+                            >
+                              {sub.name}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                ))}
               </div>
             </div>
           )}
