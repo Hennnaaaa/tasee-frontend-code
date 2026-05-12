@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ProductCard from '../../../../../components/customerComponents/products/ProductCard';
+import ScrollingImageBanner from '../../../../../components/customerComponents/ScrollingImageBanner';
 
 const SubcategoryPage = () => {
   const params = useParams();
@@ -115,6 +116,9 @@ const SubcategoryPage = () => {
 
   return (
     <div className="min-h-screen bg-stone-50">
+      {/* Mobile-only scrolling image banner */}
+      <ScrollingImageBanner />
+
       <div className="px-0 sm:px-8 py-16">
         {/* Page Header */}
         <div className="text-center mb-16">

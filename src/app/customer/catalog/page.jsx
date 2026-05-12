@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { GET_ALL_PRODUCTS, GET_ALL_CATEGORIES } from '@/utils/routes/customerRoutes';
 import ProductCard from '@/components/customerComponents/products/ProductCard';
+import ScrollingImageBanner from '@/components/customerComponents/ScrollingImageBanner';
 
 const useScreenSize = () => {
   const [screenSize, setScreenSize] = useState('desktop');
@@ -115,6 +116,9 @@ export default function CatalogPage() {
           </div>
         </div>
       </div>
+
+      {/* Mobile-only scrolling image banner */}
+      <ScrollingImageBanner />
 
       <div className="max-w-screen-xl mx-auto px-0 sm:px-6">
         <div className="flex gap-8 py-8">

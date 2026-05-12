@@ -17,6 +17,7 @@ const Navbar = () => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
   const [showShopMenu, setShowShopMenu] = useState(false);
+  const [showMobileCatalog, setShowMobileCatalog] = useState(false);
   const [mobileExpandedCategory, setMobileExpandedCategory] = useState(null);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -454,46 +455,79 @@ const Navbar = () => {
                   Home
                 </Link>
 
-                <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`} className="px-5 py-4 text-xs tracking-widest uppercase text-stone-700 hover:text-stone-900 hover:bg-stone-50" onClick={() => setShowMobileMenu(false)}>
-                  All Products
-                </Link>
-
-                {/* Mobile Categories — parent is a tap-to-expand label, only subcategories are links */}
-                {!loading && categories.map((category) => (
-                  <div key={category.id}>
-                    <button
-                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors"
-                      onClick={() => setMobileExpandedCategory(mobileExpandedCategory === category.id ? null : category.id)}
+                {/* Catalog dropdown — parent categories with nested subcategory accordions */}
+                <div>
+                  <button
+                    className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors"
+                    onClick={() => setShowMobileCatalog(!showMobileCatalog)}
+                  >
+                    <span className="text-xs tracking-widest uppercase text-stone-700">Catalog</span>
+                    <svg
+                      className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 ${showMobileCatalog ? 'rotate-180' : ''}`}
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
                     >
-                      <span className="text-xs tracking-widest uppercase text-stone-400 font-semibold">
-                        {category.name}
-                      </span>
-                      {category.subcategories && category.subcategories.length > 0 && (
-                        <svg
-                          className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 ${mobileExpandedCategory === category.id ? 'rotate-180' : ''}`}
-                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                        </svg>
-                      )}
-                    </button>
-                    {category.subcategories && category.subcategories.length > 0 && mobileExpandedCategory === category.id && (
-                      <div className="bg-stone-50 border-t border-stone-100 px-8 py-2">
-                        {category.subcategories.map((sub) => (
-                          <Link
-                            key={sub.id}
-                            href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}/${sub.slug}`}
-                            className="flex items-center gap-2 py-2.5 text-xs tracking-wide text-stone-600 hover:text-stone-900 transition-colors"
-                            onClick={() => setShowMobileMenu(false)}
-                          >
-                            <span className="w-1 h-1 rounded-full bg-stone-300 flex-shrink-0" />
-                            {sub.name}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {showMobileCatalog && (
+                    <div className="border-t border-stone-100">
+                      {/* All Products */}
+                      <Link
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`}
+                        className="flex items-center px-8 py-3 bg-stone-50 text-xs tracking-widest uppercase text-stone-500 hover:text-stone-900 hover:bg-stone-100 transition-colors"
+                        onClick={() => setShowMobileMenu(false)}
+                      >
+                        All Products
+                      </Link>
+
+                      {/* Parent categories */}
+                      {!loading && categories.map((category) => (
+                        <div key={category.id} className="border-t border-stone-100">
+                          <div className="flex items-center bg-stone-50">
+                            <Link
+                              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}`}
+                              className="flex-1 px-8 py-3 text-xs tracking-widest uppercase text-stone-600 hover:text-stone-900 transition-colors"
+                              onClick={() => setShowMobileMenu(false)}
+                            >
+                              {category.name}
+                            </Link>
+                            {category.subcategories && category.subcategories.length > 0 && (
+                              <button
+                                className="px-4 py-3 text-stone-400 hover:text-stone-700"
+                                onClick={() => setMobileExpandedCategory(mobileExpandedCategory === category.id ? null : category.id)}
+                              >
+                                <svg
+                                  className={`w-3 h-3 transition-transform duration-200 ${mobileExpandedCategory === category.id ? 'rotate-180' : ''}`}
+                                  fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Subcategories */}
+                          {category.subcategories && category.subcategories.length > 0 && mobileExpandedCategory === category.id && (
+                            <div className="bg-stone-100 border-t border-stone-200 px-10 py-1">
+                              {category.subcategories.map((sub) => (
+                                <Link
+                                  key={sub.id}
+                                  href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}/${sub.slug}`}
+                                  className="flex items-center gap-2 py-2.5 text-xs tracking-wide text-stone-500 hover:text-stone-900 transition-colors"
+                                  onClick={() => setShowMobileMenu(false)}
+                                >
+                                  <span className="w-1 h-1 rounded-full bg-stone-400 flex-shrink-0" />
+                                  {sub.name}
+                                </Link>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 {/* Mobile Currency */}
                 <div className="px-5 py-4">
