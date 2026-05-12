@@ -256,21 +256,18 @@ const Navbar = () => {
                         categories.length > 3 ? 'grid-cols-3' : `grid-cols-${Math.max(categories.length, 1)}`
                       }`}>
                         {!loading && categories.map((category) => (
-                          <div key={category.id} className="mb-4">
-                            <Link
-                              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}`}
-                              className="block text-xs tracking-widest uppercase text-stone-900 font-medium mb-2 hover:text-stone-500 transition-colors"
-                              onClick={() => setShowShopMenu(false)}
-                            >
+                          <div key={category.id} className="mb-5">
+                            {/* Parent category — label only, not clickable */}
+                            <p className="text-[10px] tracking-[0.4em] uppercase text-stone-400 font-semibold mb-2.5 pb-1.5 border-b border-stone-100 cursor-default select-none">
                               {category.name}
-                            </Link>
+                            </p>
                             {category.subcategories && category.subcategories.length > 0 && (
                               <ul className="space-y-1">
                                 {category.subcategories.map((sub) => (
                                   <li key={sub.id}>
                                     <Link
                                       href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}/${sub.slug}`}
-                                      className="block text-xs text-stone-500 hover:text-stone-900 tracking-wide transition-colors py-0.5"
+                                      className="block text-xs text-stone-700 hover:text-stone-900 tracking-wide transition-colors py-0.5 hover:translate-x-0.5 transform duration-150"
                                       onClick={() => setShowShopMenu(false)}
                                     >
                                       {sub.name}
@@ -461,37 +458,35 @@ const Navbar = () => {
                   All Products
                 </Link>
 
-                {/* Mobile Categories */}
+                {/* Mobile Categories — parent is a tap-to-expand label, only subcategories are links */}
                 {!loading && categories.map((category) => (
                   <div key={category.id}>
-                    <div className="flex items-center justify-between px-5 py-4">
-                      <Link
-                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}`}
-                        className="text-xs tracking-widest uppercase text-stone-700 hover:text-stone-900 flex-grow"
-                        onClick={() => setShowMobileMenu(false)}
-                      >
+                    <button
+                      className="w-full flex items-center justify-between px-5 py-4 hover:bg-stone-50 transition-colors"
+                      onClick={() => setMobileExpandedCategory(mobileExpandedCategory === category.id ? null : category.id)}
+                    >
+                      <span className="text-xs tracking-widest uppercase text-stone-400 font-semibold">
                         {category.name}
-                      </Link>
+                      </span>
                       {category.subcategories && category.subcategories.length > 0 && (
-                        <button
-                          onClick={() => setMobileExpandedCategory(mobileExpandedCategory === category.id ? null : category.id)}
-                          className="text-stone-400 hover:text-stone-700 ml-2"
+                        <svg
+                          className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 ${mobileExpandedCategory === category.id ? 'rotate-180' : ''}`}
+                          fill="none" stroke="currentColor" viewBox="0 0 24 24"
                         >
-                          <svg className={`w-4 h-4 transition-transform ${mobileExpandedCategory === category.id ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </button>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
                       )}
-                    </div>
+                    </button>
                     {category.subcategories && category.subcategories.length > 0 && mobileExpandedCategory === category.id && (
-                      <div className="bg-stone-50 px-8 pb-3">
+                      <div className="bg-stone-50 border-t border-stone-100 px-8 py-2">
                         {category.subcategories.map((sub) => (
                           <Link
                             key={sub.id}
                             href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}/${sub.slug}`}
-                            className="block py-2 text-xs tracking-wide text-stone-500 hover:text-stone-900"
+                            className="flex items-center gap-2 py-2.5 text-xs tracking-wide text-stone-600 hover:text-stone-900 transition-colors"
                             onClick={() => setShowMobileMenu(false)}
                           >
+                            <span className="w-1 h-1 rounded-full bg-stone-300 flex-shrink-0" />
                             {sub.name}
                           </Link>
                         ))}

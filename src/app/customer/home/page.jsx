@@ -223,15 +223,22 @@ export default function HomePage() {
         {parentCategories.length > 0 && (
           <nav className="max-w-screen-xl mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-center overflow-x-auto no-scrollbar">
-              {parentCategories.slice(0, 6).map(cat => (
-                <Link
-                  key={cat.id}
-                  href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${cat.slug}`}
-                  className="flex-shrink-0 px-5 sm:px-7 py-5 text-[10px] sm:text-xs tracking-[0.28em] uppercase text-stone-500 hover:text-stone-900 border-r border-stone-100 last:border-r-0 transition-colors whitespace-nowrap font-medium"
-                >
-                  {cat.name}
-                </Link>
-              ))}
+              {parentCategories.slice(0, 6).map(cat => {
+                // Link to the first active subcategory — parent pages will be empty
+                const firstSub = categories.find(c => c.parentId === cat.id && c.isActive !== false);
+                const href = firstSub
+                  ? `${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${cat.slug}/${firstSub.slug}`
+                  : `${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`;
+                return (
+                  <Link
+                    key={cat.id}
+                    href={href}
+                    className="flex-shrink-0 px-5 sm:px-7 py-5 text-[10px] sm:text-xs tracking-[0.28em] uppercase text-stone-500 hover:text-stone-900 border-r border-stone-100 last:border-r-0 transition-colors whitespace-nowrap font-medium"
+                  >
+                    {cat.name}
+                  </Link>
+                );
+              })}
               <Link
                 href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`}
                 className="flex-shrink-0 px-5 sm:px-7 py-5 text-[10px] sm:text-xs tracking-[0.28em] uppercase text-stone-900 font-bold transition-colors whitespace-nowrap hover:text-stone-500"

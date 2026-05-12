@@ -17,27 +17,68 @@ const ProductCard = ({ product }) => {
   })();
 
   const [imageError, setImageError] = useState(false);
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(initialIndex);
   const [isWishlistLoading, setIsWishlistLoading] = useState(false);
   const [isInWishlist, setIsInWishlist] = useState(false);
-  const scrollRef = useRef(null);
+
+  const imageRef = useRef(null);
+  const didSwipe = useRef(false);
 
   const { formatPrice } = useCurrency();
   const { toggleWishlist, checkWishlistStatus } = useWishlist();
 
   useEffect(() => {
-    if (product?.id) {
-      setIsInWishlist(checkWishlistStatus(product.id));
-    }
+    if (product?.id) setIsInWishlist(checkWishlistStatus(product.id));
   }, [product?.id, checkWishlistStatus]);
 
-  // Scroll to primary image on first render
+  // Native non-passive touch listeners so we can preventDefault on horizontal swipe
   useEffect(() => {
-    if (scrollRef.current && initialIndex > 0) {
-      scrollRef.current.scrollLeft = initialIndex * scrollRef.current.clientWidth;
-      setCurrentImageIndex(initialIndex);
-    }
-  }, []);
+    const el = imageRef.current;
+    if (!el || productImages.length <= 1) return;
+
+    let startX = null;
+    let startY = null;
+
+    const onTouchStart = (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      didSwipe.current = false;
+    };
+
+    const onTouchMove = (e) => {
+      if (startX === null) return;
+      const dx = Math.abs(e.touches[0].clientX - startX);
+      const dy = Math.abs(e.touches[0].clientY - startY);
+      // Lock axis: if moving more horizontally than vertically, prevent page scroll
+      if (dx > dy && dx > 6) e.preventDefault();
+    };
+
+    const onTouchEnd = (e) => {
+      if (startX === null) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = Math.abs(e.changedTouches[0].clientY - startY);
+
+      if (Math.abs(dx) > 25 && Math.abs(dx) > dy) {
+        didSwipe.current = true;
+        if (dx < 0) {
+          setCurrentImageIndex(prev => Math.min(prev + 1, productImages.length - 1));
+        } else {
+          setCurrentImageIndex(prev => Math.max(prev - 1, 0));
+        }
+      }
+      startX = null;
+    };
+
+    el.addEventListener('touchstart', onTouchStart, { passive: true });
+    el.addEventListener('touchmove', onTouchMove, { passive: false }); // must be non-passive to preventDefault
+    el.addEventListener('touchend', onTouchEnd, { passive: true });
+
+    return () => {
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('touchend', onTouchEnd);
+    };
+  }, [productImages.length]);
 
   const discountPercentage = product.discountedPrice && product.price
     ? Math.round(((product.price - product.discountedPrice) / product.price) * 100)
@@ -80,21 +121,22 @@ const ProductCard = ({ product }) => {
     }
   };
 
-  const scrollToIndex = (index) => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTo({ left: index * scrollRef.current.clientWidth, behavior: 'smooth' });
+  const goToImage = (index) => {
+    setCurrentImageIndex(Math.max(0, Math.min(index, productImages.length - 1)));
   };
 
-  const handleScroll = () => {
-    if (!scrollRef.current) return;
-    const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.clientWidth);
-    setCurrentImageIndex(Math.min(Math.max(idx, 0), productImages.length - 1));
+  // Block Link navigation if the touch was a swipe, not a tap
+  const handleLinkClick = (e) => {
+    if (didSwipe.current) {
+      e.preventDefault();
+      didSwipe.current = false;
+    }
   };
 
   return (
     <div className="group relative bg-white overflow-hidden w-full">
 
-      {/* Wishlist button — positioned outside Link to prevent nav conflict */}
+      {/* Wishlist — outside Link, always on top */}
       <button
         onClick={handleWishlistToggle}
         disabled={isWishlistLoading}
@@ -106,38 +148,32 @@ const ProductCard = ({ product }) => {
         <Heart className={`w-3 h-3 sm:w-4 sm:h-4 transition-all duration-200 ${isInWishlist ? 'fill-current' : ''} ${isWishlistLoading ? 'animate-pulse' : ''}`} />
       </button>
 
-      <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}>
-
-        {/* Image area */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-stone-100 w-full">
-
+      <Link
+        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/products/${product.id}`}
+        onClick={handleLinkClick}
+      >
+        {/* Image container — touch listeners attached via useEffect */}
+        <div
+          ref={imageRef}
+          className="relative aspect-[3/4] overflow-hidden bg-stone-100 w-full select-none"
+        >
           {productImages.length > 0 && !imageError ? (
             <>
-              {/* Horizontal scroll image strip */}
-              <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                className="absolute inset-0 flex overflow-x-scroll no-scrollbar snap-x snap-mandatory"
-              >
-                {productImages.map((img, idx) => (
-                  <div key={idx} className="flex-shrink-0 w-full h-full snap-start">
-                    <img
-                      src={img.url}
-                      alt={img.alt || product.name}
-                      className="w-full h-full object-cover"
-                      onError={idx === 0 ? () => setImageError(true) : undefined}
-                    />
-                  </div>
-                ))}
-              </div>
+              <img
+                src={productImages[currentImageIndex]?.url}
+                alt={productImages[currentImageIndex]?.alt || product.name}
+                className="w-full h-full object-cover transition-opacity duration-200"
+                onError={() => setImageError(true)}
+                draggable={false}
+              />
 
-              {/* Scroll position dots */}
+              {/* Dot indicators */}
               {hasMultipleImages && (
                 <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-1 z-20">
                   {productImages.map((_, i) => (
                     <button
                       key={i}
-                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); scrollToIndex(i); }}
+                      onClick={(e) => { e.preventDefault(); e.stopPropagation(); goToImage(i); }}
                       className={`rounded-full transition-all duration-200 ${
                         i === currentImageIndex ? 'bg-white w-3.5 h-1.5' : 'bg-white/55 w-1.5 h-1.5'
                       }`}
@@ -179,8 +215,8 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {/* Hover overlay */}
-          <div className="absolute inset-0 bg-black/25 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-10">
+          {/* Hover overlay — desktop only (hidden on touch screens via md: prefix) */}
+          <div className="absolute inset-0 bg-black/25 items-center justify-center transition-opacity duration-300 z-10 hidden md:flex opacity-0 group-hover:opacity-100">
             <span className="bg-white text-stone-800 px-6 py-2.5 font-light tracking-widest text-xs">
               VIEW DETAILS
             </span>
