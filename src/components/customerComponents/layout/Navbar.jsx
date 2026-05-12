@@ -8,6 +8,10 @@ import { useWishlist } from '@/contexts/wishlistContext';
 import { useCurrency, CURRENCIES } from '@/contexts/currencyContext';
 import { GET_NAVIGATION_CATEGORIES } from '@/utils/routes/productManagementRoutes';
 
+// Clickable only when API provides a count AND it is zero; safe-default is clickable.
+const hasProducts = (cat) =>
+  cat.productCount === undefined || cat.productCount === null || cat.productCount > 0;
+
 const Navbar = () => {
   const { cartCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
@@ -485,13 +489,19 @@ const Navbar = () => {
                       {!loading && categories.map((category) => (
                         <div key={category.id} className="border-t border-stone-100">
                           <div className="flex items-center bg-stone-50">
-                            <Link
-                              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}`}
-                              className="flex-1 px-8 py-3 text-xs tracking-widest uppercase text-stone-600 hover:text-stone-900 transition-colors"
-                              onClick={() => setShowMobileMenu(false)}
-                            >
-                              {category.name}
-                            </Link>
+                            {hasProducts(category) ? (
+                              <Link
+                                href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${category.slug}`}
+                                className="flex-1 px-8 py-3 text-xs tracking-widest uppercase text-stone-600 hover:text-stone-900 transition-colors"
+                                onClick={() => setShowMobileMenu(false)}
+                              >
+                                {category.name}
+                              </Link>
+                            ) : (
+                              <span className="flex-1 px-8 py-3 text-xs tracking-widest uppercase text-stone-400 cursor-default select-none">
+                                {category.name}
+                              </span>
+                            )}
                             {category.subcategories && category.subcategories.length > 0 && (
                               <button
                                 className="px-4 py-3 text-stone-400 hover:text-stone-700"
@@ -625,14 +635,23 @@ const Navbar = () => {
                 <p className="text-stone-600 text-[10px] tracking-[0.45em] uppercase mb-5">Browse Categories</p>
                 <div className="flex flex-wrap gap-2">
                   {categories.map(cat => (
-                    <Link
-                      key={cat.id}
-                      href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${cat.slug}`}
-                      onClick={closeSearch}
-                      className="border border-stone-800 text-stone-400 hover:text-white hover:border-stone-500 px-4 py-2 text-xs tracking-widest uppercase transition-colors duration-200"
-                    >
-                      {cat.name}
-                    </Link>
+                    hasProducts(cat) ? (
+                      <Link
+                        key={cat.id}
+                        href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/category/${cat.slug}`}
+                        onClick={closeSearch}
+                        className="border border-stone-800 text-stone-400 hover:text-white hover:border-stone-500 px-4 py-2 text-xs tracking-widest uppercase transition-colors duration-200"
+                      >
+                        {cat.name}
+                      </Link>
+                    ) : (
+                      <span
+                        key={cat.id}
+                        className="border border-stone-800 text-stone-700 px-4 py-2 text-xs tracking-widest uppercase opacity-40 cursor-default select-none"
+                      >
+                        {cat.name}
+                      </span>
+                    )
                   ))}
                   <Link
                     href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/catalog`}
