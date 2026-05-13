@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Newsletter from '@/components/Newsletter';
 import { GET_ALL_CATEGORIES } from '@/utils/routes/customerRoutes';
@@ -122,7 +122,21 @@ export default function HomePage() {
 
   const parentCategories = categories.filter(c => !c.parentId && c.isActive);
 
+  // iOS Safari ignores React's muted JSX prop — ref callback sets it on the DOM node directly
+  const heroVideoRef = useCallback((node) => {
+    if (node) {
+      node.muted = true;
+      node.defaultMuted = true;
+    }
+  }, []);
+
   useEffect(() => { setMounted(true); }, []);
+
+  // Fallback: reveal hero after 4 s even if video/image never fires onCanPlay/onLoad
+  useEffect(() => {
+    const t = setTimeout(() => setHeroReady(true), 4000);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     fetch(`${GET_ALL_CATEGORIES}?includeInactive=false`)
@@ -150,13 +164,17 @@ export default function HomePage() {
         {/* Mobile: video */}
         {isMobile && (
           <video
+            ref={heroVideoRef}
             autoPlay muted loop playsInline
             preload="auto"
-            src="/videos/hero.mp4"
+            poster="/hero-slides/dress-1/IMG_5015.jpg"
             onCanPlay={() => setHeroReady(true)}
+            onError={() => setHeroReady(true)}
             className="absolute inset-0 w-full h-full object-cover"
             style={{ zIndex: 0 }}
-          />
+          >
+            <source src="/videos/hero.mp4" type="video/mp4" />
+          </video>
         )}
 
         {/* Desktop / Tablet: image slideshow */}
@@ -209,8 +227,11 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Scroll hint */}
-        <div className="absolute bottom-7 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10">
+        {/* Scroll hint — uses safe-area-inset-bottom so it clears iPhone home indicator */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 z-10"
+          style={{ bottom: 'max(28px, env(safe-area-inset-bottom, 28px))' }}
+        >
           <span className="text-white/30 text-[9px] tracking-[0.4em] uppercase">Scroll</span>
           <div className="w-px h-10 bg-gradient-to-b from-white/40 to-transparent animate-pulse" />
         </div>

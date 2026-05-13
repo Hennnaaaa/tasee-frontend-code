@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 export default function ReelCard({ src, className = '' }) {
   const containerRef = useRef(null);
@@ -10,6 +10,16 @@ export default function ReelCard({ src, className = '' }) {
   const [playing, setPlaying] = useState(false);
   const [ready, setReady] = useState(false);
   const [buffering, setBuffering] = useState(false);
+
+  // iOS Safari ignores React's muted JSX prop (React sets the JS property but not the HTML
+  // attribute). Using a ref callback sets both immediately when the DOM node is created.
+  const setVideoRef = useCallback((node) => {
+    videoRef.current = node;
+    if (node) {
+      node.muted = true;
+      node.defaultMuted = true;
+    }
+  }, []);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -49,14 +59,19 @@ export default function ReelCard({ src, className = '' }) {
   }, [src]);
 
   const toggle = () => {
-    if (!videoRef.current) return;
+    const video = videoRef.current;
+    if (!video) return;
     if (playing) {
-      videoRef.current.pause(); setPlaying(false);
+      video.pause();
+      setPlaying(false);
     } else {
+      // Re-enforce muted immediately before play() — required on iOS Safari
+      video.muted = true;
       window.dispatchEvent(new CustomEvent('reel-play', { detail: { src } }));
       setBuffering(true);
-      videoRef.current.play().catch(() => setBuffering(false));
-      setPlaying(true);
+      video.play()
+        .then(() => setPlaying(true))
+        .catch(() => { setBuffering(false); setPlaying(false); });
     }
   };
 
@@ -70,15 +85,19 @@ export default function ReelCard({ src, className = '' }) {
 
       {inView && (
         <video
-          ref={videoRef}
-          src={src}
-          playsInline loop muted
+          ref={setVideoRef}
+          playsInline
+          loop
+          muted
           preload="metadata"
-          onCanPlay={() => setReady(true)}
+          onCanPlay={() => { setReady(true); setBuffering(false); }}
           onWaiting={() => setBuffering(true)}
-          onPlaying={() => setBuffering(false)}
+          onPlaying={() => { setBuffering(false); setPlaying(true); }}
+          onPause={() => setPlaying(false)}
           className={`w-full h-full object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
-        />
+        >
+          <source src={src} type="video/mp4" />
+        </video>
       )}
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300 group-hover:from-black/30" />
