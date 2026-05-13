@@ -2,17 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export default function ReelCard({ src, className = '' }) {
+export default function ReelCard({ src, poster, className = '' }) {
   const containerRef = useRef(null);
   const videoRef = useRef(null);
   const mountTimerRef = useRef(null);
   const [inView, setInView] = useState(false);
   const [playing, setPlaying] = useState(false);
-  const [ready, setReady] = useState(false);
   const [buffering, setBuffering] = useState(false);
 
-  // iOS Safari ignores React's muted JSX prop (React sets the JS property but not the HTML
-  // attribute). Using a ref callback sets both immediately when the DOM node is created.
+  // iOS Safari ignores React's muted JSX prop — ref callback sets it on the DOM node directly
   const setVideoRef = useCallback((node) => {
     videoRef.current = node;
     if (node) {
@@ -65,7 +63,6 @@ export default function ReelCard({ src, className = '' }) {
       video.pause();
       setPlaying(false);
     } else {
-      // Re-enforce muted immediately before play() — required on iOS Safari
       video.muted = true;
       window.dispatchEvent(new CustomEvent('reel-play', { detail: { src } }));
       setBuffering(true);
@@ -81,8 +78,24 @@ export default function ReelCard({ src, className = '' }) {
       className={`relative overflow-hidden cursor-pointer select-none group bg-stone-900 aspect-[9/16] md:aspect-[3/4] ${className}`}
       onClick={toggle}
     >
-      {!ready && <div className="absolute inset-0 bg-stone-800 animate-pulse" />}
+      {/* Poster image — always visible when video is not playing.
+          Using <img> instead of the <video poster> attribute because the browser
+          poster disappears after the first play/pause cycle, showing black instead. */}
+      {poster && !playing && (
+        <img
+          src={poster}
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      )}
 
+      {/* Skeleton only before the card enters the viewport and no poster is available */}
+      {!inView && !poster && (
+        <div className="absolute inset-0 bg-stone-800 animate-pulse" />
+      )}
+
+      {/* Video — invisible when not playing so CSS poster shows through underneath */}
       {inView && (
         <video
           ref={setVideoRef}
@@ -90,17 +103,16 @@ export default function ReelCard({ src, className = '' }) {
           loop
           muted
           preload="metadata"
-          onCanPlay={() => { setReady(true); setBuffering(false); }}
           onWaiting={() => setBuffering(true)}
           onPlaying={() => { setBuffering(false); setPlaying(true); }}
           onPause={() => setPlaying(false)}
-          className={`w-full h-full object-cover transition-opacity duration-500 ${ready ? 'opacity-100' : 'opacity-0'}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${playing ? 'opacity-100' : 'opacity-0'}`}
         >
           <source src={src} type="video/mp4" />
         </video>
       )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent transition-opacity duration-300 group-hover:from-black/30" />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
 
       {buffering && (
         <div className="absolute inset-0 flex items-center justify-center">

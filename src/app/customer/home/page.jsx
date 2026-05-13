@@ -109,8 +109,12 @@ function RevealSection({ children, zIndex, bg = 'bg-white', rounded = true }) {
 }
 
 const REELS = [
-  '/videos/reel-1.mp4','/videos/reel-2.mp4','/videos/reel-3.mp4',
-  '/videos/reel-4.mp4','/videos/reel-5.mp4','/videos/reel-6.mp4',
+  { src: '/videos/reel-1.mp4', poster: '/videos/posters/reel-1.jpg' },
+  { src: '/videos/reel-2.mp4', poster: '/videos/posters/reel-2.jpg' },
+  { src: '/videos/reel-3.mp4', poster: '/videos/posters/reel-3.jpg' },
+  { src: '/videos/reel-4.mp4', poster: '/videos/posters/reel-4.jpg' },
+  { src: '/videos/reel-5.mp4', poster: '/videos/posters/reel-5.jpg' },
+  { src: '/videos/reel-6.mp4', poster: '/videos/posters/reel-6.jpg' },
 ];
 
 export default function HomePage() {
@@ -316,12 +320,12 @@ export default function HomePage() {
 
           {/* Horizontal scroll strip */}
           <div className="flex gap-2 sm:gap-3 overflow-x-scroll no-scrollbar snap-x snap-mandatory px-4 sm:px-10 pb-4">
-            {REELS.map((src) => (
+            {REELS.map(({ src, poster }) => (
               <div
                 key={src}
                 className="flex-shrink-0 snap-start w-[72vw] sm:w-[44vw] md:w-[30vw] lg:w-[24vw]"
               >
-                <ReelCard src={src} />
+                <ReelCard src={src} poster={poster} />
               </div>
             ))}
           </div>
