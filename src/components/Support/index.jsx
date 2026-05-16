@@ -14,8 +14,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { SEND_SUPPORT_MAIL } from "@/utils/routes/support.routes";
 import axios from "axios";
-const Support = () => {
-    const [isOpen, setIsOpen] = useState(false);
+const Support = ({ isOpen: externalIsOpen, onOpenChange: externalOnOpenChange, showButton = true }) => {
+    const [internalIsOpen, setInternalIsOpen] = useState(false);
+    const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+    const setIsOpen = externalOnOpenChange !== undefined ? externalOnOpenChange : setInternalIsOpen;
     const [formData, setFormData] = useState({
         subject: "",
         email: "",
@@ -58,13 +60,15 @@ const Support = () => {
 
     return (
         <>
-            <button
-                onClick={() => setIsOpen(true)}
-                className="fixed bottom-6 right-6 bg-pink-600 hover:bg-pink-700 text-white rounded-full p-3 shadow-lg transition-transform hover:scale-110 z-50"
-                aria-label="Contact Support"
-            >
-                <MessageCircle size={24} />
-            </button>
+            {showButton && (
+                <button
+                    onClick={() => setIsOpen(true)}
+                    className="fixed bottom-6 right-6 bg-pink-600 hover:bg-pink-700 text-white rounded-full p-3 shadow-lg transition-transform hover:scale-110 z-50"
+                    aria-label="Contact Support"
+                >
+                    <MessageCircle size={24} />
+                </button>
+            )}
 
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogContent className="sm:max-w-md">

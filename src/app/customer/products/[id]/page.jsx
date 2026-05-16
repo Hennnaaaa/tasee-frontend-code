@@ -62,9 +62,7 @@ export default function ProductDetailsPage({ params }) {
   const getStockMessage = (availableToAdd, inCart) => {
     if (availableToAdd === 0 && inCart > 0) return 'In Cart';
     if (availableToAdd === 0) return 'Out of Stock';
-    if (availableToAdd <= 2) return `Only ${availableToAdd} more`;
-    if (availableToAdd <= 5) return `${availableToAdd} left`;
-    return 'In Stock';
+    return '';
   };
 
   const cartQuantities = (() => {
@@ -340,13 +338,6 @@ export default function ProductDetailsPage({ params }) {
                   </div>
                 )}
 
-                {/* Low stock badge */}
-                {isLowStockDisplay && (
-                  <div className="absolute top-14 left-4 z-20 bg-amber-500 text-white text-[10px] tracking-widest uppercase px-3 py-1.5">
-                    Only {totalAvailable} Left
-                  </div>
-                )}
-
                 {productImages.length > 0 && !imageError ? (
                   <>
                     <img
@@ -564,9 +555,11 @@ export default function ProductDetailsPage({ params }) {
                           }`}
                         >
                           <span className="font-medium">{sv.sizeCode || sv.size?.code || 'N/A'}</span>
-                          <span className={`text-[9px] mt-0.5 tracking-wide ${
-                            isSelected ? 'text-stone-300' : avail <= 2 ? 'text-amber-500' : 'text-stone-400'
-                          }`}>{msg}</span>
+                          {msg && (
+                            <span className={`text-[9px] mt-0.5 tracking-wide ${
+                              isSelected ? 'text-stone-300' : 'text-stone-400'
+                            }`}>{msg}</span>
+                          )}
                         </button>
                       );
                     })}
@@ -586,13 +579,14 @@ export default function ProductDetailsPage({ params }) {
                 {(() => {
                   const inCart = cartQuantities.regular || 0;
                   const avail = getAvailableToAdd(product.inventory, inCart);
-                  return (
-                    <span className={`text-xs tracking-widest uppercase ${
-                      avail > 5 ? 'text-green-600' : avail > 0 ? 'text-amber-600' : 'text-red-500'
-                    }`}>
-                      {avail > 5 ? 'In Stock' : avail > 0 ? `Only ${avail} left` : 'Out of Stock'}
-                    </span>
-                  );
+                  if (avail === 0) {
+                    return (
+                      <span className="text-xs tracking-widest uppercase text-red-500">
+                        Out of Stock
+                      </span>
+                    );
+                  }
+                  return null;
                 })()}
               </div>
             ) : null}
@@ -667,13 +661,6 @@ export default function ProductDetailsPage({ params }) {
               <Heart className={`w-3.5 h-3.5 ${isInWishlist ? 'fill-current text-stone-900' : ''}`} />
               {isInWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
             </button>
-
-            {/* Low stock warning */}
-            {isLowStockDisplay && (
-              <p className="text-xs text-amber-600 tracking-wide text-center">
-                Only {totalAvailable} left in stock — order soon
-              </p>
-            )}
 
             {/* ── Info Tabs ── */}
             <div className="border-t border-stone-100 pt-6 mt-2">
@@ -782,11 +769,9 @@ export default function ProductDetailsPage({ params }) {
                                 {availableSizes.map(s => (
                                   <td key={s.id} className="py-2.5 px-3 text-center">
                                     {s.inStock ? (
-                                      <span className={`text-[10px] uppercase tracking-wide ${s.inventory <= 5 ? 'text-amber-600' : 'text-green-600'}`}>
-                                        {s.inventory <= 5 ? `${s.inventory} left` : 'In Stock'}
-                                      </span>
+                                      <span className="text-[10px] uppercase tracking-wide text-green-600">In Stock</span>
                                     ) : (
-                                      <span className="text-[10px] uppercase tracking-wide text-red-400">Out</span>
+                                      <span className="text-[10px] uppercase tracking-wide text-red-400">Out of Stock</span>
                                     )}
                                   </td>
                                 ))}

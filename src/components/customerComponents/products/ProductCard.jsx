@@ -199,13 +199,6 @@ const ProductCard = ({ product }) => {
             </div>
           )}
 
-          {/* Low stock badge */}
-          {isLowStock && (
-            <div className="absolute top-10 left-2 bg-amber-500 text-white text-[9px] px-2 py-0.5 tracking-wider z-10">
-              ONLY {totalInventory} LEFT
-            </div>
-          )}
-
           {/* Out of stock overlay */}
           {!hasInventory && (
             <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-10">

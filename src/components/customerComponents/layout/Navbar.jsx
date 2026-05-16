@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/authcontext';
 import { useWishlist } from '@/contexts/wishlistContext';
 import { useCurrency, CURRENCIES } from '@/contexts/currencyContext';
 import { GET_NAVIGATION_CATEGORIES, GET_ALL_PRODUCTS } from '@/utils/routes/productManagementRoutes';
+import Support from '@/components/Support';
 
 // Clickable only when API provides a count AND it is zero; safe-default is clickable.
 const hasProducts = (cat) =>
@@ -20,6 +21,7 @@ const Navbar = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showCurrencyMenu, setShowCurrencyMenu] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
   const [showShopMenu, setShowShopMenu] = useState(false);
   const [showMobileCatalog, setShowMobileCatalog] = useState(false);
   const [mobileExpandedCategory, setMobileExpandedCategory] = useState(null);
@@ -309,6 +311,13 @@ const Navbar = () => {
                 Catalog
               </Link>
 
+              <button
+                onClick={() => setShowSupport(true)}
+                className="text-xs tracking-widest text-stone-600 hover:text-stone-900 uppercase font-medium transition-colors duration-200"
+              >
+                Contact
+              </button>
+
             </div>
 
             {/* Right Icons */}
@@ -331,7 +340,11 @@ const Navbar = () => {
                   className="flex items-center space-x-1 text-stone-500 hover:text-stone-900 transition-colors"
                   onClick={() => setShowCurrencyMenu(!showCurrencyMenu)}
                 >
-                  <span className="text-sm">{currentCurrency.flag}</span>
+                  <img
+                    src={`https://flagcdn.com/20x15/${currentCurrency.countryCode}.png`}
+                    alt={currentCurrency.code}
+                    className="w-5 h-auto rounded-sm"
+                  />
                   <span className="text-xs font-medium tracking-wide">{currentCurrency.code}</span>
                   <svg className={`w-3 h-3 transition-transform ${showCurrencyMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -347,7 +360,11 @@ const Navbar = () => {
                           selectedCurrency === currency.code ? 'text-stone-900 font-semibold' : 'text-stone-600'
                         }`}
                       >
-                        <span>{currency.flag}</span>
+                        <img
+                          src={`https://flagcdn.com/20x15/${currency.countryCode}.png`}
+                          alt={currency.code}
+                          className="w-5 h-auto rounded-sm flex-shrink-0"
+                        />
                         <div>
                           <div className="font-medium">{currency.code}</div>
                           <div className="text-stone-400">{currency.name}</div>
@@ -551,6 +568,14 @@ const Navbar = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Mobile Contact */}
+                <button
+                  onClick={() => { setShowSupport(true); setShowMobileMenu(false); }}
+                  className="px-5 py-4 text-xs tracking-widests uppercase text-stone-700 hover:text-stone-900 hover:bg-stone-50 text-left"
+                >
+                  Contact
+                </button>
 
                 {/* Mobile Currency */}
                 <div className="px-5 py-4">
@@ -758,6 +783,9 @@ const Navbar = () => {
           </div>
         </div>
       )}
+
+      {/* Contact/Support dialog — triggered by nav Contact link */}
+      <Support isOpen={showSupport} onOpenChange={setShowSupport} showButton={false} />
     </>
   );
 };

@@ -17,25 +17,29 @@ export const CURRENCIES = {
     code: 'USD',
     symbol: '$',
     name: 'US Dollar',
-    flag: '🇺🇸'
+    flag: '🇺🇸',
+    countryCode: 'us'
   },
   EUR: {
     code: 'EUR',
     symbol: '€',
     name: 'Euro',
-    flag: '🇪🇺'
+    flag: '🇪🇺',
+    countryCode: 'eu'
   },
   GBP: {
     code: 'GBP',
     symbol: '£',
     name: 'British Pound',
-    flag: '🇬🇧'
+    flag: '🇬🇧',
+    countryCode: 'gb'
   },
   PKR: {
     code: 'PKR',
     symbol: 'Rs',
     name: 'Pakistani Rupee',
-    flag: '🇵🇰'
+    flag: '🇵🇰',
+    countryCode: 'pk'
   }
 };
 
