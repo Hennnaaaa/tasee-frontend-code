@@ -84,6 +84,7 @@ export default function ProductDetailsPage({ params }) {
   const apiCall = async (url, options = {}) => {
     const response = await fetch(url, {
       headers: { 'Content-Type': 'application/json' },
+      cache: 'no-store',
       ...options,
     });
     if (!response.ok) {
