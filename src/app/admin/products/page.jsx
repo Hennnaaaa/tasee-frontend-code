@@ -272,14 +272,14 @@ export default function ProductsPage() {
         router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
-      
+
       // Make authenticated request
       await axios.delete(DELETE_PRODUCT(productToDelete.id), {
         headers: {
           Authorization: `Bearer ${auth.token}`
         }
       });
-      
+
       setDeleteDialogOpen(false);
       fetchProducts();
       fetchInventorySummary();
@@ -291,7 +291,9 @@ export default function ProductsPage() {
         router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
         return;
       }
-      
+
+      setDeleteDialogOpen(false);
+      setError(error.response?.data?.message || 'Error deleting product. Please try again.');
       console.error('Error deleting product:', error);
     }
   };
@@ -342,6 +344,14 @@ export default function ProductsPage() {
           Add Product
         </Button>
       </div>
+
+      {/* Error alert */}
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
       
       {/* Dashboard cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
