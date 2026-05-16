@@ -57,7 +57,7 @@ const Footer = () => {
               </a>
               {/* Email */}
               <a
-                href="mailto:Hina@absinthesoftware.com"
+                href="mailto:info@xn--taee-m5a.com"
                 className="text-stone-600 hover:text-white transition-colors duration-200"
                 aria-label="Email"
               >
@@ -151,13 +151,13 @@ const Footer = () => {
             <ul className="space-y-3">
               <li>
                 <a
-                  href="mailto:Hina@absinthesoftware.com"
+                  href="mailto:info@xn--taee-m5a.com"
                   className="flex items-start gap-2.5 text-xs text-stone-500 hover:text-white tracking-wide transition-colors duration-200 group"
                 >
                   <svg className="w-4 h-4 mt-0.5 flex-shrink-0 text-stone-700 group-hover:text-stone-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  Hina@absinthesoftware.com
+                  info@xn--taee-m5a.com
                 </a>
               </li>
               <li className="flex items-start gap-2.5 text-xs text-stone-500 tracking-wide">
@@ -185,7 +185,7 @@ const Footer = () => {
             <Link href={`${process.env.NEXT_PUBLIC_FRONTEND_URL}/customer/terms-conditions`} className="text-stone-700 hover:text-white text-[11px] tracking-wide transition-colors duration-200">
               Terms
             </Link>
-            <a href="mailto:Hina@absinthesoftware.com" className="text-stone-700 hover:text-white text-[11px] tracking-wide transition-colors duration-200">
+            <a href="mailto:info@xn--taee-m5a.com" className="text-stone-700 hover:text-white text-[11px] tracking-wide transition-colors duration-200">
               Contact
             </a>
           </div>

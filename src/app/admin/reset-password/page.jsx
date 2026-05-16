@@ -346,7 +346,7 @@ function ResetPasswordForm() {
         <div className="text-center mt-8">
           <p className="text-sm text-gray-500">
             Need help? Contact{' '}
-            <a href="mailto:support@yourstore.com" className="text-indigo-600 hover:text-indigo-700 font-medium">
+            <a href="mailto:info@xn--taee-m5a.com" className="text-indigo-600 hover:text-indigo-700 font-medium">
               technical support
             </a>
           </p>

@@ -290,7 +290,7 @@ export default function ProductDetailsPage({ params }) {
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 lg:gap-12 xl:gap-16 min-w-0">
 
           {/* LEFT: Image Gallery */}
-          <div className="flex gap-3">
+          <div className="flex gap-3 min-w-0 w-full overflow-hidden">
 
             {/* Vertical thumbnail strip — desktop only */}
             {hasMultipleImages && (
@@ -317,8 +317,8 @@ export default function ProductDetailsPage({ params }) {
             )}
 
             {/* Main image */}
-            <div className="flex-1 relative">
-              <div className="relative w-full aspect-[3/4] bg-stone-50 overflow-hidden">
+            <div className="flex-1 relative min-w-0">
+              <div className="relative w-full aspect-[3/4] bg-stone-50 overflow-hidden max-h-[80vh] sm:max-h-none">
 
                 {/* Wishlist */}
                 <button
@@ -346,7 +346,8 @@ export default function ProductDetailsPage({ params }) {
                     <img
                       src={productImages[currentImageIndex]?.url || product.primaryImage}
                       alt={productImages[currentImageIndex]?.alt || product.name}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain object-top"
+                      style={{ maxWidth: '100%', display: 'block' }}
                       onError={() => setImageError(true)}
                     />
 
