@@ -13,6 +13,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata = {
   title: "Tasee - Premium Women's Fashion",
   description: "Discover the latest trends in women's clothing and accessories",
+  icons: [],
 };
 
 export default function RootLayout({ children }) {

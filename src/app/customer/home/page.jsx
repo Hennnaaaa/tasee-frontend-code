@@ -202,16 +202,6 @@ export default function HomePage() {
           <p className="text-white/55 text-[10px] tracking-[0.55em] uppercase mb-4 font-light">
             Premium Women's Fashion
           </p>
-          <h1
-            className="text-white font-black uppercase leading-none mb-3"
-            style={{
-              fontSize: screenSize === 'mobile' ? 'clamp(3rem,14vw,4.5rem)' : 'clamp(4.5rem,8vw,8rem)',
-              fontFamily: "'Georgia','Times New Roman',serif",
-              letterSpacing: '0.06em',
-            }}
-          >
-            Tasee
-          </h1>
           <p className="text-white/60 text-xs sm:text-sm tracking-[0.35em] uppercase mb-10 font-light" style={{ fontFamily: "'Georgia',serif" }}>
             New Collection
           </p>

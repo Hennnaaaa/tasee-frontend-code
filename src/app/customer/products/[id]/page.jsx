@@ -764,18 +764,6 @@ export default function ProductDetailsPage({ params }) {
                                   ))}
                                 </tr>
                               ))}
-                              <tr className="bg-stone-50">
-                                <td className="py-2.5 pr-4 text-[10px] tracking-wide uppercase text-stone-400">Stock</td>
-                                {availableSizes.map(s => (
-                                  <td key={s.id} className="py-2.5 px-3 text-center">
-                                    {s.inStock ? (
-                                      <span className="text-[10px] uppercase tracking-wide text-green-600">In Stock</span>
-                                    ) : (
-                                      <span className="text-[10px] uppercase tracking-wide text-red-400">Out of Stock</span>
-                                    )}
-                                  </td>
-                                ))}
-                              </tr>
                             </tbody>
                           </table>
                           <p className="mt-4 text-[10px] text-stone-400 leading-relaxed">
