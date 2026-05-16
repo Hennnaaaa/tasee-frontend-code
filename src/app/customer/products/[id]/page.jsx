@@ -441,14 +441,16 @@ export default function ProductDetailsPage({ params }) {
 
                 if (selectedPriceVariant) {
                   displayPrice = parseFloat(selectedPriceVariant.price);
-                } else if (selectedSize && selectedSize.price !== product.price) {
-                  displayPrice = selectedSize.price;
                 } else if (product.priceRange?.hasPriceVariation) {
-                  return (
-                    <span className="text-2xl font-light text-stone-900 tracking-wide">
-                      {formatPrice(product.priceRange.min)} – {formatPrice(product.priceRange.max)}
-                    </span>
-                  );
+                  if (selectedSize) {
+                    displayPrice = selectedSize.price;
+                  } else {
+                    return (
+                      <span className="text-2xl font-light text-stone-900 tracking-wide">
+                        {formatPrice(product.priceRange.min)} – {formatPrice(product.priceRange.max)}
+                      </span>
+                    );
+                  }
                 } else {
                   displayPrice = product.discountedPrice || product.price;
                   if (product.discountInfo?.hasDiscount) {
