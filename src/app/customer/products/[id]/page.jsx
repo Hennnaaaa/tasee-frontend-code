@@ -177,7 +177,7 @@ export default function ProductDetailsPage({ params }) {
   const decreaseQuantity = () => { if (quantity > 1) setQuantity(p => p - 1); };
 
   const handleAddToCart = async () => {
-    const requiresSize = product.productType === 'sized' && product.availableSizes?.length > 0;
+    const requiresSize = !!product.requiresSizeSelection;
     if (requiresSize && !selectedSize) { showNotification('error', 'Please select a size'); return; }
     const availInv = selectedSize ? selectedSize.inventory : (product.inventory || 0);
     if (quantity > availInv) { showNotification('error', `Only ${availInv} items available`); return; }
@@ -248,8 +248,11 @@ export default function ProductDetailsPage({ params }) {
 
   const productImages = product.images || [];
   const hasMultipleImages = productImages.length > 1;
-  const { hasStock, isLowStock, totalAvailable } = product.inventoryStatus || {};
-  const isLowStockDisplay = hasStock && totalAvailable <= 5;
+  const { hasStock } = product.inventoryStatus || {};
+  // A sized product with no assigned sizes must be treated as out of stock
+  const effectiveHasStock = hasStock && (
+    product.productType !== 'sized' || (product.availableSizes?.length > 0)
+  );
 
   // ── Render ────────────────────────────────────────────────────
   return (
@@ -371,7 +374,7 @@ export default function ProductDetailsPage({ params }) {
                     )}
 
                     {/* Out of stock overlay */}
-                    {!hasStock && (
+                    {!effectiveHasStock && (
                       <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-10">
                         <span className="bg-stone-900 text-white text-xs tracking-widest uppercase px-8 py-3">Out of Stock</span>
                       </div>
@@ -518,7 +521,12 @@ export default function ProductDetailsPage({ params }) {
             )}
 
             {/* Size Selection */}
-            {product.productType === 'sized' && product.availableSizes?.length > 0 ? (
+            {product.productType === 'sized' && (product.noSizesAvailable || (!product.availableSizes?.length && !product.outOfStockSizes?.length)) ? (
+              <div>
+                <p className="text-[10px] tracking-[0.3em] uppercase text-stone-500 font-medium mb-2">Sizes</p>
+                <p className="text-xs text-red-400 tracking-wide">No sizes are currently available for this product.</p>
+              </div>
+            ) : product.productType === 'sized' && product.availableSizes?.length > 0 ? (
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-[10px] tracking-[0.3em] uppercase text-stone-500 font-medium">Select Size</p>
@@ -597,7 +605,7 @@ export default function ProductDetailsPage({ params }) {
               <div className="flex items-center border border-stone-200 w-fit">
                 <button
                   onClick={decreaseQuantity}
-                  disabled={quantity <= 1 || !hasStock || addingToCart}
+                  disabled={quantity <= 1 || !effectiveHasStock || addingToCart}
                   className="w-10 h-10 flex items-center justify-center text-stone-600 hover:bg-stone-50 disabled:opacity-30 transition-colors"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -610,7 +618,7 @@ export default function ProductDetailsPage({ params }) {
                 <button
                   onClick={increaseQuantity}
                   disabled={(() => {
-                    if (!hasStock || addingToCart || quantity >= 99) return true;
+                    if (!effectiveHasStock || addingToCart || quantity >= 99) return true;
                     const inCart = selectedSize ? (cartQuantities[selectedSize.sizeId] || 0) : (cartQuantities.regular || 0);
                     const inv = selectedSize ? selectedSize.inventory : (product?.inventory || 0);
                     return quantity >= getAvailableToAdd(inv, inCart);
@@ -630,9 +638,9 @@ export default function ProductDetailsPage({ params }) {
             {/* Add to Cart */}
             <button
               onClick={handleAddToCart}
-              disabled={!hasStock || addingToCart || (product.requiresSizeSelection && !selectedSize)}
+              disabled={!effectiveHasStock || addingToCart || (product.requiresSizeSelection && !selectedSize)}
               className={`w-full py-4 text-xs tracking-[0.3em] uppercase font-medium transition-all duration-300 ${
-                !hasStock || (product.requiresSizeSelection && !selectedSize)
+                !effectiveHasStock || (product.requiresSizeSelection && !selectedSize)
                   ? 'bg-stone-200 text-stone-400 cursor-not-allowed'
                   : addingToCart
                   ? 'bg-stone-500 text-white cursor-wait'
@@ -647,7 +655,7 @@ export default function ProductDetailsPage({ params }) {
                   </svg>
                   Adding...
                 </span>
-              ) : !hasStock ? 'Out of Stock'
+              ) : !effectiveHasStock ? 'Out of Stock'
                 : (product.requiresSizeSelection && !selectedSize) ? 'Select a Size'
                 : `Add ${quantity > 1 ? `${quantity} items` : ''} to Cart`}
             </button>
@@ -691,8 +699,8 @@ export default function ProductDetailsPage({ params }) {
                     )}
                     <div className="flex justify-between py-3">
                       <dt className="text-[10px] tracking-widest uppercase text-stone-400">Availability</dt>
-                      <dd className={`text-xs font-medium ${hasStock ? (isLowStockDisplay ? 'text-amber-600' : 'text-green-600') : 'text-red-500'}`}>
-                        {hasStock ? (isLowStockDisplay ? `Low Stock (${totalAvailable})` : 'In Stock') : 'Out of Stock'}
+                      <dd className={`text-xs font-medium ${effectiveHasStock ? 'text-green-600' : 'text-red-500'}`}>
+                        {effectiveHasStock ? 'In Stock' : 'Out of Stock'}
                       </dd>
                     </div>
                     {product.discountInfo?.hasDiscount && (
