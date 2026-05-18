@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Newsletter from '@/components/Newsletter';
 import { GET_ALL_CATEGORIES } from '@/utils/routes/customerRoutes';
@@ -23,11 +23,17 @@ const useScreenSize = () => {
 // ── Hero slideshow data ───────────────────────────────────────
 // Round-robin: D1[0]→D2[0]→D3[0]→D4[0]→D5[0]→D1[1]→D2[1]→…
 const DRESS_IMAGES = [
-  ['IMG_5015.jpg','IMG_5016.jpg','IMG_5017.jpg','IMG_5018.jpg','IMG_5019.jpg','IMG_5020.jpg','IMG_5021.jpg','IMG_5022.jpg','IMG_5023.jpg','IMG_5234.JPG'],
+  ['IMG_5015.jpg','IMG_5016.jpg','IMG_5017.jpg','IMG_5018.jpg','IMG_5019.jpg','IMG_5020.jpg','IMG_5021.jpg','IMG_5022.jpg','IMG_5023.jpg'],
   ['IMG_5036.jpg','IMG_5037.jpg','IMG_5038.jpg','IMG_5039.jpg','IMG_5040.jpg','IMG_5041.jpg','IMG_5042.jpg','IMG_5043.jpg','IMG_5044.jpg','IMG_5045.jpg','IMG_5046.jpg','IMG_5047.jpg','IMG_5048.jpg','IMG_5049.jpg','IMG_5305.JPG'],
   ['IMG_5050.jpg','IMG_5051.jpg','IMG_5052.jpg','IMG_5053.jpg','IMG_5054.jpg','IMG_5055.jpg','IMG_5056.jpg','IMG_5057.jpg','IMG_5058.jpg','IMG_5059.jpg','IMG_5060.jpg'],
   ['IMG_5024.jpg','IMG_5025.jpg','IMG_5026.jpg','IMG_5027.jpg','IMG_5028.jpg','IMG_5029.jpg','IMG_5030.jpg','IMG_5031.jpg','IMG_5032.jpg','IMG_5033.jpg','IMG_5034.jpg'],
-  ['IMG_5061.jpg','IMG_5062.JPG','IMG_5063.JPG','IMG_5064.JPG','IMG_5065.JPG','IMG_5066.JPG','IMG_5067.JPG','IMG_5068.JPG','IMG_5069.JPG','IMG_5342.JPG'],
+  ['IMG_5061.jpg','IMG_5062.JPG','IMG_5063.JPG','IMG_5064.JPG','IMG_5065.JPG','IMG_5066.JPG','IMG_5067.JPG','IMG_5068.JPG','IMG_5069.JPG'],
+  // Lueur collection
+  ['IMG_2150.JPG','IMG_2151.JPG','IMG_2152.JPG','IMG_2153.JPG','IMG_2154.JPG','IMG_2155.JPG','IMG_2156.JPG','IMG_2157.JPG'],
+  ['IMG_2139.JPG','IMG_2140.JPG','IMG_2141.JPG','IMG_2142.JPG','IMG_2143.JPG','IMG_2144.JPG','IMG_2145.JPG','IMG_2146.JPG','IMG_2147.JPG'],
+  ['IMG_2130.JPG','IMG_2131.JPG','IMG_2132.JPG','IMG_2133.JPG','IMG_2134.JPG','IMG_2135.JPG'],
+  ['IMG_2125.JPG','IMG_2126.JPG','IMG_2127.JPG','IMG_2128.JPG','IMG_2129.JPG'],
+  ['IMG_2115.JPG','IMG_2116.JPG','IMG_2117.JPG','IMG_2118.JPG','IMG_2119.JPG','IMG_2120.JPG','IMG_2121.JPG'],
 ];
 
 const HERO_SLIDES = (() => {
@@ -41,30 +47,29 @@ const HERO_SLIDES = (() => {
   return out;
 })();
 
-// ── Desktop hero: 3-up crossfade slideshow ───────────────────
-// Shows 3 portrait images side by side so the full image height is
-// visible — no top/bottom cropping. Groups of 3 advance together.
-const GROUP_SIZE = 3;
-const TOTAL_GROUPS = Math.floor(HERO_SLIDES.length / GROUP_SIZE);
-
-function HeroSlideshow({ onReady }) {
+function HeroSlideshow({ onReady, groupSize = 3 }) {
   const [currGroup, setCurrGroup] = useState(0);
   const [fading, setFading] = useState(false);
+  const totalGroups = Math.floor(HERO_SLIDES.length / groupSize);
+
+  useEffect(() => {
+    setCurrGroup(0);
+  }, [groupSize]);
 
   useEffect(() => {
     const t = setInterval(() => {
       setFading(true);
       setTimeout(() => {
-        setCurrGroup(g => (g + 1) % TOTAL_GROUPS);
+        setCurrGroup(g => (g + 1) % totalGroups);
         setFading(false);
       }, 700);
     }, 3800);
     return () => clearInterval(t);
-  }, []);
+  }, [totalGroups]);
 
-  const slice = (g) => HERO_SLIDES.slice(g * GROUP_SIZE, g * GROUP_SIZE + GROUP_SIZE);
+  const slice = (g) => HERO_SLIDES.slice(g * groupSize, g * groupSize + groupSize);
   const currImages = slice(currGroup);
-  const nextImages = slice((currGroup + 1) % TOTAL_GROUPS);
+  const nextImages = slice((currGroup + 1) % totalGroups);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -109,12 +114,21 @@ function RevealSection({ children, zIndex, bg = 'bg-white', rounded = true }) {
 }
 
 const REELS = [
-  { src: '/videos/reel-1.mp4', poster: '/videos/posters/reel-1.jpg' },
-  { src: '/videos/reel-2.mp4', poster: '/videos/posters/reel-2.jpg' },
-  { src: '/videos/reel-3.mp4', poster: '/videos/posters/reel-3.jpg' },
-  { src: '/videos/reel-4.mp4', poster: '/videos/posters/reel-4.jpg' },
-  { src: '/videos/reel-5.mp4', poster: '/videos/posters/reel-5.jpg' },
-  { src: '/videos/reel-6.mp4', poster: '/videos/posters/reel-6.jpg' },
+  '/videos/reel-1.mp4',
+  '/videos/reel-7.mp4',
+  '/videos/reel-2.mp4',
+  '/videos/reel-8.mp4',
+  '/videos/reel-3.mp4',
+  '/videos/reel-9.mp4',
+  '/videos/reel-4.mp4',
+  '/videos/reel-10.mp4',
+  '/videos/reel-5.mp4',
+  '/videos/reel-11.mp4',
+  '/videos/reel-6.mp4',
+  '/videos/reel-12.mp4',
+  '/videos/reel-13.mp4',
+  '/videos/reel-14.mp4',
+  '/videos/reel-15.mp4',
 ];
 
 export default function HomePage() {
@@ -125,14 +139,6 @@ export default function HomePage() {
   const isMobile = mounted && screenSize === 'mobile';
 
   const parentCategories = categories.filter(c => !c.parentId && c.isActive);
-
-  // iOS Safari ignores React's muted JSX prop — ref callback sets it on the DOM node directly
-  const heroVideoRef = useCallback((node) => {
-    if (node) {
-      node.muted = true;
-      node.defaultMuted = true;
-    }
-  }, []);
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -165,26 +171,13 @@ export default function HomePage() {
           style={{ opacity: heroReady ? 0 : 1, zIndex: 1 }}
         />
 
-        {/* Mobile: video */}
-        {isMobile && (
-          <video
-            ref={heroVideoRef}
-            autoPlay muted loop playsInline
-            preload="auto"
-            poster="/hero-slides/dress-1/IMG_5015.jpg"
-            onCanPlay={() => setHeroReady(true)}
-            onError={() => setHeroReady(true)}
-            className="absolute inset-0 w-full h-full object-cover"
-            style={{ zIndex: 0 }}
-          >
-            <source src="/videos/hero.mp4" type="video/mp4" />
-          </video>
-        )}
-
-        {/* Desktop / Tablet: image slideshow */}
-        {mounted && !isMobile && (
+        {/* Image slideshow for all screen sizes */}
+        {mounted && (
           <div className="absolute inset-0" style={{ zIndex: 0 }}>
-            <HeroSlideshow onReady={() => setHeroReady(true)} />
+            <HeroSlideshow
+              onReady={() => setHeroReady(true)}
+              groupSize={screenSize === 'mobile' ? 1 : screenSize === 'tablet' ? 2 : 3}
+            />
           </div>
         )}
 
@@ -310,18 +303,18 @@ export default function HomePage() {
 
           {/* Horizontal scroll strip */}
           <div className="flex gap-2 sm:gap-3 overflow-x-scroll no-scrollbar snap-x snap-mandatory px-4 sm:px-10 pb-4">
-            {REELS.map(({ src, poster }) => (
+            {REELS.map((src) => (
               <div
                 key={src}
                 className="flex-shrink-0 snap-start w-[72vw] sm:w-[44vw] md:w-[30vw] lg:w-[24vw]"
               >
-                <ReelCard src={src} poster={poster} />
+                <ReelCard src={src} />
               </div>
             ))}
           </div>
 
           <p className="text-center text-stone-700 text-[10px] tracking-[0.35em] mt-6 uppercase px-4">
-            Tap to play · Scroll to discover
+            Scroll to play · Tap to pause
           </p>
         </section>
       </RevealSection>
