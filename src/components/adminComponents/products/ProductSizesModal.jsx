@@ -52,7 +52,6 @@ import {
   GET_PRODUCT_SIZES,
   ASSIGN_SIZES_TO_PRODUCT,
   UPDATE_PRODUCT_SIZE_INVENTORY,
-  GET_ALL_SIZES,
 } from '@/utils/routes/productManagementRoutes';
 
 // Import auth utility
@@ -98,7 +97,6 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
   useEffect(() => {
     if (isOpen && product) {
       fetchProductSizes();
-      fetchAvailableSizes();
     }
   }, [isOpen, product]);
 
@@ -126,14 +124,9 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
   useEffect(() => {
     if (isOpen && product) {
       console.log('=== ProductSizesModal Debug ===');
-      console.log('Product:', {
-        id: product.id,
-        name: product.name,
-        categoryId: product.categoryId,
-        category: product.category
-      });
-      console.log('Product Sizes:', productSizes.length);
-      console.log('Available Sizes:', availableSizes.length);
+      console.log('Product:', { id: product.id, name: product.name });
+      console.log('Assigned sizes:', productSizes.length);
+      console.log('Available sizes to add:', availableSizes.length);
     }
   }, [isOpen, product, productSizes, availableSizes]);
 
@@ -174,9 +167,15 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
         setProductSizes(sizesWithOriginal);
         setProductData(response.data.data.product);
         
-        // If there are recommended sizes, add them to available sizes
+        // Backend returns all unassigned sizes (any clothing type) as recommendedSizes.
+        // Normalize clothingType → category so the grouping UI works correctly.
         if (response.data.data.recommendedSizes) {
-          setAvailableSizes(response.data.data.recommendedSizes);
+          setAvailableSizes(
+            response.data.data.recommendedSizes.map(s => ({
+              ...s,
+              category: s.clothingType,
+            }))
+          );
         }
       } else {
         setError(response.data.message);
@@ -194,83 +193,6 @@ export default function ProductSizesModal({ isOpen, onClose, product, onSaved })
       console.error('❌ Error fetching product sizes:', err);
     } finally {
       setLoading(false);
-    }
-  };
-
-  // ✅ FIXED: Fetch available sizes with authentication (NO CATEGORY FILTER)
-  const fetchAvailableSizes = async () => {
-    if (!product) return;
-
-    try {
-      // Get authentication data
-      const auth = getUserData();
-      if (!auth || !auth.token) {
-        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
-        return;
-      }
-
-      console.log('🔍 Fetching available sizes for product:', product.name);
-
-      // ✅ FIX: Fetch ALL active sizes (no category filter)
-      const response = await axios.get(GET_ALL_SIZES, {
-        params: {
-          includeInactive: false,  // ✅ Only get active sizes
-          // ✅ REMOVED: category filter to show all sizes
-        },
-        headers: {
-          Authorization: `Bearer ${auth.token}`
-        }
-      });
-
-      console.log('📦 Available sizes response:', {
-        success: response.data.success,
-        totalSizes: response.data.data?.length || 0
-      });
-
-      if (response.data.success) {
-        // Filter out sizes already assigned to this product
-        const currentSizeIds = new Set(productSizes.map((ps) => ps.sizeId));
-        
-        const filteredSizes = response.data.data.filter(
-          (size) => !currentSizeIds.has(size.id)
-        );
-
-        console.log('✅ Available sizes after filtering:', {
-          total: filteredSizes.length,
-          categories: [...new Set(filteredSizes.map(s => s.category))],
-          sizeNames: filteredSizes.map(s => `${s.name} (${s.code})`)
-        });
-
-        // Sort by category, then by sortOrder
-        const sortedSizes = filteredSizes.sort((a, b) => {
-          if (a.category !== b.category) {
-            return a.category.localeCompare(b.category);
-          }
-          return (a.sortOrder || 0) - (b.sortOrder || 0);
-        });
-
-        setAvailableSizes(sortedSizes);
-      } else {
-        console.error('❌ Failed to fetch sizes:', response.data.message);
-        setError(response.data.message || 'Failed to fetch available sizes');
-      }
-    } catch (err) {
-      // Handle unauthorized error
-      if (err.response && err.response.status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        router.push(`${process.env.NEXT_PUBLIC_FRONTEND_URL}/login`);
-        return;
-      }
-
-      console.error('❌ Error fetching available sizes:', err);
-      console.error('Error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
-      });
-      
-      setError(err.response?.data?.message || 'Error fetching available sizes');
     }
   };
 
